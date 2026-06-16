@@ -20,7 +20,7 @@ Ele nasceu de um problema real e comum nas obras de pequeno e médio porte: a ge
 
 O ObraFácil resolve isso colocando o controle completo da obra no celular — de forma simples, móvel e com **inteligência artificial embarcada que roda no próprio aparelho, mesmo sem internet**.
 
-🎥 **Vídeo de apresentação (Pitch):** [assista aqui](https://youtu.be/SEU_LINK_AQUI)
+🎥 **Vídeo de apresentação (Pitch):** [assista aqui](https://youtu.be/Z8BTWrMxLTY)
 
 ---
 
