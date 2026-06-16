@@ -89,32 +89,6 @@ O diferencial central do ObraFácil é rodar inteligência **dentro do próprio 
 
 ---
 
-## 🚀 Como rodar o projeto
-
-> Pré-requisitos: Flutter SDK 3.x, Android Studio e um projeto Firebase configurado.
-
-```bash
-# 1. Clonar o repositório
-git clone https://github.com/SEU_USUARIO/obra-facil.git
-cd obra-facil
-
-# 2. Instalar as dependências
-flutter pub get
-
-# 3. Configurar o Firebase
-#    - Crie um projeto em https://console.firebase.google.com
-#    - Adicione um app Android com o pacote: com.obrafacil.obra_facil
-#    - Baixe o google-services.json e coloque em: android/app/google-services.json
-
-# 4. Verificar o ambiente
-flutter doctor
-
-# 5. Rodar no emulador ou celular
-flutter run
-```
-
----
-
 ## 📁 Estrutura do projeto
 
 ```
