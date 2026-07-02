@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../constants/app_colors.dart';
 import '../constants/app_theme.dart';
+import 'demo_ia_screen.dart';
 
 /// Mostrada quando o firebase_options.dart ainda tem placeholders —
 /// orienta a configurar o projeto em vez de quebrar com erro de conexão.
@@ -57,6 +58,18 @@ class ConfiguracaoPendenteApp extends StatelessWidget {
                   'O comando gera o lib/firebase_options.dart com as chaves '
                   'do seu projeto. Depois é só rodar o app de novo.',
                   style: TextStyle(color: AppColors.textoSecundario),
+                ),
+                const SizedBox(height: 24),
+                Builder(
+                  builder: (ctx) => OutlinedButton.icon(
+                    onPressed: () => Navigator.of(ctx).push(
+                      MaterialPageRoute(
+                          builder: (_) => const DemoIaScreen()),
+                    ),
+                    icon: const Icon(Icons.auto_awesome),
+                    label:
+                        const Text('Testar as IAs sem conta (demonstração)'),
+                  ),
                 ),
                 const Spacer(flex: 2),
               ],

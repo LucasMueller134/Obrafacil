@@ -67,8 +67,7 @@ class _RelatorioScreenState extends State<RelatorioScreen> {
             IconButton(
               tooltip: 'Compartilhar',
               icon: const Icon(Icons.share),
-              onPressed: () => SharePlus.instance
-                  .share(ShareParams(text: _relatorio!)),
+              onPressed: () => Share.share(_relatorio!),
             ),
         ],
       ),

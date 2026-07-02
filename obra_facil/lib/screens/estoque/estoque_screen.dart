@@ -211,6 +211,10 @@ class _FormEstoqueState extends State<_FormEstoque> {
   bool _reconhecendo = false;
   String? _resultadoVisao;
 
+  /// Controller interno do campo visível do Autocomplete — necessário para
+  /// refletir o material reconhecido pela câmera na tela.
+  TextEditingController? _campoMaterialVisivel;
+
   @override
   void dispose() {
     _materialCtrl.dispose();
@@ -243,6 +247,7 @@ class _FormEstoqueState extends State<_FormEstoque> {
         } else {
           final melhor = detectados.first;
           _materialCtrl.text = melhor.material;
+          _campoMaterialVisivel?.text = melhor.material;
           _resultadoVisao =
               'Reconhecido: ${melhor.material} '
               '(${(melhor.confianca * 100).toStringAsFixed(0)}% de confiança'
@@ -310,12 +315,12 @@ class _FormEstoqueState extends State<_FormEstoque> {
                     onSelected: (v) => _materialCtrl.text = v,
                     fieldViewBuilder:
                         (context, ctrl, focus, onSubmit) {
-                      ctrl.addListener(
-                          () => _materialCtrl.text = ctrl.text);
+                      _campoMaterialVisivel = ctrl;
                       return TextFormField(
                         controller: ctrl,
                         focusNode: focus,
                         textCapitalization: TextCapitalization.sentences,
+                        onChanged: (v) => _materialCtrl.text = v,
                         decoration: const InputDecoration(
                             labelText: 'Material'),
                         validator: (v) =>
