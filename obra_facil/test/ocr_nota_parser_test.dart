@@ -54,8 +54,10 @@ TOTAL 99,90
       expect(nota.data, DateTime(2026, 3, 2));
     });
 
-    test('texto irrelevante não encontra nada', () {
-      final nota = OcrNotaService.parsearTexto('apenas um rabisco');
+    test('texto sem dados de nota não encontra nada', () {
+      // Sem palavras com 4+ letras (candidatas a fornecedor), sem valores
+      // monetários, CNPJ ou datas.
+      final nota = OcrNotaService.parsearTexto('a1 b2\nc3 d4');
       expect(nota.encontrouAlgo, isFalse);
     });
   });

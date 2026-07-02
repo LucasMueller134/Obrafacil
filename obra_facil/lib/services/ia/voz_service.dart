@@ -39,8 +39,10 @@ class VozService {
 
   Future<void> ouvir(void Function(String textoParcial, bool finalizou) onTexto) async {
     await _stt.listen(
-      localeId: 'pt_BR',
-      listenOptions: SpeechListenOptions(partialResults: true),
+      listenOptions: SpeechListenOptions(
+        localeId: 'pt_BR',
+        partialResults: true,
+      ),
       onResult: (SpeechRecognitionResult r) =>
           onTexto(r.recognizedWords, r.finalResult),
     );

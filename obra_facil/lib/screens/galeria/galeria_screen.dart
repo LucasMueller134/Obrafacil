@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -152,11 +153,11 @@ class _GaleriaScreenState extends State<GaleriaScreen> {
       return;
     }
 
-    showDialog(
+    unawaited(showDialog(
       context: context,
       barrierDismissible: false,
       builder: (_) => const Center(child: CircularProgressIndicator()),
-    );
+    ));
     final resultado = await ProgressoFotoService.compararBytes(
       ImagemService.bytesDe(fotos[0].url),
       ImagemService.bytesDe(fotos[1].url),
@@ -164,7 +165,7 @@ class _GaleriaScreenState extends State<GaleriaScreen> {
     if (!mounted) return;
     Navigator.pop(context); // fecha o loading
 
-    showDialog(
+    await showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Progresso por foto (IA)'),

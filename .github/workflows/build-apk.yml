@@ -51,6 +51,13 @@ jobs:
           if [ -f android/app/build.gradle ]; then
             sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 23/' android/app/build.gradle
           fi
+          # desliga a minificação R8 no release: o plugin de OCR referencia
+          # classes de idiomas (chinês/japonês/coreano) que não incluímos,
+          # e o R8 falha com "missing classes" ao tentar encolher o app
+          if [ -f android/app/build.gradle.kts ]; then
+            sed -i 's/signingConfig = signingConfigs.getByName("debug")/signingConfig = signingConfigs.getByName("debug")\n            isMinifyEnabled = false\n            isShrinkResources = false/' android/app/build.gradle.kts
+            grep -A4 'release {' android/app/build.gradle.kts || true
+          fi
           MANIFEST=android/app/src/main/AndroidManifest.xml
           # nome exibido no launcher
           sed -i 's/android:label="obra_facil"/android:label="ObraFácil"/' "$MANIFEST"
@@ -63,15 +70,11 @@ jobs:
       - name: Dependências
         run: flutter pub get
 
-      # test/analyze não travam o APK enquanto estabilizamos o projeto;
-      # os resultados aparecem no log para corrigirmos depois.
       - name: Testes unitários (parsers e IA)
         run: flutter test
-        continue-on-error: true
 
       - name: Análise estática
         run: flutter analyze
-        continue-on-error: true
 
       - name: Build APK (release)
         run: flutter build apk --release
