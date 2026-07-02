@@ -1,119 +1,113 @@
-// lib/models/obra_model.dart
+enum StatusObra {
+  emAndamento,
+  pausada,
+  concluida;
+
+  String get label => switch (this) {
+        StatusObra.emAndamento => 'Em andamento',
+        StatusObra.pausada => 'Pausada',
+        StatusObra.concluida => 'Concluída',
+      };
+
+  static StatusObra fromString(String? v) => StatusObra.values.firstWhere(
+        (s) => s.name == v,
+        orElse: () => StatusObra.emAndamento,
+      );
+}
+
 class ObraModel {
   final String id;
   final String nome;
   final String endereco;
-  final String status;
-  final String faseAtual;
-  final double orcamentoTotal;
-  final double custoAtual;
-  final String mestreId;
-  final String donoId;
+  final String? cliente;
+  final double orcamento;
   final DateTime dataInicio;
-  final DateTime? dataPrevisaoFim;
-  final DateTime? dataFim;
-  final String? fotoUrl;
-  final double? latitude;
-  final double? longitude;
-  final DateTime criadoEm;
-  final DateTime atualizadoEm;
+  final DateTime previsaoTermino;
+  final StatusObra status;
+  final String donoId;
 
-  ObraModel({
+  /// Usuários (mestres de obra) com acesso a esta obra.
+  final List<String> equipeIds;
+
+  /// Código curto que o dono compartilha para o mestre entrar na obra.
+  final String codigoConvite;
+  final DateTime criadoEm;
+
+  const ObraModel({
     required this.id,
     required this.nome,
     required this.endereco,
-    required this.status,
-    required this.faseAtual,
-    required this.orcamentoTotal,
-    required this.custoAtual,
-    required this.mestreId,
-    required this.donoId,
+    this.cliente,
+    required this.orcamento,
     required this.dataInicio,
-    this.dataPrevisaoFim,
-    this.dataFim,
-    this.fotoUrl,
-    this.latitude,
-    this.longitude,
+    required this.previsaoTermino,
+    this.status = StatusObra.emAndamento,
+    required this.donoId,
+    this.equipeIds = const [],
+    required this.codigoConvite,
     required this.criadoEm,
-    required this.atualizadoEm,
   });
 
-  double get percentualGasto =>
-      orcamentoTotal > 0 ? (custoAtual / orcamentoTotal) * 100 : 0;
+  int get duracaoDias => previsaoTermino.difference(dataInicio).inDays;
 
-  double get saldoRestante => orcamentoTotal - custoAtual;
-
-  bool get estourandoOrcamento => percentualGasto >= 80;
+  int get diasDecorridos {
+    final passados = DateTime.now().difference(dataInicio).inDays;
+    return passados.clamp(0, duracaoDias);
+  }
 
   Map<String, dynamic> toMap() => {
-    'id': id,
-    'nome': nome,
-    'endereco': endereco,
-    'status': status,
-    'faseAtual': faseAtual,
-    'orcamentoTotal': orcamentoTotal,
-    'custoAtual': custoAtual,
-    'mestreId': mestreId,
-    'donoId': donoId,
-    'dataInicio': dataInicio.toIso8601String(),
-    'dataPrevisaoFim': dataPrevisaoFim?.toIso8601String(),
-    'dataFim': dataFim?.toIso8601String(),
-    'fotoUrl': fotoUrl,
-    'latitude': latitude,
-    'longitude': longitude,
-    'criadoEm': criadoEm.toIso8601String(),
-    'atualizadoEm': atualizadoEm.toIso8601String(),
-  };
+        'nome': nome,
+        'endereco': endereco,
+        'cliente': cliente,
+        'orcamento': orcamento,
+        'dataInicio': dataInicio.toIso8601String(),
+        'previsaoTermino': previsaoTermino.toIso8601String(),
+        'status': status.name,
+        'donoId': donoId,
+        'equipeIds': equipeIds,
+        'codigoConvite': codigoConvite,
+        'criadoEm': criadoEm.toIso8601String(),
+      };
 
-  factory ObraModel.fromMap(Map<String, dynamic> map) => ObraModel(
-    id: map['id'],
-    nome: map['nome'],
-    endereco: map['endereco'],
-    status: map['status'],
-    faseAtual: map['faseAtual'],
-    orcamentoTotal: (map['orcamentoTotal'] ?? 0).toDouble(),
-    custoAtual: (map['custoAtual'] ?? 0).toDouble(),
-    mestreId: map['mestreId'] ?? '',
-    donoId: map['donoId'] ?? '',
-    dataInicio: DateTime.parse(map['dataInicio']),
-    dataPrevisaoFim: map['dataPrevisaoFim'] != null
-        ? DateTime.parse(map['dataPrevisaoFim'])
-        : null,
-    dataFim: map['dataFim'] != null ? DateTime.parse(map['dataFim']) : null,
-    fotoUrl: map['fotoUrl'],
-    latitude: map['latitude']?.toDouble(),
-    longitude: map['longitude']?.toDouble(),
-    criadoEm: DateTime.parse(map['criadoEm']),
-    atualizadoEm: DateTime.parse(map['atualizadoEm']),
-  );
+  factory ObraModel.fromMap(String id, Map<String, dynamic> map) => ObraModel(
+        id: id,
+        nome: map['nome'] ?? '',
+        endereco: map['endereco'] ?? '',
+        cliente: map['cliente'],
+        orcamento: (map['orcamento'] ?? 0).toDouble(),
+        dataInicio:
+            DateTime.tryParse(map['dataInicio'] ?? '') ?? DateTime.now(),
+        previsaoTermino: DateTime.tryParse(map['previsaoTermino'] ?? '') ??
+            DateTime.now(),
+        status: StatusObra.fromString(map['status']),
+        donoId: map['donoId'] ?? '',
+        equipeIds: List<String>.from(map['equipeIds'] ?? const []),
+        codigoConvite: map['codigoConvite'] ?? '',
+        criadoEm: DateTime.tryParse(map['criadoEm'] ?? '') ?? DateTime.now(),
+      );
 
   ObraModel copyWith({
     String? nome,
     String? endereco,
-    String? status,
-    String? faseAtual,
-    double? orcamentoTotal,
-    double? custoAtual,
-    String? fotoUrl,
-    DateTime? atualizadoEm,
+    String? cliente,
+    double? orcamento,
+    DateTime? dataInicio,
+    DateTime? previsaoTermino,
+    StatusObra? status,
+    List<String>? equipeIds,
   }) =>
       ObraModel(
         id: id,
         nome: nome ?? this.nome,
         endereco: endereco ?? this.endereco,
+        cliente: cliente ?? this.cliente,
+        orcamento: orcamento ?? this.orcamento,
+        dataInicio: dataInicio ?? this.dataInicio,
+        previsaoTermino: previsaoTermino ?? this.previsaoTermino,
         status: status ?? this.status,
-        faseAtual: faseAtual ?? this.faseAtual,
-        orcamentoTotal: orcamentoTotal ?? this.orcamentoTotal,
-        custoAtual: custoAtual ?? this.custoAtual,
-        mestreId: mestreId,
         donoId: donoId,
-        dataInicio: dataInicio,
-        dataPrevisaoFim: dataPrevisaoFim,
-        dataFim: dataFim,
-        fotoUrl: fotoUrl ?? this.fotoUrl,
-        latitude: latitude,
-        longitude: longitude,
+        equipeIds: equipeIds ?? this.equipeIds,
+        codigoConvite: codigoConvite,
         criadoEm: criadoEm,
-        atualizadoEm: atualizadoEm ?? this.atualizadoEm,
       );
 }

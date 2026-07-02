@@ -1,0 +1,58 @@
+rules_version = '2';
+
+// Regras de segurança do ObraFácil.
+// Publique no console do Firebase (Firestore Database → Regras)
+// ou via CLI: firebase deploy --only firestore:rules
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function logado() {
+      return request.auth != null;
+    }
+
+    function ehDonoDaObra(obra) {
+      return obra.data.donoId == request.auth.uid;
+    }
+
+    function ehDaEquipe(obra) {
+      return request.auth.uid in obra.data.equipeIds;
+    }
+
+    function membroDaObra(obraId) {
+      let obra = get(/databases/$(database)/documents/obras/$(obraId));
+      return ehDonoDaObra(obra) || ehDaEquipe(obra);
+    }
+
+    // Perfil do usuário: cada um lê/escreve apenas o próprio.
+    match /usuarios/{uid} {
+      allow read, write: if logado() && request.auth.uid == uid;
+    }
+
+    match /obras/{obraId} {
+      // Leitura por listagem (dono/equipe) e busca por código de convite.
+      allow read: if logado();
+      allow create: if logado() && request.resource.data.donoId == request.auth.uid;
+      // Dono edita tudo; mestre só pode se adicionar à equipe (código de convite).
+      allow update: if logado() && (
+        ehDonoDaObra(resource) ||
+        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['equipeIds']) &&
+         request.auth.uid in request.resource.data.equipeIds)
+      );
+      allow delete: if logado() && ehDonoDaObra(resource);
+
+      // Subcoleções: qualquer membro da obra lê e escreve.
+      // A moderação (aprovar/rejeitar) é validada no app; para o protótipo
+      // isso é suficiente — endurecer depois se for para produção.
+      match /{subcolecao}/{docId} {
+        allow read, write: if logado() && membroDaObra(obraId);
+      }
+    }
+
+    // Fornecedores pertencem ao dono, mas o mestre pode criar/consultar
+    // durante o lançamento (cadastro automático via OCR/voz).
+    match /fornecedores/{id} {
+      allow read, create: if logado();
+      allow update, delete: if logado() && resource.data.donoId == request.auth.uid;
+    }
+  }
+}

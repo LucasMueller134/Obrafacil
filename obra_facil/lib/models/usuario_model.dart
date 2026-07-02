@@ -1,39 +1,51 @@
-// lib/models/usuario_model.dart
+/// Perfil de acesso do usuário.
+enum PerfilUsuario {
+  dono,
+  mestre;
+
+  String get label => switch (this) {
+        PerfilUsuario.dono => 'Dono / Gestor',
+        PerfilUsuario.mestre => 'Mestre de obras',
+      };
+
+  static PerfilUsuario fromString(String? v) =>
+      PerfilUsuario.values.firstWhere(
+        (p) => p.name == v,
+        orElse: () => PerfilUsuario.mestre,
+      );
+}
+
 class UsuarioModel {
   final String id;
   final String nome;
   final String email;
-  final String perfil; // 'dono' ou 'mestre'
-  final List<String> obrasIds;
+  final PerfilUsuario perfil;
   final DateTime criadoEm;
 
-  UsuarioModel({
+  const UsuarioModel({
     required this.id,
     required this.nome,
     required this.email,
     required this.perfil,
-    this.obrasIds = const [],
     required this.criadoEm,
   });
 
-  bool get isDono => perfil == 'dono';
-  bool get isMestre => perfil == 'mestre';
+  bool get ehDono => perfil == PerfilUsuario.dono;
 
   Map<String, dynamic> toMap() => {
-    'id': id,
-    'nome': nome,
-    'email': email,
-    'perfil': perfil,
-    'obrasIds': obrasIds,
-    'criadoEm': criadoEm.toIso8601String(),
-  };
+        'nome': nome,
+        'email': email,
+        'perfil': perfil.name,
+        'criadoEm': criadoEm.toIso8601String(),
+      };
 
-  factory UsuarioModel.fromMap(Map<String, dynamic> map) => UsuarioModel(
-    id: map['id'],
-    nome: map['nome'],
-    email: map['email'],
-    perfil: map['perfil'],
-    obrasIds: List<String>.from(map['obrasIds'] ?? []),
-    criadoEm: DateTime.parse(map['criadoEm']),
-  );
+  factory UsuarioModel.fromMap(String id, Map<String, dynamic> map) =>
+      UsuarioModel(
+        id: id,
+        nome: map['nome'] ?? '',
+        email: map['email'] ?? '',
+        perfil: PerfilUsuario.fromString(map['perfil']),
+        criadoEm:
+            DateTime.tryParse(map['criadoEm'] ?? '') ?? DateTime.now(),
+      );
 }

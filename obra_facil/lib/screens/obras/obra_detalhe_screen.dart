@@ -1,230 +1,401 @@
-// lib/screens/obras/obra_detalhe_screen.dart
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:intl/intl.dart';
-import 'package:fl_chart/fl_chart.dart';
-import '../../models/obra_model.dart';
-import '../../models/lancamento_model.dart';
+
+import '../../constants/app_colors.dart';
 import '../../models/models.dart';
-import '../../constants/app_theme.dart';
-import '../../constants/app_constants.dart';
-import '../../providers/app_provider.dart';
-import '../lancamentos/lancamentos_screen.dart';
-import '../lancamentos/novo_lancamento_screen.dart';
-import '../relatorios/relatorio_screen.dart';
-import '../estoque/estoque_screen.dart';
-import '../diario/diario_screen.dart';
-import '../cronograma/cronograma_screen.dart';
-import '../galeria/galeria_screen.dart';
-import 'nova_obra_screen.dart';
+import '../../providers/auth_provider.dart';
+import '../../services/firestore_service.dart';
+import '../../services/ia/previsao_orcamento_service.dart';
+import '../../utils/formatters.dart';
+import '../../widgets/barra_orcamento.dart';
+import '../../widgets/cartao_resumo.dart';
+import '../../widgets/grafico_categorias.dart';
+import '../../widgets/grafico_semanal.dart';
 
-class ObraDetalheScreen extends StatefulWidget {
-  final ObraModel obra;
-  const ObraDetalheScreen({super.key, required this.obra});
+/// Dashboard da obra: financeiro, previsão de IA, gráficos e módulos.
+class ObraDetalheScreen extends StatelessWidget {
+  final String obraId;
 
-  @override
-  State<ObraDetalheScreen> createState() => _ObraDetalheScreenState();
-}
-
-class _ObraDetalheScreenState extends State<ObraDetalheScreen>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
-
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 6, vsync: this);
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
+  const ObraDetalheScreen({super.key, required this.obraId});
 
   @override
   Widget build(BuildContext context) {
-    final provider = context.read<AppProvider>();
-    final fmt = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
+    final db = context.read<FirestoreService>();
+    final auth = context.watch<AuthProvider>();
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          widget.obra.nome,
-          overflow: TextOverflow.ellipsis,
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.edit_outlined),
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => NovaObraScreen(obraParaEditar: widget.obra),
-              ),
-            ),
-          ),
-        ],
-        bottom: TabBar(
-          controller: _tabController,
-          isScrollable: true,
-          indicatorColor: AppTheme.accent,
-          labelColor: Colors.white,
-          unselectedLabelColor: Colors.white60,
-          tabs: const [
-            Tab(text: 'Resumo'),
-            Tab(text: 'Lançamentos'),
-            Tab(text: 'Estoque'),
-            Tab(text: 'Diário'),
-            Tab(text: 'Cronograma'),
-            Tab(text: 'Fotos'),
-          ],
-        ),
-      ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          _ResumoTab(obra: widget.obra),
-          LancamentosScreen(obraId: widget.obra.id),
-          EstoqueScreen(obraId: widget.obra.id),
-          DiarioScreen(obraId: widget.obra.id),
-          CronogramaScreen(obraId: widget.obra.id),
-          GaleriaScreen(obraId: widget.obra.id),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => NovoLancamentoScreen(obraId: widget.obra.id),
-          ),
-        ),
-        icon: const Icon(Icons.add),
-        label: const Text('Lançamento'),
-      ),
+    return StreamBuilder<ObraModel?>(
+      stream: db.obra(obraId),
+      builder: (context, obraSnap) {
+        final obra = obraSnap.data;
+        if (obra == null) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+        return StreamBuilder<List<LancamentoModel>>(
+          stream: db.lancamentos(obraId),
+          builder: (context, lancSnap) {
+            final lancamentos = lancSnap.data ?? const <LancamentoModel>[];
+            return _Dashboard(
+              obra: obra,
+              lancamentos: lancamentos,
+              ehDono: auth.ehDono,
+            );
+          },
+        );
+      },
     );
   }
 }
 
-class _ResumoTab extends StatelessWidget {
+class _Dashboard extends StatelessWidget {
   final ObraModel obra;
-  const _ResumoTab({required this.obra});
+  final List<LancamentoModel> lancamentos;
+  final bool ehDono;
+
+  const _Dashboard({
+    required this.obra,
+    required this.lancamentos,
+    required this.ehDono,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final provider = context.read<AppProvider>();
-    final fmt = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
+    final aprovados = lancamentos
+        .where((l) => l.status == StatusLancamento.aprovado)
+        .toList();
+    final pendentes = lancamentos
+        .where((l) => l.status == StatusLancamento.pendente)
+        .toList();
+    final gastoAprovado =
+        aprovados.fold<double>(0, (s, l) => s + l.valor);
+    final valorPendente =
+        pendentes.fold<double>(0, (s, l) => s + l.valor);
+    final previsao = PrevisaoOrcamentoService.calcular(
+      obra: obra,
+      lancamentos: lancamentos,
+    );
 
-    return ListView(
-      padding: const EdgeInsets.all(16),
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(obra.nome, overflow: TextOverflow.ellipsis),
+        actions: [
+          if (ehDono)
+            PopupMenuButton<String>(
+              onSelected: (acao) => _executarAcao(context, acao),
+              itemBuilder: (_) => [
+                if (obra.status != StatusObra.concluida)
+                  const PopupMenuItem(
+                    value: 'concluir',
+                    child: Text('Marcar como concluída'),
+                  ),
+                if (obra.status == StatusObra.emAndamento)
+                  const PopupMenuItem(
+                    value: 'pausar',
+                    child: Text('Pausar obra'),
+                  ),
+                if (obra.status != StatusObra.emAndamento)
+                  const PopupMenuItem(
+                    value: 'retomar',
+                    child: Text('Retomar obra'),
+                  ),
+                const PopupMenuItem(
+                  value: 'excluir',
+                  child: Text('Excluir obra',
+                      style: TextStyle(color: AppColors.erro)),
+                ),
+              ],
+            ),
+        ],
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          _CabecalhoObra(obra: obra, ehDono: ehDono),
+          const SizedBox(height: 16),
+
+          // Financeiro
+          _Secao(
+            titulo: 'Financeiro',
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                BarraOrcamento(gasto: gastoAprovado, orcamento: obra.orcamento),
+                const SizedBox(height: 14),
+                Row(
+                  children: [
+                    Expanded(
+                      child: CartaoResumo(
+                        rotulo: 'Aprovados',
+                        valor: '${aprovados.length}',
+                        icone: Icons.check_circle_outline,
+                        cor: AppColors.sucesso,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: CartaoResumo(
+                        rotulo: 'Pendentes',
+                        valor: pendentes.isEmpty
+                            ? '0'
+                            : '${pendentes.length} · ${Formatters.moedaCompacta(valorPendente)}',
+                        icone: Icons.hourglass_top,
+                        cor: AppColors.alerta,
+                      ),
+                    ),
+                  ],
+                ),
+                if (ehDono && pendentes.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  OutlinedButton.icon(
+                    onPressed: () =>
+                        context.push('/obras/${obra.id}/lancamentos'),
+                    icon: const Icon(Icons.rule),
+                    label: Text(
+                        'Revisar ${pendentes.length} lançamento${pendentes.length > 1 ? 's' : ''} pendente${pendentes.length > 1 ? 's' : ''}'),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Previsão IA
+          _CartaoPrevisao(previsao: previsao),
+          const SizedBox(height: 16),
+
+          _Secao(
+            titulo: 'Gastos por categoria',
+            child: GraficoCategorias(lancamentos: lancamentos),
+          ),
+          const SizedBox(height: 16),
+          _Secao(
+            titulo: 'Gastos por semana',
+            child: GraficoSemanal(lancamentos: lancamentos),
+          ),
+          const SizedBox(height: 16),
+
+          // Módulos
+          GridView.count(
+            crossAxisCount: 3,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            mainAxisSpacing: 10,
+            crossAxisSpacing: 10,
+            childAspectRatio: 0.95,
+            children: [
+              _Modulo(
+                icone: Icons.receipt_long,
+                rotulo: 'Lançamentos',
+                onTap: () => context.push('/obras/${obra.id}/lancamentos'),
+              ),
+              _Modulo(
+                icone: Icons.inventory_2,
+                rotulo: 'Estoque',
+                onTap: () => context.push('/obras/${obra.id}/estoque'),
+              ),
+              _Modulo(
+                icone: Icons.menu_book,
+                rotulo: 'Diário',
+                onTap: () => context.push('/obras/${obra.id}/diario'),
+              ),
+              _Modulo(
+                icone: Icons.timeline,
+                rotulo: 'Cronograma',
+                onTap: () => context.push('/obras/${obra.id}/cronograma'),
+              ),
+              _Modulo(
+                icone: Icons.photo_library,
+                rotulo: 'Galeria',
+                onTap: () => context.push('/obras/${obra.id}/galeria'),
+              ),
+              _Modulo(
+                icone: Icons.auto_awesome,
+                rotulo: 'Relatório IA',
+                onTap: () => context.push('/obras/${obra.id}/relatorio'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => context.push('/obras/${obra.id}/lancamentos/novo'),
+        icon: const Icon(Icons.add),
+        label: const Text('Lançar gasto'),
+      ),
+    );
+  }
+
+  Future<void> _executarAcao(BuildContext context, String acao) async {
+    final db = context.read<FirestoreService>();
+    switch (acao) {
+      case 'concluir':
+        await db.atualizarObra(obra.copyWith(status: StatusObra.concluida));
+      case 'pausar':
+        await db.atualizarObra(obra.copyWith(status: StatusObra.pausada));
+      case 'retomar':
+        await db.atualizarObra(obra.copyWith(status: StatusObra.emAndamento));
+      case 'excluir':
+        final confirmar = await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('Excluir obra?'),
+            content: const Text(
+                'Todos os lançamentos, fotos e registros desta obra serão '
+                'perdidos. Essa ação não pode ser desfeita.'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('Cancelar'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: const Text('Excluir',
+                    style: TextStyle(color: AppColors.erro)),
+              ),
+            ],
+          ),
+        );
+        if (confirmar == true && context.mounted) {
+          await db.excluirObra(obra.id);
+          if (context.mounted) context.go('/obras');
+        }
+    }
+  }
+}
+
+class _CabecalhoObra extends StatelessWidget {
+  final ObraModel obra;
+  final bool ehDono;
+
+  const _CabecalhoObra({required this.obra, required this.ehDono});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Cards de valor
         Row(
           children: [
+            const Icon(Icons.place, size: 15, color: AppColors.textoSecundario),
+            const SizedBox(width: 4),
             Expanded(
-              child: _ValorCard(
-                titulo: 'Gasto Total',
-                valor: fmt.format(obra.custoAtual),
-                cor: AppTheme.primary,
-                icone: Icons.trending_up,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _ValorCard(
-                titulo: 'Saldo',
-                valor: fmt.format(obra.saldoRestante),
-                cor: obra.saldoRestante >= 0 ? AppTheme.success : AppTheme.error,
-                icone: Icons.account_balance_wallet_outlined,
+              child: Text(
+                obra.endereco +
+                    (obra.cliente != null ? ' · ${obra.cliente}' : ''),
+                style: Theme.of(context)
+                    .textTheme
+                    .bodySmall
+                    ?.copyWith(color: AppColors.textoSecundario),
               ),
             ),
           ],
         ),
-        const SizedBox(height: 16),
-        // Gráfico por categoria
-        StreamBuilder<List<LancamentoModel>>(
-          stream: provider.firebaseService.streamLancamentos(obra.id),
-          builder: (context, snapshot) {
-            final lancamentos = snapshot.data ?? [];
-            if (lancamentos.isEmpty) {
-              return _SemDados();
-            }
-            return _GraficoCategoria(lancamentos: lancamentos);
-          },
-        ),
-        const SizedBox(height: 16),
-        // Relatório semanal
-        _RelatorioSemanalCard(obraId: obra.id, nomeObra: obra.nome, fase: obra.faseAtual),
-        const SizedBox(height: 16),
-        // Info da obra
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Informações', style: Theme.of(context).textTheme.titleLarge),
-                const SizedBox(height: 12),
-                _InfoRow(icone: Icons.location_on_outlined, texto: obra.endereco),
-                _InfoRow(icone: Icons.layers_outlined, texto: 'Fase: ${obra.faseAtual}'),
-                _InfoRow(
-                  icone: Icons.calendar_today_outlined,
-                  texto:
-                      'Início: ${obra.dataInicio.day.toString().padLeft(2, '0')}/${obra.dataInicio.month.toString().padLeft(2, '0')}/${obra.dataInicio.year}',
-                ),
-                if (obra.dataPrevisaoFim != null)
-                  _InfoRow(
-                    icone: Icons.event_outlined,
-                    texto:
-                        'Previsão: ${obra.dataPrevisaoFim!.day.toString().padLeft(2, '0')}/${obra.dataPrevisaoFim!.month.toString().padLeft(2, '0')}/${obra.dataPrevisaoFim!.year}',
+        if (ehDono) ...[
+          const SizedBox(height: 12),
+          InkWell(
+            onTap: () {
+              Clipboard.setData(ClipboardData(text: obra.codigoConvite));
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                  content: Text('Código copiado! Envie para o mestre de obras.')));
+            },
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(
+                color: AppColors.superficie,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.borda),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.qr_code,
+                      size: 18, color: AppColors.amareloCapacete),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Código da equipe: ${obra.codigoConvite}',
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodyMedium
+                        ?.copyWith(fontWeight: FontWeight.w600),
                   ),
-              ],
+                  const SizedBox(width: 8),
+                  const Icon(Icons.copy,
+                      size: 15, color: AppColors.textoSecundario),
+                ],
+              ),
             ),
           ),
-        ),
-        const SizedBox(height: 80),
+        ],
       ],
     );
   }
 }
 
-class _ValorCard extends StatelessWidget {
-  final String titulo;
-  final String valor;
-  final Color cor;
-  final IconData icone;
+class _CartaoPrevisao extends StatelessWidget {
+  final PrevisaoOrcamento previsao;
 
-  const _ValorCard({
-    required this.titulo,
-    required this.valor,
-    required this.cor,
-    required this.icone,
-  });
+  const _CartaoPrevisao({required this.previsao});
 
   @override
   Widget build(BuildContext context) {
+    final cor = switch (previsao.risco) {
+      NivelRisco.ok => AppColors.sucesso,
+      NivelRisco.atencao => AppColors.alerta,
+      NivelRisco.alto => AppColors.erro,
+    };
+    final icone = switch (previsao.risco) {
+      NivelRisco.ok => Icons.verified,
+      NivelRisco.atencao => Icons.warning_amber,
+      NivelRisco.alto => Icons.report,
+    };
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: cor.withOpacity(0.1),
+        color: cor.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: cor.withOpacity(0.3)),
+        border: Border.all(color: cor.withValues(alpha: 0.5)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icone, color: cor, size: 24),
+          Row(
+            children: [
+              Icon(icone, color: cor, size: 20),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Previsão de orçamento (IA): ${previsao.risco.label}',
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleSmall
+                      ?.copyWith(color: cor, fontWeight: FontWeight.w700),
+                ),
+              ),
+            ],
+          ),
           const SizedBox(height: 8),
-          Text(titulo,
-              style: TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
-          const SizedBox(height: 4),
-          Text(
-            valor,
-            style: TextStyle(
-              color: cor,
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
+          if (previsao.dadosSuficientes) ...[
+            Text(
+              'Projeção para o fim da obra: '
+              '${Formatters.moeda(previsao.gastoProjetadoFinal)}'
+              '${previsao.dataEstouroPrevista != null ? ' · estouro estimado em ${Formatters.data(previsao.dataEstouroPrevista!)}' : ''}',
+              style: Theme.of(context).textTheme.bodySmall,
             ),
-            overflow: TextOverflow.ellipsis,
+            const SizedBox(height: 6),
+          ],
+          Text(
+            previsao.recomendacao,
+            style: Theme.of(context)
+                .textTheme
+                .bodySmall
+                ?.copyWith(color: AppColors.textoSecundario),
           ),
         ],
       ),
@@ -232,233 +403,80 @@ class _ValorCard extends StatelessWidget {
   }
 }
 
-class _GraficoCategoria extends StatelessWidget {
-  final List<LancamentoModel> lancamentos;
-  const _GraficoCategoria({required this.lancamentos});
+class _Secao extends StatelessWidget {
+  final String titulo;
+  final Widget child;
+
+  const _Secao({required this.titulo, required this.child});
 
   @override
   Widget build(BuildContext context) {
-    final Map<String, double> porCategoria = {};
-    for (final l in lancamentos) {
-      porCategoria[l.categoria] = (porCategoria[l.categoria] ?? 0) + l.valorTotal;
-    }
-
-    final cores = [
-      AppTheme.primary,
-      AppTheme.secondary,
-      AppTheme.accent,
-      AppTheme.success,
-      AppTheme.warning,
-      AppTheme.error,
-    ];
-
-    final entries = porCategoria.entries.toList();
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Gastos por categoria',
-                style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: 16),
-            SizedBox(
-              height: 200,
-              child: PieChart(
-                PieChartData(
-                  sections: entries.asMap().entries.map((e) {
-                    final cor = cores[e.key % cores.length];
-                    final total = porCategoria.values
-                        .fold<double>(0, (a, b) => a + b);
-                    final pct = (e.value.value / total) * 100;
-                    return PieChartSectionData(
-                      value: e.value.value,
-                      title: '${pct.toStringAsFixed(0)}%',
-                      color: cor,
-                      radius: 70,
-                      titleStyle: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    );
-                  }).toList(),
-                  sectionsSpace: 2,
-                  centerSpaceRadius: 40,
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 12,
-              runSpacing: 8,
-              children: entries.asMap().entries.map((e) {
-                final cor = cores[e.key % cores.length];
-                final fmt = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
-                return Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 10,
-                      height: 10,
-                      decoration: BoxDecoration(
-                        color: cor,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      '${e.value.key}: ${fmt.format(e.value.value)}',
-                      style: const TextStyle(fontSize: 11),
-                    ),
-                  ],
-                );
-              }).toList(),
-            ),
-          ],
-        ),
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.superficie,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.borda),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            titulo,
+            style: Theme.of(context)
+                .textTheme
+                .titleSmall
+                ?.copyWith(fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 14),
+          child,
+        ],
       ),
     );
   }
 }
 
-class _RelatorioSemanalCard extends StatefulWidget {
-  final String obraId;
-  final String nomeObra;
-  final String fase;
-  const _RelatorioSemanalCard({
-    required this.obraId,
-    required this.nomeObra,
-    required this.fase,
+class _Modulo extends StatelessWidget {
+  final IconData icone;
+  final String rotulo;
+  final VoidCallback onTap;
+
+  const _Modulo({
+    required this.icone,
+    required this.rotulo,
+    required this.onTap,
   });
 
   @override
-  State<_RelatorioSemanalCard> createState() => _RelatorioSemanalCardState();
-}
-
-class _RelatorioSemanalCardState extends State<_RelatorioSemanalCard> {
-  String? _relatorio;
-  bool _carregando = false;
-
-  Future<void> _gerarRelatorio() async {
-    setState(() => _carregando = true);
-    try {
-      final provider = context.read<AppProvider>();
-      final lancamentos = await provider.firebaseService
-          .getLancamentosSemana(widget.obraId);
-      final total = lancamentos.fold<double>(0, (a, b) => a + b.valorTotal);
-      final relatorio = await provider.iaService.gerarRelatorioSemanal(
-        nomeObra: widget.nomeObra,
-        lancamentos: lancamentos.map((l) => l.toMap()).toList(),
-        totalSemana: total,
-        faseAtual: widget.fase,
-      );
-      setState(() => _relatorio = relatorio);
-    } catch (e) {
-      setState(() => _relatorio = 'Erro ao gerar relatório.');
-    } finally {
-      setState(() => _carregando = false);
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('Relatório Semanal',
-                    style: Theme.of(context).textTheme.titleLarge),
-                TextButton.icon(
-                  onPressed: _carregando ? null : _gerarRelatorio,
-                  icon: _carregando
-                      ? const SizedBox(
-                          width: 14,
-                          height: 14,
-                          child: CircularProgressIndicator(strokeWidth: 2))
-                      : const Icon(Icons.auto_awesome, size: 16),
-                  label: Text(_relatorio == null ? 'Gerar' : 'Atualizar'),
-                ),
-              ],
-            ),
-            if (_relatorio != null) ...[
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppTheme.background,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  _relatorio!,
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
-              ),
-            ] else ...[
-              const SizedBox(height: 8),
-              Text(
-                'Toque em "Gerar" para criar um resumo da semana com IA',
-                style: Theme.of(context)
-                    .textTheme
-                    .bodySmall
-                    ?.copyWith(color: AppTheme.textSecondary),
-              ),
-            ],
-          ],
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.superficie,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.borda),
         ),
-      ),
-    );
-  }
-}
-
-class _InfoRow extends StatelessWidget {
-  final IconData icone;
-  final String texto;
-  const _InfoRow({required this.icone, required this.texto});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Row(
-        children: [
-          Icon(icone, size: 16, color: AppTheme.textSecondary),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(texto, style: Theme.of(context).textTheme.bodyMedium),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SemDados extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Center(
-          child: Column(
-            children: [
-              Icon(Icons.bar_chart, size: 48, color: AppTheme.border),
-              const SizedBox(height: 12),
-              Text(
-                'Nenhum lançamento ainda',
-                style: Theme.of(context)
-                    .textTheme
-                    .bodyMedium
-                    ?.copyWith(color: AppTheme.textSecondary),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icone, color: AppColors.laranja, size: 26),
+            const SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: Text(
+                rotulo,
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

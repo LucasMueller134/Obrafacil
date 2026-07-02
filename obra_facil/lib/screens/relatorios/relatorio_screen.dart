@@ -1,244 +1,136 @@
-// lib/screens/relatorios/relatorio_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:intl/intl.dart';
-import 'package:fl_chart/fl_chart.dart';
-import '../../models/lancamento_model.dart';
-import '../../providers/app_provider.dart';
-import '../../constants/app_theme.dart';
-import '../../constants/app_constants.dart';
+import 'package:share_plus/share_plus.dart';
 
-class RelatorioScreen extends StatelessWidget {
+import '../../constants/app_colors.dart';
+import '../../models/models.dart';
+import '../../services/firestore_service.dart';
+import '../../services/ia/relatorio_semanal_service.dart';
+
+/// Relatório semanal gerado no aparelho a partir dos dados da obra.
+class RelatorioScreen extends StatefulWidget {
   final String obraId;
-  final String nomeObra;
-  const RelatorioScreen({super.key, required this.obraId, required this.nomeObra});
+
+  const RelatorioScreen({super.key, required this.obraId});
 
   @override
-  Widget build(BuildContext context) {
-    final provider = context.read<AppProvider>();
-
-    return Scaffold(
-      appBar: AppBar(title: const Text('Relatórios')),
-      body: StreamBuilder<List<LancamentoModel>>(
-        stream: provider.firebaseService.streamLancamentos(obraId),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          final lancamentos = snapshot.data ?? [];
-          if (lancamentos.isEmpty) {
-            return const Center(child: Text('Nenhum lançamento para gerar relatório'));
-          }
-          return _RelatorioContent(lancamentos: lancamentos, nomeObra: nomeObra);
-        },
-      ),
-    );
-  }
+  State<RelatorioScreen> createState() => _RelatorioScreenState();
 }
 
-class _RelatorioContent extends StatelessWidget {
-  final List<LancamentoModel> lancamentos;
-  final String nomeObra;
+class _RelatorioScreenState extends State<RelatorioScreen> {
+  String? _relatorio;
+  String? _erro;
 
-  const _RelatorioContent({required this.lancamentos, required this.nomeObra});
+  @override
+  void initState() {
+    super.initState();
+    _gerar();
+  }
+
+  Future<void> _gerar() async {
+    setState(() {
+      _relatorio = null;
+      _erro = null;
+    });
+    try {
+      final db = context.read<FirestoreService>();
+      final obra = await db.obra(widget.obraId).first;
+      if (obra == null) throw Exception('Obra não encontrada');
+      final lancamentos = await db.lancamentos(widget.obraId).first;
+      final diario = await db.diario(widget.obraId).first;
+      final cronograma = await db.cronograma(widget.obraId).first;
+
+      final texto = RelatorioSemanalService.gerar(
+        obra: obra,
+        lancamentos: lancamentos,
+        diario: diario,
+        cronograma: cronograma,
+      );
+      if (mounted) setState(() => _relatorio = texto);
+    } catch (e) {
+      if (mounted) setState(() => _erro = '$e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final fmt = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
-    final totalGeral = lancamentos.fold<double>(0, (a, b) => a + b.valorTotal);
-
-    // Agrupamento por categoria
-    final Map<String, double> porCategoria = {};
-    for (final l in lancamentos) {
-      porCategoria[l.categoria] = (porCategoria[l.categoria] ?? 0) + l.valorTotal;
-    }
-
-    // Agrupamento por fase
-    final Map<String, double> porFase = {};
-    for (final l in lancamentos) {
-      porFase[l.fase] = (porFase[l.fase] ?? 0) + l.valorTotal;
-    }
-
-    // Por semana (últimas 8 semanas)
-    final Map<String, double> porSemana = {};
-    final agora = DateTime.now();
-    for (int i = 7; i >= 0; i--) {
-      final semana = agora.subtract(Duration(days: i * 7));
-      final chave = 'S${8 - i}';
-      porSemana[chave] = 0;
-    }
-    for (final l in lancamentos) {
-      final diff = agora.difference(l.data).inDays;
-      if (diff < 56) {
-        final idx = 7 - (diff ~/ 7);
-        if (idx >= 0 && idx <= 7) {
-          final chave = 'S${idx + 1}';
-          porSemana[chave] = (porSemana[chave] ?? 0) + l.valorTotal;
-        }
-      }
-    }
-
-    final cores = [
-      AppTheme.primary, AppTheme.secondary, AppTheme.accent,
-      AppTheme.success, AppTheme.warning, AppTheme.error,
-    ];
-
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        // Total geral
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: AppTheme.secondary,
-            borderRadius: BorderRadius.circular(16),
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Relatório semanal'),
+        actions: [
+          IconButton(
+            tooltip: 'Gerar novamente',
+            icon: const Icon(Icons.refresh),
+            onPressed: _gerar,
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('Total gasto na obra',
-                  style: TextStyle(color: Colors.white70, fontSize: 13)),
-              const SizedBox(height: 8),
-              Text(
-                fmt.format(totalGeral),
-                style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 4),
-              Text('${lancamentos.length} lançamentos no total',
-                  style: const TextStyle(color: Colors.white54, fontSize: 12)),
-            ],
-          ),
-        ),
-        const SizedBox(height: 20),
-
-        // Gráfico de barras por semana
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Gastos por semana',
-                    style: Theme.of(context).textTheme.titleLarge),
-                const SizedBox(height: 16),
-                SizedBox(
-                  height: 180,
-                  child: BarChart(
-                    BarChartData(
-                      barGroups: porSemana.entries.toList().asMap().entries.map((e) {
-                        return BarChartGroupData(
-                          x: e.key,
-                          barRods: [
-                            BarChartRodData(
-                              toY: e.value.value,
-                              color: AppTheme.primary,
-                              width: 16,
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                          ],
-                        );
-                      }).toList(),
-                      borderData: FlBorderData(show: false),
-                      gridData: FlGridData(show: false),
-                      titlesData: FlTitlesData(
-                        leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                        rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                        topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                        bottomTitles: AxisTitles(
-                          sideTitles: SideTitles(
-                            showTitles: true,
-                            getTitlesWidget: (v, _) => Text(
-                              porSemana.keys.toList()[v.toInt()],
-                              style: const TextStyle(fontSize: 10),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+          if (_relatorio != null)
+            IconButton(
+              tooltip: 'Compartilhar',
+              icon: const Icon(Icons.share),
+              onPressed: () => SharePlus.instance
+                  .share(ShareParams(text: _relatorio!)),
             ),
-          ),
-        ),
-        const SizedBox(height: 16),
-
-        // Por categoria
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Por categoria', style: Theme.of(context).textTheme.titleLarge),
-                const SizedBox(height: 12),
-                ...porCategoria.entries.toList().asMap().entries.map((e) {
-                  final cor = cores[e.key % cores.length];
-                  final pct = (e.value.value / totalGeral) * 100;
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(e.value.key, style: const TextStyle(fontSize: 13)),
-                            Text(fmt.format(e.value.value),
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                          ],
-                        ),
-                        const SizedBox(height: 4),
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(4),
-                          child: LinearProgressIndicator(
-                            value: pct / 100,
-                            backgroundColor: AppTheme.border,
-                            valueColor: AlwaysStoppedAnimation(cor),
-                            minHeight: 8,
-                          ),
-                        ),
-                        Text('${pct.toStringAsFixed(1)}%',
-                            style: TextStyle(fontSize: 11, color: AppTheme.textSecondary)),
-                      ],
-                    ),
-                  );
-                }),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 16),
-
-        // Por fase
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Por fase da obra', style: Theme.of(context).textTheme.titleLarge),
-                const SizedBox(height: 12),
-                ...porFase.entries.map((e) => Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        ],
+      ),
+      body: _erro != null
+          ? Center(child: Text('Erro ao gerar relatório: $_erro'))
+          : _relatorio == null
+              ? const Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Expanded(child: Text(e.key, style: const TextStyle(fontSize: 13))),
-                      Text(fmt.format(e.value),
-                          style: const TextStyle(fontWeight: FontWeight.bold)),
+                      CircularProgressIndicator(),
+                      SizedBox(height: 12),
+                      Text('Analisando os dados da obra…'),
                     ],
                   ),
-                )),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 80),
-      ],
+                )
+              : ListView(
+                  padding: const EdgeInsets.all(16),
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color:
+                            AppColors.amareloCapacete.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                            color: AppColors.amareloCapacete
+                                .withValues(alpha: 0.4)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.auto_awesome,
+                              size: 18, color: AppColors.amareloCapacete),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Gerado automaticamente no seu aparelho, a partir '
+                              'dos lançamentos, diário e cronograma da obra.',
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.all(18),
+                      decoration: BoxDecoration(
+                        color: AppColors.superficie,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: AppColors.borda),
+                      ),
+                      child: SelectableText(
+                        _relatorio!,
+                        style: Theme.of(context)
+                            .textTheme
+                            .bodyMedium
+                            ?.copyWith(height: 1.6),
+                      ),
+                    ),
+                  ],
+                ),
     );
   }
 }

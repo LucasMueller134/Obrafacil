@@ -1,9 +1,11 @@
-// lib/screens/auth/cadastro_screen.dart
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import '../../providers/app_provider.dart';
-import '../../constants/app_theme.dart';
-import '../../constants/app_constants.dart';
+
+import '../../constants/app_colors.dart';
+import '../../models/usuario_model.dart';
+import '../../providers/auth_provider.dart';
+import '../../utils/validators.dart';
 
 class CadastroScreen extends StatefulWidget {
   const CadastroScreen({super.key});
@@ -17,8 +19,7 @@ class _CadastroScreenState extends State<CadastroScreen> {
   final _nomeCtrl = TextEditingController();
   final _emailCtrl = TextEditingController();
   final _senhaCtrl = TextEditingController();
-  String _perfil = AppConstants.perfilDono;
-  bool _senhaVisivel = false;
+  PerfilUsuario _perfil = PerfilUsuario.dono;
   bool _carregando = false;
 
   @override
@@ -32,136 +33,107 @@ class _CadastroScreenState extends State<CadastroScreen> {
   Future<void> _cadastrar() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _carregando = true);
-    try {
-      await context.read<AppProvider>().authService.cadastrar(
-            nome: _nomeCtrl.text.trim(),
-            email: _emailCtrl.text.trim(),
-            senha: _senhaCtrl.text,
-            perfil: _perfil,
-          );
-      if (mounted) {
-        Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Conta criada com sucesso! Faça o login.'),
-            backgroundColor: AppTheme.success,
-          ),
+    final erro = await context.read<AuthProvider>().cadastrar(
+          nome: _nomeCtrl.text,
+          email: _emailCtrl.text,
+          senha: _senhaCtrl.text,
+          perfil: _perfil,
         );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString()), backgroundColor: AppTheme.error),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _carregando = false);
+    if (!mounted) return;
+    setState(() => _carregando = false);
+    if (erro != null) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(erro)));
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Criar conta')),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              TextFormField(
-                controller: _nomeCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Nome completo',
-                  prefixIcon: Icon(Icons.person_outlined),
-                ),
-                validator: (v) =>
-                    v == null || v.isEmpty ? 'Informe o nome' : null,
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _emailCtrl,
-                keyboardType: TextInputType.emailAddress,
-                decoration: const InputDecoration(
-                  labelText: 'E-mail',
-                  prefixIcon: Icon(Icons.email_outlined),
-                ),
-                validator: (v) {
-                  if (v == null || v.isEmpty) return 'Informe o e-mail';
-                  if (!v.contains('@')) return 'E-mail inválido';
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _senhaCtrl,
-                obscureText: !_senhaVisivel,
-                decoration: InputDecoration(
-                  labelText: 'Senha',
-                  prefixIcon: const Icon(Icons.lock_outlined),
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                        _senhaVisivel ? Icons.visibility_off : Icons.visibility),
-                    onPressed: () =>
-                        setState(() => _senhaVisivel = !_senhaVisivel),
-                  ),
-                ),
-                validator: (v) {
-                  if (v == null || v.isEmpty) return 'Informe a senha';
-                  if (v.length < 6) return 'Mínimo 6 caracteres';
-                  return null;
-                },
-              ),
-              const SizedBox(height: 24),
-              Text(
-                'Tipo de conta',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: _PerfilCard(
-                      titulo: 'Dono',
-                      subtitulo: 'Acesso total a todas as obras',
-                      icone: Icons.business,
-                      selecionado: _perfil == AppConstants.perfilDono,
-                      onTap: () =>
-                          setState(() => _perfil = AppConstants.perfilDono),
+      appBar: AppBar(
+        title: const Text('Criar conta'),
+        leading: BackButton(onPressed: () => context.go('/login')),
+      ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text('Como você vai usar o ObraFácil?',
+                    style: Theme.of(context).textTheme.titleMedium),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _CartaoPerfil(
+                        perfil: PerfilUsuario.dono,
+                        icone: Icons.business_center,
+                        descricao: 'Cria obras, aprova gastos e acompanha tudo',
+                        selecionado: _perfil == PerfilUsuario.dono,
+                        onTap: () =>
+                            setState(() => _perfil = PerfilUsuario.dono),
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _PerfilCard(
-                      titulo: 'Mestre',
-                      subtitulo: 'Gerencia suas obras',
-                      icone: Icons.engineering,
-                      selecionado: _perfil == AppConstants.perfilMestre,
-                      onTap: () =>
-                          setState(() => _perfil = AppConstants.perfilMestre),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _CartaoPerfil(
+                        perfil: PerfilUsuario.mestre,
+                        icone: Icons.engineering,
+                        descricao: 'Registra gastos, materiais e o dia a dia',
+                        selecionado: _perfil == PerfilUsuario.mestre,
+                        onTap: () =>
+                            setState(() => _perfil = PerfilUsuario.mestre),
+                      ),
                     ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                TextFormField(
+                  controller: _nomeCtrl,
+                  textCapitalization: TextCapitalization.words,
+                  decoration: const InputDecoration(
+                    labelText: 'Nome completo',
+                    prefixIcon: Icon(Icons.person_outline),
                   ),
-                ],
-              ),
-              const SizedBox(height: 32),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
+                  validator: (v) => Validators.obrigatorio(v, 'O nome'),
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _emailCtrl,
+                  keyboardType: TextInputType.emailAddress,
+                  decoration: const InputDecoration(
+                    labelText: 'E-mail',
+                    prefixIcon: Icon(Icons.mail_outline),
+                  ),
+                  validator: Validators.email,
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _senhaCtrl,
+                  obscureText: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Senha (mínimo 6 caracteres)',
+                    prefixIcon: Icon(Icons.lock_outline),
+                  ),
+                  validator: Validators.senha,
+                ),
+                const SizedBox(height: 28),
+                ElevatedButton(
                   onPressed: _carregando ? null : _cadastrar,
                   child: _carregando
                       ? const SizedBox(
-                          height: 20,
-                          width: 20,
+                          width: 22,
+                          height: 22,
                           child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2,
-                          ),
+                              strokeWidth: 2.5, color: Colors.white),
                         )
                       : const Text('Criar conta'),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -169,56 +141,63 @@ class _CadastroScreenState extends State<CadastroScreen> {
   }
 }
 
-class _PerfilCard extends StatelessWidget {
-  final String titulo;
-  final String subtitulo;
+class _CartaoPerfil extends StatelessWidget {
+  final PerfilUsuario perfil;
   final IconData icone;
+  final String descricao;
   final bool selecionado;
   final VoidCallback onTap;
 
-  const _PerfilCard({
-    required this.titulo,
-    required this.subtitulo,
+  const _CartaoPerfil({
+    required this.perfil,
     required this.icone,
+    required this.descricao,
     required this.selecionado,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return InkWell(
       onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.all(16),
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: selecionado ? AppTheme.primary.withOpacity(0.1) : Colors.white,
-          borderRadius: BorderRadius.circular(12),
+          color: selecionado
+              ? AppColors.laranja.withValues(alpha: 0.14)
+              : AppColors.superficie,
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: selecionado ? AppTheme.primary : AppTheme.border,
+            color: selecionado ? AppColors.laranja : AppColors.borda,
             width: selecionado ? 2 : 1,
           ),
         ),
         child: Column(
           children: [
-            Icon(
-              icone,
-              color: selecionado ? AppTheme.primary : AppTheme.textSecondary,
-              size: 32,
-            ),
-            const SizedBox(height: 8),
+            Icon(icone,
+                size: 30,
+                color: selecionado
+                    ? AppColors.laranja
+                    : AppColors.textoSecundario),
+            const SizedBox(height: 10),
             Text(
-              titulo,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: selecionado ? AppTheme.primary : AppTheme.textPrimary,
-                    fontWeight: FontWeight.w600,
-                  ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              subtitulo,
-              style: Theme.of(context).textTheme.bodySmall,
+              perfil.label,
               textAlign: TextAlign.center,
+              style: Theme.of(context)
+                  .textTheme
+                  .titleSmall
+                  ?.copyWith(fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              descricao,
+              textAlign: TextAlign.center,
+              style: Theme.of(context)
+                  .textTheme
+                  .bodySmall
+                  ?.copyWith(color: AppColors.textoSecundario),
             ),
           ],
         ),

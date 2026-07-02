@@ -1,10 +1,13 @@
-// lib/firebase_options.dart
-// ATENÇÃO: Este arquivo é gerado automaticamente pelo FlutterFire CLI.
-// Execute: flutterfire configure
-// Depois substitua este arquivo pelo gerado.
+// Arquivo gerado pelo FlutterFire CLI — substitua rodando:
+//   dart pub global activate flutterfire_cli
+//   flutterfire configure
+//
+// Enquanto os valores abaixo forem placeholders, o app mostra a tela
+// de configuração pendente em vez de tentar conectar no Firebase.
 
 import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
-import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform;
+import 'package:flutter/foundation.dart'
+    show defaultTargetPlatform, TargetPlatform;
 
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
@@ -12,16 +15,19 @@ class DefaultFirebaseOptions {
       case TargetPlatform.android:
         return android;
       default:
-        throw UnsupportedError('Plataforma não suportada');
+        throw UnsupportedError(
+            'ObraFácil é Android-first: plataforma não suportada.');
     }
   }
 
-  // SUBSTITUA com os dados gerados pelo: flutterfire configure
+  /// True quando o flutterfire configure já foi executado.
+  static bool get configurado => !android.apiKey.contains('PLACEHOLDER');
+
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'SUA_API_KEY',
-    appId: 'SEU_APP_ID',
-    messagingSenderId: 'SEU_SENDER_ID',
-    projectId: 'SEU_PROJECT_ID',
-    storageBucket: 'SEU_BUCKET.appspot.com',
+    apiKey: 'PLACEHOLDER_API_KEY',
+    appId: 'PLACEHOLDER_APP_ID',
+    messagingSenderId: 'PLACEHOLDER_SENDER_ID',
+    projectId: 'PLACEHOLDER_PROJECT_ID',
+    storageBucket: 'PLACEHOLDER_BUCKET',
   );
 }

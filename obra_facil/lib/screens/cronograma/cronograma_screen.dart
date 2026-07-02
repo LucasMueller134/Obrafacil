@@ -1,218 +1,367 @@
-// lib/screens/cronograma/cronograma_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:uuid/uuid.dart';
-import 'package:intl/intl.dart';
+
+import '../../constants/app_colors.dart';
 import '../../models/models.dart';
-import '../../providers/app_provider.dart';
-import '../../constants/app_theme.dart';
-import '../../constants/app_constants.dart';
+import '../../services/firestore_service.dart';
+import '../../utils/formatters.dart';
+import '../../utils/validators.dart';
+import '../../widgets/estado_vazio.dart';
 
 class CronogramaScreen extends StatelessWidget {
   final String obraId;
+
   const CronogramaScreen({super.key, required this.obraId});
 
   @override
   Widget build(BuildContext context) {
-    final provider = context.read<AppProvider>();
+    final db = context.read<FirestoreService>();
 
-    return StreamBuilder<List<CronogramaModel>>(
-      stream: provider.firebaseService.streamCronograma(obraId),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        final fases = snapshot.data ?? [];
-
-        return Scaffold(
-          body: fases.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.calendar_month_outlined,
-                          size: 64, color: AppTheme.border),
-                      const SizedBox(height: 16),
-                      const Text('Nenhuma fase no cronograma'),
-                    ],
-                  ),
-                )
-              : ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: fases.length,
-                  itemBuilder: (context, i) => _FaseCard(fase: fases[i]),
+    return Scaffold(
+      appBar: AppBar(title: const Text('Cronograma')),
+      body: StreamBuilder<List<CronogramaFaseModel>>(
+        stream: db.cronograma(obraId),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          final fases = snapshot.data ?? const <CronogramaFaseModel>[];
+          if (fases.isEmpty) {
+            return EstadoVazio(
+              icone: Icons.timeline,
+              titulo: 'Sem cronograma',
+              mensagem: 'Adicione as fases da obra para acompanhar o '
+                  'percentual de conclusão de cada etapa.',
+              rotuloAcao: 'Adicionar fase',
+              onAcao: () => _abrirFormulario(context, ordem: 0),
+            );
+          }
+          final progressoGeral = fases.fold<int>(
+                  0, (s, f) => s + f.percentualConcluido) /
+              fases.length;
+          return ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppColors.superficie,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.borda),
                 ),
-          floatingActionButton: FloatingActionButton(
-            onPressed: () => _mostrarFormFase(context),
-            child: const Icon(Icons.add),
-          ),
-        );
-      },
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('Progresso geral',
+                            style: Theme.of(context).textTheme.titleSmall),
+                        Text(
+                          '${progressoGeral.toStringAsFixed(0)}%',
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleMedium
+                              ?.copyWith(
+                                  color: AppColors.laranja,
+                                  fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: LinearProgressIndicator(
+                        value: progressoGeral / 100,
+                        minHeight: 10,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              for (final fase in fases) ...[
+                _CartaoFase(
+                  fase: fase,
+                  onPercentual: (v) =>
+                      db.salvarFase(fase.copyWith(percentualConcluido: v)),
+                  onExcluir: () => db.excluirFase(obraId, fase.id),
+                ),
+                const SizedBox(height: 10),
+              ],
+              const SizedBox(height: 70),
+            ],
+          );
+        },
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () async {
+          final fases = await db.cronograma(obraId).first;
+          if (context.mounted) {
+            _abrirFormulario(context, ordem: fases.length);
+          }
+        },
+        icon: const Icon(Icons.add),
+        label: const Text('Fase'),
+      ),
     );
   }
 
-  void _mostrarFormFase(BuildContext context) {
-    String faseSel = AppConstants.fasesObra.first;
-    DateTime inicio = DateTime.now();
-    DateTime fim = DateTime.now().add(const Duration(days: 30));
-
+  void _abrirFormulario(BuildContext context, {required int ordem}) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setState) => Padding(
-          padding: EdgeInsets.fromLTRB(
-              16, 16, 16, MediaQuery.of(context).viewInsets.bottom + 16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text('Adicionar fase', style: Theme.of(context).textTheme.titleLarge),
-              const SizedBox(height: 16),
-              DropdownButtonFormField<String>(
-                value: faseSel,
-                decoration: const InputDecoration(labelText: 'Fase'),
-                items: AppConstants.fasesObra
-                    .map((f) => DropdownMenuItem(value: f, child: Text(f)))
-                    .toList(),
-                onChanged: (v) => setState(() => faseSel = v!),
-              ),
-              const SizedBox(height: 12),
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.calendar_today_outlined),
-                title: const Text('Início'),
-                subtitle: Text(
-                  '${inicio.day.toString().padLeft(2, '0')}/${inicio.month.toString().padLeft(2, '0')}/${inicio.year}',
-                ),
-                onTap: () async {
-                  final d = await showDatePicker(
-                    context: context,
-                    initialDate: inicio,
-                    firstDate: DateTime(2020),
-                    lastDate: DateTime(2030),
-                  );
-                  if (d != null) setState(() => inicio = d);
-                },
-              ),
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.event_outlined),
-                title: const Text('Término previsto'),
-                subtitle: Text(
-                  '${fim.day.toString().padLeft(2, '0')}/${fim.month.toString().padLeft(2, '0')}/${fim.year}',
-                ),
-                onTap: () async {
-                  final d = await showDatePicker(
-                    context: context,
-                    initialDate: fim,
-                    firstDate: DateTime(2020),
-                    lastDate: DateTime(2030),
-                  );
-                  if (d != null) setState(() => fim = d);
-                },
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: () async {
-                  final cron = CronogramaModel(
-                    id: const Uuid().v4(),
-                    obraId: obraId,
-                    fase: faseSel,
-                    dataInicio: inicio,
-                    dataFim: fim,
-                    percentualConcluido: 0,
-                  );
-                  await context
-                      .read<AppProvider>()
-                      .firebaseService
-                      .salvarCronograma(cron);
-                  if (ctx.mounted) Navigator.pop(ctx);
-                },
-                child: const Text('Salvar'),
-              ),
-            ],
-          ),
-        ),
-      ),
+      builder: (_) => _FormFase(obraId: obraId, ordem: ordem),
     );
   }
 }
 
-class _FaseCard extends StatelessWidget {
-  final CronogramaModel fase;
-  const _FaseCard({required this.fase});
+class _CartaoFase extends StatelessWidget {
+  final CronogramaFaseModel fase;
+  final void Function(int) onPercentual;
+  final VoidCallback onExcluir;
+
+  const _CartaoFase({
+    required this.fase,
+    required this.onPercentual,
+    required this.onExcluir,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final fmt = DateFormat('dd/MM/yy');
-
-    Color cor;
-    if (fase.percentualConcluido == 100) {
-      cor = AppTheme.success;
-    } else if (fase.atrasado) {
-      cor = AppTheme.error;
-    } else {
-      cor = AppTheme.primary;
-    }
+    final cor = fase.concluida
+        ? AppColors.sucesso
+        : fase.atrasada
+            ? AppColors.erro
+            : fase.emAndamento
+                ? AppColors.laranja
+                : AppColors.textoSecundario;
 
     return Card(
-      margin: const EdgeInsets.only(bottom: 12),
       child: Padding(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 6),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(fase.fase,
-                    style: const TextStyle(fontWeight: FontWeight.w600)),
-                if (fase.atrasado)
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: AppTheme.error.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text('Atrasado',
-                        style: TextStyle(
-                            fontSize: 10,
-                            color: AppTheme.error,
-                            fontWeight: FontWeight.bold)),
+                Icon(
+                  fase.concluida
+                      ? Icons.check_circle
+                      : fase.atrasada
+                          ? Icons.error
+                          : Icons.radio_button_unchecked,
+                  size: 18,
+                  color: cor,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    fase.nome,
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodyMedium
+                        ?.copyWith(fontWeight: FontWeight.w700),
                   ),
+                ),
+                if (fase.atrasada)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: AppColors.erro.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: const Text(
+                      'Atrasada',
+                      style: TextStyle(
+                          fontSize: 10,
+                          color: AppColors.erro,
+                          fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                PopupMenuButton<String>(
+                  iconSize: 18,
+                  onSelected: (_) => _confirmarExclusao(context),
+                  itemBuilder: (_) => const [
+                    PopupMenuItem(
+                      value: 'excluir',
+                      child: Text('Excluir fase'),
+                    ),
+                  ],
+                ),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 4),
             Text(
-              '${fmt.format(fase.dataInicio)} → ${fmt.format(fase.dataFim)}',
-              style: Theme.of(context).textTheme.bodySmall,
+              '${Formatters.data(fase.dataInicio)} → ${Formatters.data(fase.dataFim)}',
+              style: Theme.of(context)
+                  .textTheme
+                  .bodySmall
+                  ?.copyWith(color: AppColors.textoSecundario),
             ),
-            const SizedBox(height: 10),
             Row(
               children: [
                 Expanded(
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(4),
-                    child: LinearProgressIndicator(
-                      value: fase.percentualConcluido / 100,
-                      backgroundColor: AppTheme.border,
-                      valueColor: AlwaysStoppedAnimation(cor),
-                      minHeight: 8,
-                    ),
+                  child: Slider(
+                    value: fase.percentualConcluido.toDouble(),
+                    max: 100,
+                    divisions: 20,
+                    label: '${fase.percentualConcluido}%',
+                    onChanged: (_) {},
+                    onChangeEnd: (v) => onPercentual(v.round()),
                   ),
                 ),
-                const SizedBox(width: 8),
-                Text(
-                  '${fase.percentualConcluido}%',
-                  style: TextStyle(
-                      fontWeight: FontWeight.bold, color: cor, fontSize: 13),
+                SizedBox(
+                  width: 42,
+                  child: Text(
+                    '${fase.percentualConcluido}%',
+                    textAlign: TextAlign.end,
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodySmall
+                        ?.copyWith(fontWeight: FontWeight.w700, color: cor),
+                  ),
                 ),
               ],
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _confirmarExclusao(BuildContext context) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('Excluir a fase "${fase.nome}"?'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancelar')),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Excluir',
+                  style: TextStyle(color: AppColors.erro))),
+        ],
+      ),
+    );
+    if (ok == true) onExcluir();
+  }
+}
+
+class _FormFase extends StatefulWidget {
+  final String obraId;
+  final int ordem;
+
+  const _FormFase({required this.obraId, required this.ordem});
+
+  @override
+  State<_FormFase> createState() => _FormFaseState();
+}
+
+class _FormFaseState extends State<_FormFase> {
+  final _formKey = GlobalKey<FormState>();
+  final _nomeCtrl = TextEditingController();
+  DateTime _inicio = DateTime.now();
+  DateTime _fim = DateTime.now().add(const Duration(days: 14));
+
+  @override
+  void dispose() {
+    _nomeCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _escolherData(bool inicio) async {
+    final escolhida = await showDatePicker(
+      context: context,
+      initialDate: inicio ? _inicio : _fim,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2035),
+      locale: const Locale('pt', 'BR'),
+    );
+    if (escolhida == null) return;
+    setState(() {
+      if (inicio) {
+        _inicio = escolhida;
+        if (!_fim.isAfter(_inicio)) {
+          _fim = _inicio.add(const Duration(days: 7));
+        }
+      } else {
+        _fim = escolhida;
+      }
+    });
+  }
+
+  Future<void> _salvar() async {
+    if (!_formKey.currentState!.validate()) return;
+    final db = context.read<FirestoreService>();
+    await db.salvarFase(CronogramaFaseModel(
+      id: '',
+      obraId: widget.obraId,
+      nome: _nomeCtrl.text.trim(),
+      ordem: widget.ordem,
+      dataInicio: _inicio,
+      dataFim: _fim,
+    ));
+    if (mounted) Navigator.pop(context);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(
+        left: 20,
+        right: 20,
+        top: 20,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+      ),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text('Nova fase', style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _nomeCtrl,
+              textCapitalization: TextCapitalization.sentences,
+              decoration: const InputDecoration(
+                labelText: 'Nome da fase',
+                hintText: 'Ex.: Estrutura do 2º andar',
+              ),
+              validator: (v) => Validators.obrigatorio(v, 'O nome'),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: InkWell(
+                    onTap: () => _escolherData(true),
+                    borderRadius: BorderRadius.circular(14),
+                    child: InputDecorator(
+                      decoration: const InputDecoration(labelText: 'Início'),
+                      child: Text(Formatters.data(_inicio)),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: InkWell(
+                    onTap: () => _escolherData(false),
+                    borderRadius: BorderRadius.circular(14),
+                    child: InputDecorator(
+                      decoration: const InputDecoration(labelText: 'Fim'),
+                      child: Text(Formatters.data(_fim)),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(onPressed: _salvar, child: const Text('Salvar')),
           ],
         ),
       ),

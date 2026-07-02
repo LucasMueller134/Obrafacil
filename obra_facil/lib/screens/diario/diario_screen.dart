@@ -1,231 +1,335 @@
-// lib/screens/diario/diario_screen.dart
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
-import 'package:uuid/uuid.dart';
-import 'package:intl/intl.dart';
-import '../../models/models.dart';
-import '../../providers/app_provider.dart';
-import '../../constants/app_theme.dart';
+
+import '../../constants/app_colors.dart';
 import '../../constants/app_constants.dart';
+import '../../models/models.dart';
+import '../../providers/auth_provider.dart';
+import '../../services/firestore_service.dart';
+import '../../services/imagem_service.dart';
+import '../../utils/formatters.dart';
+import '../../utils/validators.dart';
+import '../../widgets/estado_vazio.dart';
+import '../../widgets/imagem_obra.dart';
 
 class DiarioScreen extends StatelessWidget {
   final String obraId;
+
   const DiarioScreen({super.key, required this.obraId});
 
   @override
   Widget build(BuildContext context) {
-    final provider = context.read<AppProvider>();
+    final db = context.read<FirestoreService>();
 
-    return StreamBuilder<List<DiarioModel>>(
-      stream: provider.firebaseService.streamDiario(obraId),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        final registros = snapshot.data ?? [];
-
-        return Scaffold(
-          body: registros.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.book_outlined, size: 64, color: AppTheme.border),
-                      const SizedBox(height: 16),
-                      const Text('Nenhum registro no diário'),
-                    ],
-                  ),
-                )
-              : ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: registros.length,
-                  itemBuilder: (context, i) => _DiarioCard(registro: registros[i]),
-                ),
-          floatingActionButton: FloatingActionButton(
-            onPressed: () => _mostrarFormDiario(context),
-            child: const Icon(Icons.add),
-          ),
-        );
-      },
+    return Scaffold(
+      appBar: AppBar(title: const Text('Diário de obra')),
+      body: StreamBuilder<List<DiarioEntradaModel>>(
+        stream: db.diario(obraId),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          final entradas = snapshot.data ?? const <DiarioEntradaModel>[];
+          if (entradas.isEmpty) {
+            return EstadoVazio(
+              icone: Icons.menu_book,
+              titulo: 'Diário vazio',
+              mensagem:
+                  'Registre o que aconteceu no canteiro hoje: atividades, '
+                  'equipe presente e condições do tempo.',
+              rotuloAcao: 'Registrar dia',
+              onAcao: () => _novaEntrada(context),
+            );
+          }
+          return ListView.separated(
+            padding: const EdgeInsets.all(16),
+            itemCount: entradas.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 12),
+            itemBuilder: (_, i) => _CartaoDiario(entrada: entradas[i]),
+          );
+        },
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _novaEntrada(context),
+        icon: const Icon(Icons.add),
+        label: const Text('Registrar dia'),
+      ),
     );
   }
 
-  void _mostrarFormDiario(BuildContext context) {
-    final descCtrl = TextEditingController();
-    final pessoasCtrl = TextEditingController();
-    String fase = AppConstants.fasesObra.first;
-    String clima = 'Bom';
-    final usuario = context.read<AppProvider>().usuario!;
-
+  void _novaEntrada(BuildContext context) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setState) => Padding(
-          padding: EdgeInsets.fromLTRB(
-              16, 16, 16, MediaQuery.of(context).viewInsets.bottom + 16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text('Registro do dia',
-                  style: Theme.of(context).textTheme.titleLarge),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: descCtrl,
-                maxLines: 3,
-                decoration: const InputDecoration(
-                  labelText: 'O que foi feito hoje?',
-                  hintText: 'Ex: Concretagem da laje, colocação de tijolos...',
-                ),
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: DropdownButtonFormField<String>(
-                      value: fase,
-                      decoration: const InputDecoration(labelText: 'Fase'),
-                      items: AppConstants.fasesObra
-                          .map((f) => DropdownMenuItem(value: f, child: Text(f)))
-                          .toList(),
-                      onChanged: (v) => setState(() => fase = v!),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: DropdownButtonFormField<String>(
-                      value: clima,
-                      decoration: const InputDecoration(labelText: 'Clima'),
-                      items: ['Bom', 'Nublado', 'Chuva', 'Muito Quente']
-                          .map((c) => DropdownMenuItem(value: c, child: Text(c)))
-                          .toList(),
-                      onChanged: (v) => setState(() => clima = v!),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: pessoasCtrl,
-                keyboardType: TextInputType.number,
-                decoration:
-                    const InputDecoration(labelText: 'Nº de pessoas trabalhando'),
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: () async {
-                  final diario = DiarioModel(
-                    id: const Uuid().v4(),
-                    obraId: obraId,
-                    descricao: descCtrl.text.trim(),
-                    fase: fase,
-                    numeroPessoas: int.tryParse(pessoasCtrl.text) ?? 0,
-                    clima: clima,
-                    registradoPorNome: usuario.nome,
-                    data: DateTime.now(),
-                    criadoEm: DateTime.now(),
-                  );
-                  await context.read<AppProvider>().firebaseService.criarDiario(diario);
-                  if (ctx.mounted) Navigator.pop(ctx);
-                },
-                child: const Text('Salvar registro'),
-              ),
-            ],
-          ),
-        ),
-      ),
+      builder: (_) => _FormDiario(obraId: obraId),
     );
   }
 }
 
-class _DiarioCard extends StatelessWidget {
-  final DiarioModel registro;
-  const _DiarioCard({required this.registro});
+class _CartaoDiario extends StatelessWidget {
+  final DiarioEntradaModel entrada;
+
+  const _CartaoDiario({required this.entrada});
+
+  IconData get _iconeClima => switch (entrada.clima) {
+        'Ensolarado' => Icons.wb_sunny,
+        'Nublado' => Icons.cloud,
+        'Chuvoso' => Icons.umbrella,
+        'Chuva forte' => Icons.thunderstorm,
+        _ => Icons.wb_sunny,
+      };
 
   @override
   Widget build(BuildContext context) {
-    final fmt = DateFormat('dd/MM/yyyy', 'pt_BR');
     return Card(
-      margin: const EdgeInsets.only(bottom: 12),
       child: Padding(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(fmt.format(registro.data),
-                    style: const TextStyle(
-                        fontWeight: FontWeight.bold, fontSize: 13)),
-                Row(
-                  children: [
-                    Icon(_iconeClima(registro.clima),
-                        size: 16, color: AppTheme.textSecondary),
-                    const SizedBox(width: 4),
-                    Text(registro.clima,
-                        style: Theme.of(context).textTheme.bodySmall),
-                  ],
+                Expanded(
+                  child: Text(
+                    Formatters.diaSemana(entrada.data),
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleSmall
+                        ?.copyWith(fontWeight: FontWeight.w700),
+                  ),
+                ),
+                Icon(_iconeClima,
+                    size: 18, color: AppColors.amareloCapacete),
+                const SizedBox(width: 4),
+                Text(
+                  entrada.clima,
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodySmall
+                      ?.copyWith(color: AppColors.textoSecundario),
                 ),
               ],
             ),
             const SizedBox(height: 8),
-            Text(registro.descricao),
-            const SizedBox(height: 8),
+            if (entrada.fase.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 10, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: AppColors.laranja.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    entrada.fase,
+                    style: const TextStyle(
+                        fontSize: 11,
+                        color: AppColors.laranja,
+                        fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ),
+            Text(entrada.descricao,
+                style: Theme.of(context).textTheme.bodyMedium),
+            if (entrada.fotosUrls.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: SizedBox(
+                  height: 150,
+                  width: double.infinity,
+                  child: ImagemObra(entrada.fotosUrls.first),
+                ),
+              ),
+            ],
+            const SizedBox(height: 10),
             Row(
               children: [
-                _InfoChip(texto: registro.fase, icone: Icons.layers_outlined),
-                const SizedBox(width: 8),
-                _InfoChip(
-                  texto: '${registro.numeroPessoas} pessoas',
-                  icone: Icons.people_outlined,
+                const Icon(Icons.groups,
+                    size: 15, color: AppColors.textoSecundario),
+                const SizedBox(width: 4),
+                Text(
+                  '${entrada.numeroPessoas} no canteiro',
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodySmall
+                      ?.copyWith(color: AppColors.textoSecundario),
+                ),
+                const Spacer(),
+                Text(
+                  'por ${entrada.registradoPorNome}',
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodySmall
+                      ?.copyWith(color: AppColors.textoDesabilitado),
                 ),
               ],
             ),
-            const SizedBox(height: 8),
-            Text('Registrado por ${registro.registradoPorNome}',
-                style: Theme.of(context).textTheme.bodySmall),
           ],
         ),
       ),
     );
   }
-
-  IconData _iconeClima(String clima) {
-    switch (clima) {
-      case 'Chuva': return Icons.umbrella_outlined;
-      case 'Nublado': return Icons.cloud_outlined;
-      case 'Muito Quente': return Icons.wb_sunny_outlined;
-      default: return Icons.wb_sunny_outlined;
-    }
-  }
 }
 
-class _InfoChip extends StatelessWidget {
-  final String texto;
-  final IconData icone;
-  const _InfoChip({required this.texto, required this.icone});
+class _FormDiario extends StatefulWidget {
+  final String obraId;
+
+  const _FormDiario({required this.obraId});
+
+  @override
+  State<_FormDiario> createState() => _FormDiarioState();
+}
+
+class _FormDiarioState extends State<_FormDiario> {
+  final _formKey = GlobalKey<FormState>();
+  final _descricaoCtrl = TextEditingController();
+  final _pessoasCtrl = TextEditingController(text: '1');
+  String _clima = 'Ensolarado';
+  String? _fase;
+  File? _foto;
+  bool _salvando = false;
+
+  @override
+  void dispose() {
+    _descricaoCtrl.dispose();
+    _pessoasCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _tirarFoto() async {
+    final xfile = await ImagePicker().pickImage(
+      source: ImageSource.camera,
+      imageQuality: 85,
+      maxWidth: 1600,
+    );
+    if (xfile != null && mounted) setState(() => _foto = File(xfile.path));
+  }
+
+  Future<void> _salvar() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() => _salvando = true);
+
+    final db = context.read<FirestoreService>();
+    final usuario = context.read<AuthProvider>().usuario!;
+
+    final fotos = <String>[];
+    if (_foto != null) {
+      fotos.add(await ImagemService.comprimirParaDataUri(_foto!));
+    }
+
+    await db.criarEntradaDiario(DiarioEntradaModel(
+      id: '',
+      obraId: widget.obraId,
+      descricao: _descricaoCtrl.text.trim(),
+      fase: _fase ?? '',
+      numeroPessoas: int.tryParse(_pessoasCtrl.text) ?? 0,
+      clima: _clima,
+      fotosUrls: fotos,
+      registradoPorId: usuario.id,
+      registradoPorNome: usuario.nome,
+      data: DateTime.now(),
+      criadoEm: DateTime.now(),
+    ));
+    if (mounted) Navigator.pop(context);
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: AppTheme.background,
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: AppTheme.border),
+    return Padding(
+      padding: EdgeInsets.only(
+        left: 20,
+        right: 20,
+        top: 20,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 24,
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icone, size: 12, color: AppTheme.textSecondary),
-          const SizedBox(width: 4),
-          Text(texto, style: const TextStyle(fontSize: 11)),
-        ],
+      child: Form(
+        key: _formKey,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text('Registro do dia',
+                  style: Theme.of(context).textTheme.titleMedium),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _descricaoCtrl,
+                maxLines: 3,
+                textCapitalization: TextCapitalization.sentences,
+                decoration: const InputDecoration(
+                  labelText: 'O que foi feito hoje?',
+                  hintText: 'Ex.: Concluída a concretagem da laje do 1º andar',
+                ),
+                validator: (v) => Validators.obrigatorio(v, 'A descrição'),
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                initialValue: _fase,
+                decoration:
+                    const InputDecoration(labelText: 'Fase da obra (opcional)'),
+                items: [
+                  for (final f in AppConstants.fasesPadrao)
+                    DropdownMenuItem(value: f, child: Text(f)),
+                ],
+                onChanged: (v) => setState(() => _fase = v),
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _pessoasCtrl,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                    labelText: 'Pessoas no canteiro hoje'),
+                validator: Validators.numero,
+              ),
+              const SizedBox(height: 16),
+              Text('Clima', style: Theme.of(context).textTheme.titleSmall),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                children: [
+                  for (final c in AppConstants.climas)
+                    ChoiceChip(
+                      label: Text(c),
+                      selected: _clima == c,
+                      onSelected: (_) => setState(() => _clima = c),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              if (_foto != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Image.file(_foto!,
+                        height: 140, width: double.infinity, fit: BoxFit.cover),
+                  ),
+                ),
+              OutlinedButton.icon(
+                onPressed: _tirarFoto,
+                icon: const Icon(Icons.photo_camera),
+                label: Text(_foto == null ? 'Anexar foto' : 'Trocar foto'),
+              ),
+              const SizedBox(height: 12),
+              ElevatedButton(
+                onPressed: _salvando ? null : _salvar,
+                child: _salvando
+                    ? const SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2.5, color: Colors.white),
+                      )
+                    : const Text('Salvar registro'),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

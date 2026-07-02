@@ -1,103 +1,81 @@
-// lib/services/auth_service.dart
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../models/usuario_model.dart';
-import '../constants/app_constants.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
+import '../models/usuario_model.dart';
+
+/// Autenticação (Firebase Auth) + perfil do usuário no Firestore.
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseFirestore _db = FirebaseFirestore.instance;
 
-  User? get currentUser => _auth.currentUser;
   Stream<User?> get authStateChanges => _auth.authStateChanges();
 
-  Future<UsuarioModel?> login(String email, String senha) async {
-    try {
-      final credential = await _auth.signInWithEmailAndPassword(
-        email: email,
-        password: senha,
-      );
-      if (credential.user != null) {
-        return await getUsuario(credential.user!.uid);
-      }
-      return null;
-    } on FirebaseAuthException catch (e) {
-      throw _traduzirErro(e.code);
-    }
+  User? get usuarioFirebase => _auth.currentUser;
+
+  Future<UsuarioModel?> carregarPerfil(String uid) async {
+    final doc = await _db.collection('usuarios').doc(uid).get();
+    if (!doc.exists) return null;
+    return UsuarioModel.fromMap(doc.id, doc.data()!);
   }
 
   Future<UsuarioModel> cadastrar({
     required String nome,
     required String email,
     required String senha,
-    required String perfil,
+    required PerfilUsuario perfil,
   }) async {
-    try {
-      final credential = await _auth.createUserWithEmailAndPassword(
-        email: email,
-        password: senha,
-      );
-
-      final usuario = UsuarioModel(
-        id: credential.user!.uid,
-        nome: nome,
-        email: email,
-        perfil: perfil,
-        criadoEm: DateTime.now(),
-      );
-
-      await _firestore
-          .collection(AppConstants.usersCollection)
-          .doc(usuario.id)
-          .set(usuario.toMap());
-
-      await credential.user!.updateDisplayName(nome);
-
-      return usuario;
-    } on FirebaseAuthException catch (e) {
-      throw _traduzirErro(e.code);
-    }
+    final cred = await _auth.createUserWithEmailAndPassword(
+      email: email.trim(),
+      password: senha,
+    );
+    final usuario = UsuarioModel(
+      id: cred.user!.uid,
+      nome: nome.trim(),
+      email: email.trim(),
+      perfil: perfil,
+      criadoEm: DateTime.now(),
+    );
+    await _db.collection('usuarios').doc(usuario.id).set(usuario.toMap());
+    await cred.user!.updateDisplayName(usuario.nome);
+    return usuario;
   }
 
-  Future<UsuarioModel?> getUsuario(String uid) async {
-    final doc = await _firestore
-        .collection(AppConstants.usersCollection)
-        .doc(uid)
-        .get();
-    if (doc.exists) {
-      return UsuarioModel.fromMap(doc.data()!);
-    }
-    return null;
+  Future<UsuarioModel?> entrar({
+    required String email,
+    required String senha,
+  }) async {
+    final cred = await _auth.signInWithEmailAndPassword(
+      email: email.trim(),
+      password: senha,
+    );
+    return carregarPerfil(cred.user!.uid);
   }
 
-  Future<void> logout() async {
-    await _auth.signOut();
-  }
+  Future<void> sair() => _auth.signOut();
 
-  Future<void> resetarSenha(String email) async {
-    try {
-      await _auth.sendPasswordResetEmail(email: email);
-    } on FirebaseAuthException catch (e) {
-      throw _traduzirErro(e.code);
-    }
-  }
+  Future<void> recuperarSenha(String email) =>
+      _auth.sendPasswordResetEmail(email: email.trim());
 
-  String _traduzirErro(String code) {
-    switch (code) {
-      case 'user-not-found':
-        return 'Usuário não encontrado';
-      case 'wrong-password':
-        return 'Senha incorreta';
-      case 'email-already-in-use':
-        return 'E-mail já cadastrado';
-      case 'weak-password':
-        return 'Senha muito fraca (mínimo 6 caracteres)';
-      case 'invalid-email':
-        return 'E-mail inválido';
-      case 'too-many-requests':
-        return 'Muitas tentativas. Tente novamente mais tarde';
-      default:
-        return 'Erro de autenticação. Tente novamente';
+  /// Traduz os códigos de erro do Firebase Auth para mensagens amigáveis.
+  static String mensagemErro(Object e) {
+    if (e is FirebaseAuthException) {
+      switch (e.code) {
+        case 'invalid-email':
+          return 'E-mail inválido.';
+        case 'user-not-found':
+        case 'wrong-password':
+        case 'invalid-credential':
+          return 'E-mail ou senha incorretos.';
+        case 'email-already-in-use':
+          return 'Já existe uma conta com este e-mail.';
+        case 'weak-password':
+          return 'Senha muito fraca. Use pelo menos 6 caracteres.';
+        case 'network-request-failed':
+          return 'Sem conexão. Verifique sua internet.';
+        case 'too-many-requests':
+          return 'Muitas tentativas. Aguarde alguns minutos.';
+      }
     }
+    return 'Não foi possível concluir. Tente novamente.';
   }
 }

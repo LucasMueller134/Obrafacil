@@ -1,19 +1,23 @@
-// lib/screens/lancamentos/novo_lancamento_screen.dart
-import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:uuid/uuid.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:record/record.dart';
-import 'package:path_provider/path_provider.dart';
 import 'dart:io';
-import '../../providers/app_provider.dart';
-import '../../models/lancamento_model.dart';
-import '../../services/ia_service.dart';
-import '../../constants/app_theme.dart';
-import '../../constants/app_constants.dart';
+
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:provider/provider.dart';
+
+import '../../constants/app_colors.dart';
+import '../../models/models.dart';
+import '../../providers/auth_provider.dart';
+import '../../services/firestore_service.dart';
+import '../../services/ia/ocr_nota_service.dart';
+import '../../services/ia/voz_service.dart';
+import '../../services/imagem_service.dart';
+import '../../utils/formatters.dart';
+import '../../utils/validators.dart';
 
 class NovoLancamentoScreen extends StatefulWidget {
   final String obraId;
+
   const NovoLancamentoScreen({super.key, required this.obraId});
 
   @override
@@ -23,423 +27,490 @@ class NovoLancamentoScreen extends StatefulWidget {
 class _NovoLancamentoScreenState extends State<NovoLancamentoScreen> {
   final _formKey = GlobalKey<FormState>();
   final _descricaoCtrl = TextEditingController();
-  final _qtdCtrl = TextEditingController();
-  final _vlrUnitCtrl = TextEditingController();
-  final _vlrTotalCtrl = TextEditingController();
+  final _valorCtrl = TextEditingController();
   final _fornecedorCtrl = TextEditingController();
-  String _categoria = AppConstants.categorias.first;
-  String _unidade = 'un';
-  String _statusPag = AppConstants.pagamentoAPagar;
-  String _fase = AppConstants.fasesObra.first;
+
+  CategoriaCusto _categoria = CategoriaCusto.material;
   DateTime _data = DateTime.now();
-  File? _notaFiscal;
-  bool _carregando = false;
-  bool _processandoIA = false;
-  bool _gravando = false;
-  final _recorder = AudioRecorder();
-  String? _audioPath;
+  OrigemLancamento _origem = OrigemLancamento.manual;
+  File? _fotoNota;
+  String? _cnpjExtraido;
+  String? _avisoIa;
+  bool _processando = false;
+  bool _salvando = false;
+
+  final _ocr = OcrNotaService();
+  final _voz = VozService();
 
   @override
   void dispose() {
     _descricaoCtrl.dispose();
-    _qtdCtrl.dispose();
-    _vlrUnitCtrl.dispose();
-    _vlrTotalCtrl.dispose();
+    _valorCtrl.dispose();
     _fornecedorCtrl.dispose();
-    _recorder.dispose();
+    _ocr.dispose();
     super.dispose();
   }
 
-  void _calcularTotal() {
-    final qtd = double.tryParse(_qtdCtrl.text.replaceAll(',', '.')) ?? 0;
-    final vlr = double.tryParse(_vlrUnitCtrl.text.replaceAll(',', '.')) ?? 0;
-    _vlrTotalCtrl.text = (qtd * vlr).toStringAsFixed(2);
-  }
+  // ------------------------------------------------------------------ OCR
 
-  Future<void> _tirarFotoNota() async {
-    final picker = ImagePicker();
-    final xFile = await picker.pickImage(source: ImageSource.camera, imageQuality: 85);
-    if (xFile == null) return;
-
-    final file = File(xFile.path);
-    setState(() {
-      _notaFiscal = file;
-      _processandoIA = true;
-    });
-
-    try {
-      final provider = context.read<AppProvider>();
-      final dados = await provider.iaService.extrairDadosNotaFiscal(file);
-      setState(() {
-        if (dados.descricao != null) _descricaoCtrl.text = dados.descricao!;
-        if (dados.fornecedor != null) _fornecedorCtrl.text = dados.fornecedor!;
-        if (dados.quantidade != null)
-          _qtdCtrl.text = dados.quantidade!.toString();
-        if (dados.valorUnitario != null)
-          _vlrUnitCtrl.text = dados.valorUnitario!.toStringAsFixed(2);
-        if (dados.valorTotal != null)
-          _vlrTotalCtrl.text = dados.valorTotal!.toStringAsFixed(2);
-        if (dados.categoria != null &&
-            AppConstants.categorias.contains(dados.categoria))
-          _categoria = dados.categoria!;
-      });
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('✅ Dados extraídos da nota fiscal!'),
-            backgroundColor: AppTheme.success,
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Não foi possível extrair os dados: $e'),
-            backgroundColor: AppTheme.warning,
-          ),
-        );
-      }
-    } finally {
-      setState(() => _processandoIA = false);
-    }
-  }
-
-  Future<void> _iniciarGravacao() async {
-    final hasPermission = await _recorder.hasPermission();
-    if (!hasPermission) return;
-
-    final dir = await getTemporaryDirectory();
-    _audioPath = '${dir.path}/audio_${DateTime.now().millisecondsSinceEpoch}.m4a';
-    await _recorder.start(
-      RecordConfig(encoder: AudioEncoder.aacLc),
-      path: _audioPath!,
+  Future<void> _lerNotaFiscal() async {
+    final origem = await showModalBottomSheet<ImageSource>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_camera),
+              title: const Text('Tirar foto da nota'),
+              onTap: () => Navigator.pop(ctx, ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library),
+              title: const Text('Escolher da galeria'),
+              onTap: () => Navigator.pop(ctx, ImageSource.gallery),
+            ),
+          ],
+        ),
+      ),
     );
-    setState(() => _gravando = true);
-  }
+    if (origem == null) return;
 
-  Future<void> _pararGravacaoEProcessar() async {
-    await _recorder.stop();
+    final xfile = await ImagePicker().pickImage(
+      source: origem,
+      imageQuality: 92,
+      maxWidth: 2200,
+    );
+    if (xfile == null || !mounted) return;
+
     setState(() {
-      _gravando = false;
-      _processandoIA = true;
+      _processando = true;
+      _avisoIa = null;
     });
 
     try {
-      final provider = context.read<AppProvider>();
-      final dados = await provider.iaService.processarAudio(File(_audioPath!));
+      final nota = await _ocr.lerNota(xfile.path);
+      if (!mounted) return;
       setState(() {
-        if (dados.descricao != null) _descricaoCtrl.text = dados.descricao!;
-        if (dados.fornecedor != null) _fornecedorCtrl.text = dados.fornecedor!;
-        if (dados.quantidade != null)
-          _qtdCtrl.text = dados.quantidade!.toString();
-        if (dados.valorUnitario != null)
-          _vlrUnitCtrl.text = dados.valorUnitario!.toStringAsFixed(2);
-        if (dados.valorTotal != null)
-          _vlrTotalCtrl.text = dados.valorTotal!.toStringAsFixed(2);
-        if (dados.categoria != null &&
-            AppConstants.categorias.contains(dados.categoria))
-          _categoria = dados.categoria!;
+        _fotoNota = File(xfile.path);
+        _origem = OrigemLancamento.ocr;
+        _categoria = CategoriaCusto.material;
+        if (nota.valorTotal != null) {
+          _valorCtrl.text =
+              nota.valorTotal!.toStringAsFixed(2).replaceAll('.', ',');
+        }
+        if (nota.data != null) _data = nota.data!;
+        if (nota.fornecedorNome != null) {
+          _fornecedorCtrl.text = nota.fornecedorNome!;
+          if (_descricaoCtrl.text.isEmpty) {
+            _descricaoCtrl.text = 'Compra em ${nota.fornecedorNome}';
+          }
+        }
+        _cnpjExtraido = nota.cnpj;
+        _avisoIa = nota.encontrouAlgo
+            ? 'Dados extraídos da nota pelo OCR — confira antes de salvar.'
+            : 'Não consegui ler os dados da nota. A foto ficou anexada; '
+                'preencha os campos manualmente.';
       });
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('🎤 "${dados.transcricao}" — dados preenchidos!'),
-            backgroundColor: AppTheme.success,
-          ),
-        );
-      }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao processar áudio: $e'),
-              backgroundColor: AppTheme.warning),
-        );
-      }
+      if (!mounted) return;
+      setState(() => _avisoIa = 'Erro ao ler a nota: $e');
     } finally {
-      setState(() => _processandoIA = false);
+      if (mounted) setState(() => _processando = false);
     }
   }
+
+  // ------------------------------------------------------------------ Voz
+
+  Future<void> _lancarPorVoz() async {
+    final ok = await _voz.inicializar();
+    if (!mounted) return;
+    if (!ok) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Reconhecimento de voz indisponível. '
+              'Verifique a permissão do microfone.')));
+      return;
+    }
+
+    var transcricao = '';
+    await showModalBottomSheet(
+      context: context,
+      isDismissible: false,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheet) {
+          if (!_voz.ouvindo) {
+            _voz.ouvir((texto, finalizou) {
+              transcricao = texto;
+              setSheet(() {});
+              if (finalizou) Navigator.pop(ctx);
+            });
+          }
+          return Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.mic, size: 48, color: AppColors.laranja),
+                const SizedBox(height: 12),
+                Text('Fale o lançamento',
+                    style: Theme.of(ctx).textTheme.titleMedium),
+                const SizedBox(height: 6),
+                Text(
+                  'Ex.: "Comprei 10 sacos de cimento por 350 reais '
+                  'no Depósito São José"',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(ctx)
+                      .textTheme
+                      .bodySmall
+                      ?.copyWith(color: AppColors.textoSecundario),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  transcricao.isEmpty ? 'Ouvindo…' : transcricao,
+                  textAlign: TextAlign.center,
+                  style: Theme.of(ctx)
+                      .textTheme
+                      .bodyLarge
+                      ?.copyWith(color: AppColors.amareloCapacete),
+                ),
+                const SizedBox(height: 20),
+                OutlinedButton.icon(
+                  onPressed: () async {
+                    await _voz.parar();
+                    if (ctx.mounted) Navigator.pop(ctx);
+                  },
+                  icon: const Icon(Icons.stop),
+                  label: const Text('Concluir'),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+    await _voz.parar();
+    if (!mounted || transcricao.trim().isEmpty) return;
+
+    final interpretado = VozService.interpretar(transcricao);
+    setState(() {
+      _origem = OrigemLancamento.voz;
+      _descricaoCtrl.text = interpretado.descricao;
+      if (interpretado.valor != null) {
+        _valorCtrl.text =
+            interpretado.valor!.toStringAsFixed(2).replaceAll('.', ',');
+      }
+      _categoria = interpretado.categoria;
+      if (interpretado.fornecedorNome != null) {
+        _fornecedorCtrl.text = interpretado.fornecedorNome!;
+      }
+      _avisoIa = interpretado.valor == null
+          ? 'Entendi a descrição, mas não o valor — preencha o campo.'
+          : 'Lançamento interpretado da sua fala — confira antes de salvar.';
+    });
+  }
+
+  // ---------------------------------------------------------------- Salvar
 
   Future<void> _salvar() async {
     if (!_formKey.currentState!.validate()) return;
-    setState(() => _carregando = true);
+    setState(() => _salvando = true);
+
+    final db = context.read<FirestoreService>();
+    final usuario = context.read<AuthProvider>().usuario!;
 
     try {
-      final provider = context.read<AppProvider>();
-      final usuario = provider.usuario!;
-      final agora = DateTime.now();
-      final id = const Uuid().v4();
+      final obra = await db.obra(widget.obraId).first;
+      if (obra == null) throw Exception('Obra não encontrada');
 
-      String? notaUrl;
-      if (_notaFiscal != null) {
-        notaUrl = await provider.firebaseService
-            .uploadNotaFiscal(_notaFiscal!, widget.obraId, 'nota_$id.jpg');
+      String? fornecedorId;
+      String? fornecedorNome;
+      if (_fornecedorCtrl.text.trim().isNotEmpty) {
+        final fornecedor = await db.obterOuCriarFornecedor(
+          donoId: obra.donoId,
+          nome: _fornecedorCtrl.text,
+          cnpj: _cnpjExtraido,
+        );
+        fornecedorId = fornecedor.id;
+        fornecedorNome = fornecedor.nome;
       }
 
-      final lancamento = LancamentoModel(
-        id: id,
+      String? fotoDataUri;
+      if (_fotoNota != null) {
+        fotoDataUri = await ImagemService.comprimirParaDataUri(_fotoNota!);
+      }
+
+      await db.criarLancamento(LancamentoModel(
+        id: '',
         obraId: widget.obraId,
-        categoria: _categoria,
         descricao: _descricaoCtrl.text.trim(),
-        quantidade: double.tryParse(_qtdCtrl.text.replaceAll(',', '.')) ?? 1,
-        unidade: _unidade,
-        valorUnitario:
-            double.tryParse(_vlrUnitCtrl.text.replaceAll(',', '.')) ?? 0,
-        valorTotal:
-            double.tryParse(_vlrTotalCtrl.text.replaceAll(',', '.')) ?? 0,
-        fornecedorId: '',
-        fornecedorNome: _fornecedorCtrl.text.trim(),
-        statusPagamento: _statusPag,
-        fase: _fase,
-        notaFiscalUrl: notaUrl,
-        lancadoPorId: usuario.id,
-        lancadoPorNome: usuario.nome,
+        valor: Formatters.parseValor(_valorCtrl.text)!,
+        categoria: _categoria,
+        // Lançamento do dono não precisa passar por aprovação.
+        status: usuario.ehDono
+            ? StatusLancamento.aprovado
+            : StatusLancamento.pendente,
+        origem: _origem,
+        fornecedorId: fornecedorId,
+        fornecedorNome: fornecedorNome,
+        fotoNotaUrl: fotoDataUri,
         data: _data,
-        criadoEm: agora,
-        sincronizado: true,
-      );
+        criadoPorId: usuario.id,
+        criadoPorNome: usuario.nome,
+        aprovadoPorId: usuario.ehDono ? usuario.id : null,
+        criadoEm: DateTime.now(),
+      ));
 
-      await provider.firebaseService.criarLancamento(lancamento);
-
-      if (mounted) {
-        Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Lançamento salvo!'),
-            backgroundColor: AppTheme.success,
-          ),
-        );
-      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(usuario.ehDono
+            ? 'Lançamento registrado.'
+            : 'Lançamento enviado para aprovação do dono.'),
+      ));
+      context.pop();
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro: $e'), backgroundColor: AppTheme.error),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _carregando = false);
+      if (!mounted) return;
+      setState(() => _salvando = false);
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Não foi possível salvar: $e')));
     }
   }
+
+  // ------------------------------------------------------------------- UI
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Novo Lançamento')),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Botões de IA
-            if (_processandoIA)
-              const Center(
-                child: Column(
+      appBar: AppBar(title: const Text('Novo lançamento')),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
                   children: [
-                    CircularProgressIndicator(),
-                    SizedBox(height: 8),
-                    Text('Processando com IA...'),
-                    SizedBox(height: 16),
+                    Expanded(
+                      child: _BotaoIa(
+                        icone: Icons.document_scanner,
+                        rotulo: 'Foto da nota',
+                        descricao: 'OCR preenche sozinho',
+                        onTap: _processando ? null : _lerNotaFiscal,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _BotaoIa(
+                        icone: Icons.mic,
+                        rotulo: 'Por voz',
+                        descricao: 'Fale o gasto',
+                        onTap: _processando ? null : _lancarPorVoz,
+                      ),
+                    ),
                   ],
                 ),
-              )
-            else ...[
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: _tirarFotoNota,
-                      icon: const Icon(Icons.receipt_long_outlined),
-                      label: const Text('Foto da Nota'),
+                if (_processando) ...[
+                  const SizedBox(height: 16),
+                  const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2.5),
+                      ),
+                      SizedBox(width: 10),
+                      Text('Lendo a nota fiscal…'),
+                    ],
+                  ),
+                ],
+                if (_avisoIa != null) ...[
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.amareloCapacete.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                          color:
+                              AppColors.amareloCapacete.withValues(alpha: 0.5)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.auto_awesome,
+                            size: 18, color: AppColors.amareloCapacete),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(_avisoIa!,
+                              style: Theme.of(context).textTheme.bodySmall),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _gravando
-                        ? ElevatedButton.icon(
-                            onPressed: _pararGravacaoEProcessar,
-                            icon: const Icon(Icons.stop),
-                            label: const Text('Parar'),
-                            style: ElevatedButton.styleFrom(
-                                backgroundColor: AppTheme.error),
-                          )
-                        : OutlinedButton.icon(
-                            onPressed: _iniciarGravacao,
-                            icon: const Icon(Icons.mic_outlined),
-                            label: const Text('Gravar Áudio'),
+                ],
+                const SizedBox(height: 20),
+                TextFormField(
+                  controller: _descricaoCtrl,
+                  textCapitalization: TextCapitalization.sentences,
+                  decoration: const InputDecoration(
+                    labelText: 'Descrição',
+                    hintText: 'Ex.: 10 sacos de cimento CP-II',
+                    prefixIcon: Icon(Icons.notes),
+                  ),
+                  validator: (v) => Validators.obrigatorio(v, 'A descrição'),
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _valorCtrl,
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                  decoration: const InputDecoration(
+                    labelText: 'Valor (R\$)',
+                    prefixIcon: Icon(Icons.payments_outlined),
+                  ),
+                  validator: Validators.valor,
+                ),
+                const SizedBox(height: 16),
+                Text('Categoria',
+                    style: Theme.of(context).textTheme.titleSmall),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    for (final c in CategoriaCusto.values)
+                      ChoiceChip(
+                        avatar: Icon(c.icone,
+                            size: 16,
+                            color: _categoria == c
+                                ? AppColors.laranja
+                                : AppColors.textoSecundario),
+                        label: Text(c.label),
+                        selected: _categoria == c,
+                        onSelected: (_) => setState(() => _categoria = c),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                InkWell(
+                  onTap: () async {
+                    final escolhida = await showDatePicker(
+                      context: context,
+                      initialDate: _data,
+                      firstDate: DateTime(2020),
+                      lastDate: DateTime.now(),
+                      locale: const Locale('pt', 'BR'),
+                    );
+                    if (escolhida != null) setState(() => _data = escolhida);
+                  },
+                  borderRadius: BorderRadius.circular(14),
+                  child: InputDecorator(
+                    decoration: const InputDecoration(
+                      labelText: 'Data do gasto',
+                      prefixIcon: Icon(Icons.calendar_today, size: 20),
+                    ),
+                    child: Text(Formatters.data(_data)),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _fornecedorCtrl,
+                  textCapitalization: TextCapitalization.words,
+                  decoration: const InputDecoration(
+                    labelText: 'Fornecedor (opcional)',
+                    hintText: 'Cadastrado automaticamente se for novo',
+                    prefixIcon: Icon(Icons.storefront),
+                  ),
+                ),
+                if (_fotoNota != null) ...[
+                  const SizedBox(height: 16),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Stack(
+                      children: [
+                        Image.file(_fotoNota!,
+                            height: 180,
+                            width: double.infinity,
+                            fit: BoxFit.cover),
+                        Positioned(
+                          top: 8,
+                          right: 8,
+                          child: IconButton.filled(
+                            style: IconButton.styleFrom(
+                                backgroundColor: Colors.black54),
+                            icon: const Icon(Icons.close, size: 18),
+                            onPressed: () =>
+                                setState(() => _fotoNota = null),
                           ),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
-              ),
-              if (_notaFiscal != null) ...[
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    const Icon(Icons.check_circle, color: AppTheme.success, size: 16),
-                    const SizedBox(width: 4),
-                    Text('Nota fiscal anexada',
-                        style: TextStyle(color: AppTheme.success, fontSize: 12)),
-                  ],
+                const SizedBox(height: 24),
+                ElevatedButton(
+                  onPressed: _salvando ? null : _salvar,
+                  child: _salvando
+                      ? const SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2.5, color: Colors.white),
+                        )
+                      : const Text('Salvar lançamento'),
                 ),
               ],
-              if (_gravando) ...[
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    const Icon(Icons.fiber_manual_record,
-                        color: AppTheme.error, size: 16),
-                    const SizedBox(width: 4),
-                    const Text('Gravando... toque em Parar quando terminar',
-                        style: TextStyle(color: AppTheme.error, fontSize: 12)),
-                  ],
-                ),
-              ],
-              const SizedBox(height: 16),
-              const Divider(),
-              const SizedBox(height: 16),
-            ],
-            // Formulário
-            Form(
-              key: _formKey,
-              child: Column(
-                children: [
-                  DropdownButtonFormField<String>(
-                    value: _categoria,
-                    decoration: const InputDecoration(labelText: 'Categoria *'),
-                    items: AppConstants.categorias
-                        .map((c) => DropdownMenuItem(value: c, child: Text(c)))
-                        .toList(),
-                    onChanged: (v) => setState(() => _categoria = v!),
-                  ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: _descricaoCtrl,
-                    decoration: const InputDecoration(
-                      labelText: 'Descrição *',
-                      hintText: 'Ex: Sacos de cimento CP-II',
-                    ),
-                    validator: (v) =>
-                        v == null || v.isEmpty ? 'Informe a descrição' : null,
-                  ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: _fornecedorCtrl,
-                    decoration: const InputDecoration(
-                      labelText: 'Fornecedor',
-                      hintText: 'Ex: Casa do Construtor',
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        flex: 2,
-                        child: TextFormField(
-                          controller: _qtdCtrl,
-                          keyboardType: TextInputType.number,
-                          decoration:
-                              const InputDecoration(labelText: 'Quantidade'),
-                          onChanged: (_) => _calcularTotal(),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: DropdownButtonFormField<String>(
-                          value: _unidade,
-                          decoration: const InputDecoration(labelText: 'Un.'),
-                          items: ['un', 'kg', 'sc', 'm', 'm²', 'm³', 'L', 'cx']
-                              .map((u) =>
-                                  DropdownMenuItem(value: u, child: Text(u)))
-                              .toList(),
-                          onChanged: (v) => setState(() => _unidade = v!),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextFormField(
-                          controller: _vlrUnitCtrl,
-                          keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(
-                              labelText: 'Valor unit. (R\$)'),
-                          onChanged: (_) => _calcularTotal(),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: TextFormField(
-                          controller: _vlrTotalCtrl,
-                          keyboardType: TextInputType.number,
-                          decoration:
-                              const InputDecoration(labelText: 'Total (R\$)'),
-                          validator: (v) =>
-                              v == null || v.isEmpty ? 'Informe o valor' : null,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  DropdownButtonFormField<String>(
-                    value: _fase,
-                    decoration: const InputDecoration(labelText: 'Fase da obra'),
-                    items: AppConstants.fasesObra
-                        .map((f) => DropdownMenuItem(value: f, child: Text(f)))
-                        .toList(),
-                    onChanged: (v) => setState(() => _fase = v!),
-                  ),
-                  const SizedBox(height: 12),
-                  DropdownButtonFormField<String>(
-                    value: _statusPag,
-                    decoration:
-                        const InputDecoration(labelText: 'Status do pagamento'),
-                    items: [
-                      AppConstants.pagamentoPago,
-                      AppConstants.pagamentoAPagar,
-                      AppConstants.pagamentoParcelado,
-                    ]
-                        .map((s) => DropdownMenuItem(value: s, child: Text(s)))
-                        .toList(),
-                    onChanged: (v) => setState(() => _statusPag = v!),
-                  ),
-                  const SizedBox(height: 12),
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: const Icon(Icons.calendar_today_outlined),
-                    title: const Text('Data da compra'),
-                    subtitle: Text(
-                      '${_data.day.toString().padLeft(2, '0')}/${_data.month.toString().padLeft(2, '0')}/${_data.year}',
-                    ),
-                    onTap: () async {
-                      final d = await showDatePicker(
-                        context: context,
-                        initialDate: _data,
-                        firstDate: DateTime(2020),
-                        lastDate: DateTime.now(),
-                      );
-                      if (d != null) setState(() => _data = d);
-                    },
-                  ),
-                  const SizedBox(height: 24),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: _carregando ? null : _salvar,
-                      child: _carregando
-                          ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(
-                                  color: Colors.white, strokeWidth: 2),
-                            )
-                          : const Text('Salvar Lançamento'),
-                    ),
-                  ),
-                  const SizedBox(height: 32),
-                ],
-              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _BotaoIa extends StatelessWidget {
+  final IconData icone;
+  final String rotulo;
+  final String descricao;
+  final VoidCallback? onTap;
+
+  const _BotaoIa({
+    required this.icone,
+    required this.rotulo,
+    required this.descricao,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+        decoration: BoxDecoration(
+          color: AppColors.laranja.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(16),
+          border:
+              Border.all(color: AppColors.laranja.withValues(alpha: 0.45)),
+        ),
+        child: Column(
+          children: [
+            Icon(icone, color: AppColors.laranja, size: 26),
+            const SizedBox(height: 8),
+            Text(rotulo,
+                style: Theme.of(context)
+                    .textTheme
+                    .titleSmall
+                    ?.copyWith(fontWeight: FontWeight.w700)),
+            const SizedBox(height: 2),
+            Text(
+              descricao,
+              style: Theme.of(context)
+                  .textTheme
+                  .bodySmall
+                  ?.copyWith(color: AppColors.textoSecundario),
             ),
           ],
         ),

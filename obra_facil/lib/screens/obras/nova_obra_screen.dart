@@ -1,15 +1,17 @@
-// lib/screens/obras/nova_obra_screen.dart
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:uuid/uuid.dart';
-import '../../providers/app_provider.dart';
-import '../../models/obra_model.dart';
-import '../../constants/app_theme.dart';
+
+import '../../constants/app_colors.dart';
 import '../../constants/app_constants.dart';
+import '../../models/models.dart';
+import '../../providers/auth_provider.dart';
+import '../../services/firestore_service.dart';
+import '../../utils/formatters.dart';
+import '../../utils/validators.dart';
 
 class NovaObraScreen extends StatefulWidget {
-  final ObraModel? obraParaEditar;
-  const NovaObraScreen({super.key, this.obraParaEditar});
+  const NovaObraScreen({super.key});
 
   @override
   State<NovaObraScreen> createState() => _NovaObraScreenState();
@@ -19,220 +21,241 @@ class _NovaObraScreenState extends State<NovaObraScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nomeCtrl = TextEditingController();
   final _enderecoCtrl = TextEditingController();
+  final _clienteCtrl = TextEditingController();
   final _orcamentoCtrl = TextEditingController();
-  String _status = AppConstants.statusEmAndamento;
-  String _fase = AppConstants.fasesObra.first;
   DateTime _dataInicio = DateTime.now();
-  DateTime? _dataPrevisaoFim;
-  bool _carregando = false;
-
-  bool get _editando => widget.obraParaEditar != null;
-
-  @override
-  void initState() {
-    super.initState();
-    if (_editando) {
-      final o = widget.obraParaEditar!;
-      _nomeCtrl.text = o.nome;
-      _enderecoCtrl.text = o.endereco;
-      _orcamentoCtrl.text = o.orcamentoTotal.toString();
-      _status = o.status;
-      _fase = o.faseAtual;
-      _dataInicio = o.dataInicio;
-      _dataPrevisaoFim = o.dataPrevisaoFim;
-    }
-  }
+  DateTime _previsaoTermino = DateTime.now().add(const Duration(days: 180));
+  bool _criarCronograma = true;
+  bool _salvando = false;
 
   @override
   void dispose() {
     _nomeCtrl.dispose();
     _enderecoCtrl.dispose();
+    _clienteCtrl.dispose();
     _orcamentoCtrl.dispose();
     super.dispose();
   }
 
+  Future<void> _escolherData({required bool inicio}) async {
+    final atual = inicio ? _dataInicio : _previsaoTermino;
+    final escolhida = await showDatePicker(
+      context: context,
+      initialDate: atual,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2035),
+      locale: const Locale('pt', 'BR'),
+    );
+    if (escolhida == null) return;
+    setState(() {
+      if (inicio) {
+        _dataInicio = escolhida;
+        if (!_previsaoTermino.isAfter(_dataInicio)) {
+          _previsaoTermino = _dataInicio.add(const Duration(days: 30));
+        }
+      } else {
+        _previsaoTermino = escolhida;
+      }
+    });
+  }
+
   Future<void> _salvar() async {
     if (!_formKey.currentState!.validate()) return;
-    setState(() => _carregando = true);
+    if (!_previsaoTermino.isAfter(_dataInicio)) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('A previsão de término deve ser após o início.')));
+      return;
+    }
+    setState(() => _salvando = true);
+
+    final usuario = context.read<AuthProvider>().usuario!;
+    final db = context.read<FirestoreService>();
+
+    final obra = ObraModel(
+      id: '',
+      nome: _nomeCtrl.text.trim(),
+      endereco: _enderecoCtrl.text.trim(),
+      cliente: _clienteCtrl.text.trim().isEmpty
+          ? null
+          : _clienteCtrl.text.trim(),
+      orcamento: Formatters.parseValor(_orcamentoCtrl.text)!,
+      dataInicio: _dataInicio,
+      previsaoTermino: _previsaoTermino,
+      donoId: usuario.id,
+      codigoConvite: FirestoreService.gerarCodigoConvite(),
+      criadoEm: DateTime.now(),
+    );
 
     try {
-      final provider = context.read<AppProvider>();
-      final usuario = provider.usuario!;
-      final agora = DateTime.now();
-
-      final obra = ObraModel(
-        id: _editando ? widget.obraParaEditar!.id : const Uuid().v4(),
-        nome: _nomeCtrl.text.trim(),
-        endereco: _enderecoCtrl.text.trim(),
-        status: _status,
-        faseAtual: _fase,
-        orcamentoTotal: double.tryParse(
-                _orcamentoCtrl.text.replaceAll(',', '.')) ??
-            0,
-        custoAtual: _editando ? widget.obraParaEditar!.custoAtual : 0,
-        mestreId: usuario.id,
-        donoId: usuario.isDono ? usuario.id : '',
-        dataInicio: _dataInicio,
-        dataPrevisaoFim: _dataPrevisaoFim,
-        criadoEm: _editando ? widget.obraParaEditar!.criadoEm : agora,
-        atualizadoEm: agora,
-      );
-
-      if (_editando) {
-        await provider.firebaseService.atualizarObra(obra);
-      } else {
-        await provider.firebaseService.criarObra(obra);
+      final obraId = await db.criarObra(obra);
+      if (_criarCronograma) {
+        await _gerarCronogramaPadrao(db, obraId);
       }
-
-      if (mounted) {
-        Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(_editando ? 'Obra atualizada!' : 'Obra criada!'),
-            backgroundColor: AppTheme.success,
-          ),
-        );
-      }
+      if (!mounted) return;
+      context.go('/obras/$obraId');
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro: $e'), backgroundColor: AppTheme.error),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _carregando = false);
+      if (!mounted) return;
+      setState(() => _salvando = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Não foi possível salvar: $e')));
+    }
+  }
+
+  /// Distribui as fases padrão uniformemente entre o início e o fim da obra.
+  Future<void> _gerarCronogramaPadrao(
+      FirestoreService db, String obraId) async {
+    final fases = AppConstants.fasesPadrao;
+    final duracaoTotal = _previsaoTermino.difference(_dataInicio).inDays;
+    final diasPorFase = (duracaoTotal / fases.length).floor().clamp(1, 9999);
+
+    for (var i = 0; i < fases.length; i++) {
+      final inicio = _dataInicio.add(Duration(days: diasPorFase * i));
+      final fim = i == fases.length - 1
+          ? _previsaoTermino
+          : _dataInicio.add(Duration(days: diasPorFase * (i + 1)));
+      await db.salvarFase(CronogramaFaseModel(
+        id: '',
+        obraId: obraId,
+        nome: fases[i],
+        ordem: i,
+        dataInicio: inicio,
+        dataFim: fim,
+      ));
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(_editando ? 'Editar Obra' : 'Nova Obra'),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              TextFormField(
-                controller: _nomeCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Nome da obra *',
-                  hintText: 'Ex: Geminado Rua Lucas nº 12',
-                  prefixIcon: Icon(Icons.home_work_outlined),
+      appBar: AppBar(title: const Text('Nova obra')),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                TextFormField(
+                  controller: _nomeCtrl,
+                  textCapitalization: TextCapitalization.sentences,
+                  decoration: const InputDecoration(
+                    labelText: 'Nome da obra',
+                    hintText: 'Ex.: Casa do Sr. João',
+                    prefixIcon: Icon(Icons.apartment),
+                  ),
+                  validator: (v) => Validators.obrigatorio(v, 'O nome'),
                 ),
-                validator: (v) =>
-                    v == null || v.isEmpty ? 'Informe o nome da obra' : null,
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _enderecoCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Endereço completo *',
-                  hintText: 'Rua, número, bairro, cidade',
-                  prefixIcon: Icon(Icons.location_on_outlined),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _enderecoCtrl,
+                  textCapitalization: TextCapitalization.sentences,
+                  decoration: const InputDecoration(
+                    labelText: 'Endereço',
+                    prefixIcon: Icon(Icons.place_outlined),
+                  ),
+                  validator: (v) => Validators.obrigatorio(v, 'O endereço'),
                 ),
-                validator: (v) =>
-                    v == null || v.isEmpty ? 'Informe o endereço' : null,
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _orcamentoCtrl,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'Orçamento total (R\$)',
-                  hintText: '0,00',
-                  prefixIcon: Icon(Icons.attach_money),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _clienteCtrl,
+                  textCapitalization: TextCapitalization.words,
+                  decoration: const InputDecoration(
+                    labelText: 'Cliente (opcional)',
+                    prefixIcon: Icon(Icons.person_outline),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              DropdownButtonFormField<String>(
-                value: _fase,
-                decoration: const InputDecoration(
-                  labelText: 'Fase atual',
-                  prefixIcon: Icon(Icons.layers_outlined),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _orcamentoCtrl,
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                  decoration: const InputDecoration(
+                    labelText: 'Orçamento total (R\$)',
+                    hintText: 'Ex.: 250.000,00',
+                    prefixIcon: Icon(Icons.payments_outlined),
+                  ),
+                  validator: Validators.valor,
                 ),
-                items: AppConstants.fasesObra
-                    .map((f) => DropdownMenuItem(value: f, child: Text(f)))
-                    .toList(),
-                onChanged: (v) => setState(() => _fase = v!),
-              ),
-              const SizedBox(height: 16),
-              DropdownButtonFormField<String>(
-                value: _status,
-                decoration: const InputDecoration(
-                  labelText: 'Status',
-                  prefixIcon: Icon(Icons.flag_outlined),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _CampoData(
+                        rotulo: 'Início',
+                        data: _dataInicio,
+                        onTap: () => _escolherData(inicio: true),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _CampoData(
+                        rotulo: 'Previsão de término',
+                        data: _previsaoTermino,
+                        onTap: () => _escolherData(inicio: false),
+                      ),
+                    ),
+                  ],
                 ),
-                items: [
-                  AppConstants.statusEmAndamento,
-                  AppConstants.statusPausada,
-                  AppConstants.statusConcluida,
-                ]
-                    .map((s) => DropdownMenuItem(value: s, child: Text(s)))
-                    .toList(),
-                onChanged: (v) => setState(() => _status = v!),
-              ),
-              const SizedBox(height: 16),
-              // Data início
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.calendar_today_outlined),
-                title: const Text('Data de início'),
-                subtitle: Text(
-                  '${_dataInicio.day.toString().padLeft(2, '0')}/${_dataInicio.month.toString().padLeft(2, '0')}/${_dataInicio.year}',
+                const SizedBox(height: 16),
+                SwitchListTile(
+                  value: _criarCronograma,
+                  onChanged: (v) => setState(() => _criarCronograma = v),
+                  title: const Text('Gerar cronograma com fases padrão'),
+                  subtitle: Text(
+                    'Cria ${AppConstants.fasesPadrao.length} fases (fundação, '
+                    'estrutura, alvenaria...) distribuídas no período da obra',
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodySmall
+                        ?.copyWith(color: AppColors.textoSecundario),
+                  ),
+                  activeTrackColor: AppColors.laranja,
+                  contentPadding: EdgeInsets.zero,
                 ),
-                onTap: () async {
-                  final d = await showDatePicker(
-                    context: context,
-                    initialDate: _dataInicio,
-                    firstDate: DateTime(2020),
-                    lastDate: DateTime(2030),
-                  );
-                  if (d != null) setState(() => _dataInicio = d);
-                },
-              ),
-              const Divider(),
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.event_outlined),
-                title: const Text('Previsão de término'),
-                subtitle: Text(
-                  _dataPrevisaoFim != null
-                      ? '${_dataPrevisaoFim!.day.toString().padLeft(2, '0')}/${_dataPrevisaoFim!.month.toString().padLeft(2, '0')}/${_dataPrevisaoFim!.year}'
-                      : 'Não definida',
-                ),
-                onTap: () async {
-                  final d = await showDatePicker(
-                    context: context,
-                    initialDate: _dataPrevisaoFim ?? DateTime.now(),
-                    firstDate: DateTime.now(),
-                    lastDate: DateTime(2030),
-                  );
-                  if (d != null) setState(() => _dataPrevisaoFim = d);
-                },
-              ),
-              const SizedBox(height: 32),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _carregando ? null : _salvar,
-                  child: _carregando
+                const SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: _salvando ? null : _salvar,
+                  child: _salvando
                       ? const SizedBox(
-                          height: 20,
-                          width: 20,
+                          width: 22,
+                          height: 22,
                           child: CircularProgressIndicator(
-                              color: Colors.white, strokeWidth: 2),
+                              strokeWidth: 2.5, color: Colors.white),
                         )
-                      : Text(_editando ? 'Salvar alterações' : 'Criar obra'),
+                      : const Text('Criar obra'),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _CampoData extends StatelessWidget {
+  final String rotulo;
+  final DateTime data;
+  final VoidCallback onTap;
+
+  const _CampoData({
+    required this.rotulo,
+    required this.data,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: InputDecorator(
+        decoration: InputDecoration(
+          labelText: rotulo,
+          prefixIcon: const Icon(Icons.calendar_today, size: 20),
+        ),
+        child: Text(Formatters.data(data)),
       ),
     );
   }
