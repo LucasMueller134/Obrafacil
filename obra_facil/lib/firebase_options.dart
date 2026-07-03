@@ -1,9 +1,6 @@
-// Arquivo gerado pelo FlutterFire CLI — substitua rodando:
-//   dart pub global activate flutterfire_cli
-//   flutterfire configure
-//
-// Enquanto os valores abaixo forem placeholders, o app mostra a tela
-// de configuração pendente em vez de tentar conectar no Firebase.
+// Configuração do Firebase do projeto obrafacil-a755c.
+// Gerada a partir do google-services.json (equivalente ao flutterfire configure,
+// feito manualmente porque a rede corporativa bloqueia o pub.dev).
 
 import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
 import 'package:flutter/foundation.dart'
@@ -20,14 +17,14 @@ class DefaultFirebaseOptions {
     }
   }
 
-  /// True quando o flutterfire configure já foi executado.
+  /// True quando as chaves reais do projeto já estão configuradas.
   static bool get configurado => !android.apiKey.contains('PLACEHOLDER');
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'PLACEHOLDER_API_KEY',
-    appId: 'PLACEHOLDER_APP_ID',
-    messagingSenderId: 'PLACEHOLDER_SENDER_ID',
-    projectId: 'PLACEHOLDER_PROJECT_ID',
-    storageBucket: 'PLACEHOLDER_BUCKET',
+    apiKey: 'AIzaSyCCi0msI8deseumFQeMIV82DnA4b6yzaNQ',
+    appId: '1:1038297734342:android:dddea9d24f4515c47d8bc7',
+    messagingSenderId: '1038297734342',
+    projectId: 'obrafacil-a755c',
+    storageBucket: 'obrafacil-a755c.firebasestorage.app',
   );
 }
