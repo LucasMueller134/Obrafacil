@@ -3,40 +3,79 @@ import 'package:flutter/material.dart';
 import '../constants/app_colors.dart';
 import '../constants/app_constants.dart';
 
-class SplashScreen extends StatelessWidget {
+class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
+
+  @override
+  State<SplashScreen> createState() => _SplashScreenState();
+}
+
+class _SplashScreenState extends State<SplashScreen>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 700),
+  )..forward();
+
+  late final Animation<double> _fade =
+      CurvedAnimation(parent: _controller, curve: Curves.easeOut);
+  late final Animation<double> _scale = Tween(begin: 0.85, end: 1.0).animate(
+    CurvedAnimation(parent: _controller, curve: Curves.easeOutBack),
+  );
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 88,
-              height: 88,
-              decoration: BoxDecoration(
-                color: AppColors.laranja,
-                borderRadius: BorderRadius.circular(24),
-              ),
-              child: const Icon(Icons.apartment, size: 48, color: Colors.white),
+        child: FadeTransition(
+          opacity: _fade,
+          child: ScaleTransition(
+            scale: _scale,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 96,
+                  height: 96,
+                  decoration: BoxDecoration(
+                    color: AppColors.laranja,
+                    borderRadius: BorderRadius.circular(26),
+                  ),
+                  child:
+                      const Icon(Icons.apartment, size: 54, color: Colors.white),
+                ),
+                const SizedBox(height: 22),
+                Text(
+                  AppConstants.appName,
+                  style: Theme.of(context)
+                      .textTheme
+                      .headlineMedium
+                      ?.copyWith(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  AppConstants.slogan,
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodySmall
+                      ?.copyWith(color: AppColors.textoSecundario),
+                ),
+                const SizedBox(height: 36),
+                const SizedBox(
+                  width: 26,
+                  height: 26,
+                  child: CircularProgressIndicator(strokeWidth: 3),
+                ),
+              ],
             ),
-            const SizedBox(height: 20),
-            Text(
-              AppConstants.appName,
-              style: Theme.of(context)
-                  .textTheme
-                  .headlineMedium
-                  ?.copyWith(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 32),
-            const SizedBox(
-              width: 28,
-              height: 28,
-              child: CircularProgressIndicator(strokeWidth: 3),
-            ),
-          ],
+          ),
         ),
       ),
     );
