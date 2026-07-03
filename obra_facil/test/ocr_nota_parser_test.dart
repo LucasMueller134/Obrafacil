@@ -54,6 +54,52 @@ TOTAL 99,90
       expect(nota.data, DateTime(2026, 3, 2));
     });
 
+    test('nota informal: valor inteiro com R\$ (sem centavos)', () {
+      const texto = '''
+DEPOSITO DO BAIRRO
+areia e brita entregue
+TOTAL R\$ 350
+''';
+      final nota = OcrNotaService.parsearTexto(texto);
+      expect(nota.valorTotal, 350);
+      expect(nota.fornecedorNome, 'Deposito Do Bairro');
+    });
+
+    test('linha de total com inteiro sem R\$', () {
+      final nota = OcrNotaService.parsearTexto('VALOR TOTAL 1.200');
+      expect(nota.valorTotal, 1200);
+    });
+
+    test('datas com hífen e ponto também são aceitas', () {
+      expect(OcrNotaService.parsearTexto('EMISSAO 03-06-2026').data,
+          DateTime(2026, 6, 3));
+      expect(OcrNotaService.parsearTexto('DATA 05.06.26').data,
+          DateTime(2026, 6, 5));
+    });
+
+    test('rótulo "Razão Social" tem prioridade', () {
+      const texto = '''
+NOTA FISCAL
+RAZAO SOCIAL: CASA DAS TINTAS LTDA
+TOTAL 99,90
+''';
+      final nota = OcrNotaService.parsearTexto(texto);
+      expect(nota.fornecedorNome, 'Casa Das Tintas Ltda');
+    });
+
+    test('nome em caixa alta vizinho ao CNPJ é aceito', () {
+      const texto = '''
+DOCUMENTO AUXILIAR
+PEDIDO 123
+JOAQUIM SILVA
+12.345.678/0001-90
+TOTAL 55,00
+''';
+      final nota = OcrNotaService.parsearTexto(texto);
+      expect(nota.fornecedorNome, 'Joaquim Silva');
+      expect(nota.valorTotal, 55.00);
+    });
+
     test('texto sem dados de nota não encontra nada', () {
       // Sem palavras com 4+ letras (candidatas a fornecedor), sem valores
       // monetários, CNPJ ou datas.

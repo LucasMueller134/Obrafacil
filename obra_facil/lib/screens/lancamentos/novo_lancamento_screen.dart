@@ -109,8 +109,9 @@ class _NovoLancamentoScreenState extends State<NovoLancamentoScreen> {
         _cnpjExtraido = nota.cnpj;
         _avisoIa = nota.encontrouAlgo
             ? 'Dados extraídos da nota pelo OCR — confira antes de salvar.'
-            : 'Não consegui ler os dados da nota. A foto ficou anexada; '
-                'preencha os campos manualmente.';
+            : 'Não consegui ler os dados desta nota (a foto ficou anexada). '
+                'Notas impressas funcionam melhor que manuscritas — tente '
+                'fotografar de frente, com boa luz e sem sombra.';
       });
     } catch (e) {
       if (!mounted) return;
@@ -146,16 +147,23 @@ class _NovoLancamentoScreenState extends State<NovoLancamentoScreen> {
             });
           }
           return Padding(
-            padding: const EdgeInsets.all(24),
+            padding: EdgeInsets.only(
+              left: 24,
+              right: 24,
+              top: 24,
+              bottom: MediaQuery.of(ctx).viewPadding.bottom + 24,
+            ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 const Icon(Icons.mic, size: 48, color: AppColors.laranja),
                 const SizedBox(height: 12),
-                Text('Fale o lançamento',
+                Text('Fale o lançamento com calma',
                     style: Theme.of(ctx).textTheme.titleMedium),
                 const SizedBox(height: 6),
                 Text(
+                  'Pode pausar entre as palavras — só encerro depois de '
+                  '6 segundos de silêncio ou quando você tocar em Concluir.\n'
                   'Ex.: "Comprei 10 sacos de cimento por 350 reais '
                   'no Depósito São José"',
                   textAlign: TextAlign.center,

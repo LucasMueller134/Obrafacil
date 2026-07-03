@@ -39,9 +39,15 @@ class VozService {
 
   Future<void> ouvir(void Function(String textoParcial, bool finalizou) onTexto) async {
     await _stt.listen(
+      // Modo ditado: tolera pausas na fala em vez de encerrar na primeira
+      // respiração. Encerra após ~6s de silêncio ou quando o usuário toca
+      // em "Concluir" (limite máximo de 2 minutos).
+      listenFor: const Duration(minutes: 2),
+      pauseFor: const Duration(seconds: 6),
       listenOptions: SpeechListenOptions(
         localeId: 'pt_BR',
         partialResults: true,
+        listenMode: ListenMode.dictation,
       ),
       onResult: (SpeechRecognitionResult r) =>
           onTexto(r.recognizedWords, r.finalResult),

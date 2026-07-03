@@ -80,7 +80,8 @@ class _GaleriaScreenState extends State<GaleriaScreen> {
           }
 
           return ListView(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.fromLTRB(
+                16, 16, 16, MediaQuery.of(context).padding.bottom + 96),
             children: [
               for (final grupo in grupos.entries) ...[
                 Padding(
@@ -97,6 +98,7 @@ class _GaleriaScreenState extends State<GaleriaScreen> {
                   crossAxisCount: 3,
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
+                  padding: EdgeInsets.zero,
                   mainAxisSpacing: 6,
                   crossAxisSpacing: 6,
                   children: [
@@ -112,7 +114,6 @@ class _GaleriaScreenState extends State<GaleriaScreen> {
                 ),
                 const SizedBox(height: 12),
               ],
-              const SizedBox(height: 70),
             ],
           );
         },
@@ -271,7 +272,9 @@ class _GaleriaScreenState extends State<GaleriaScreen> {
             left: 20,
             right: 20,
             top: 20,
-            bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
+            bottom: MediaQuery.of(ctx).viewInsets.bottom +
+                MediaQuery.of(ctx).viewPadding.bottom +
+                24,
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,

@@ -39,7 +39,8 @@ class FornecedoresScreen extends StatelessWidget {
             );
           }
           return ListView.separated(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.fromLTRB(
+                16, 16, 16, MediaQuery.of(context).padding.bottom + 96),
             itemCount: fornecedores.length,
             separatorBuilder: (_, __) => const SizedBox(height: 10),
             itemBuilder: (_, i) {
@@ -161,7 +162,9 @@ class _FormFornecedorState extends State<_FormFornecedor> {
         left: 20,
         right: 20,
         top: 20,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+        bottom: MediaQuery.of(context).viewInsets.bottom +
+            MediaQuery.of(context).viewPadding.bottom +
+            24,
       ),
       child: Form(
         key: _formKey,

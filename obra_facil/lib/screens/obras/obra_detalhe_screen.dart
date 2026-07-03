@@ -111,7 +111,8 @@ class _Dashboard extends StatelessWidget {
         ],
       ),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.fromLTRB(
+            16, 16, 16, MediaQuery.of(context).padding.bottom + 96),
         children: [
           _CabecalhoObra(obra: obra, ehDono: ehDono),
           const SizedBox(height: 16),
@@ -182,6 +183,7 @@ class _Dashboard extends StatelessWidget {
             crossAxisCount: 3,
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
+            padding: EdgeInsets.zero,
             mainAxisSpacing: 10,
             crossAxisSpacing: 10,
             childAspectRatio: 0.95,

@@ -132,7 +132,8 @@ class _DemoIaScreenState extends State<DemoIaScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Demonstração das IAs')),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.fromLTRB(
+            16, 16, 16, MediaQuery.of(context).padding.bottom + 16),
         children: [
           Text(
             'Os quatro módulos de IA do ObraFácil rodam dentro do celular, '

@@ -42,7 +42,8 @@ class EstoqueScreen extends StatelessWidget {
           }
           final emAlerta = itens.where((i) => i.estoqueBaixo).toList();
           return ListView(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.fromLTRB(
+                16, 16, 16, MediaQuery.of(context).padding.bottom + 96),
             children: [
               if (emAlerta.isNotEmpty) ...[
                 Container(
@@ -84,7 +85,6 @@ class EstoqueScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 10),
               ],
-              const SizedBox(height: 70),
             ],
           );
         },
@@ -288,7 +288,9 @@ class _FormEstoqueState extends State<_FormEstoque> {
         left: 20,
         right: 20,
         top: 20,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+        bottom: MediaQuery.of(context).viewInsets.bottom +
+            MediaQuery.of(context).viewPadding.bottom +
+            24,
       ),
       child: Form(
         key: _formKey,

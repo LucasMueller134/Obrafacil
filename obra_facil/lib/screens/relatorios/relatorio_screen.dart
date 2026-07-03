@@ -84,7 +84,8 @@ class _RelatorioScreenState extends State<RelatorioScreen> {
                   ),
                 )
               : ListView(
-                  padding: const EdgeInsets.all(16),
+                  padding: EdgeInsets.fromLTRB(16, 16, 16,
+                      MediaQuery.of(context).padding.bottom + 16),
                   children: [
                     Container(
                       padding: const EdgeInsets.all(12),

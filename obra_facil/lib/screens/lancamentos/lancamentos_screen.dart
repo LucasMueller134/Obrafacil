@@ -80,7 +80,8 @@ class _LancamentosScreenState extends State<LancamentosScreen> {
                   );
                 }
                 return ListView.separated(
-                  padding: const EdgeInsets.all(16),
+                  padding: EdgeInsets.fromLTRB(16, 16, 16,
+                      MediaQuery.of(context).padding.bottom + 96),
                   itemCount: itens.length,
                   separatorBuilder: (_, __) => const SizedBox(height: 10),
                   itemBuilder: (_, i) => _CartaoLancamento(
@@ -113,7 +114,9 @@ class _LancamentosScreenState extends State<LancamentosScreen> {
           left: 20,
           right: 20,
           top: 20,
-          bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
+          bottom: MediaQuery.of(ctx).viewInsets.bottom +
+              MediaQuery.of(ctx).viewPadding.bottom +
+              24,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
