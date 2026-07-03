@@ -83,8 +83,10 @@ class FirestoreService {
           .toList()
         ..sort((a, b) => b.data.compareTo(a.data)));
 
-  Future<void> criarLancamento(LancamentoModel l) =>
-      _sub(l.obraId, 'lancamentos').add(l.toMap());
+  Future<String> criarLancamento(LancamentoModel l) async {
+    final ref = await _sub(l.obraId, 'lancamentos').add(l.toMap());
+    return ref.id;
+  }
 
   Future<void> atualizarLancamento(LancamentoModel l) =>
       _sub(l.obraId, 'lancamentos').doc(l.id).update(l.toMap());
@@ -105,6 +107,64 @@ class FirestoreService {
         'aprovadoPorId': donoId,
         'motivoRejeicao': motivoRejeicao,
       });
+
+  /// Interligação financeiro → estoque: dá entrada no estoque de cada
+  /// material identificado no lançamento aprovado e registra o movimento
+  /// (histórico que alimenta a previsão de término).
+  /// Retorna um resumo por item para exibir ao usuário.
+  Future<List<String>> aplicarLancamentoNoEstoque(
+      LancamentoModel l) async {
+    final resumo = <String>[];
+    for (final item in l.itens) {
+      final col = _sub(l.obraId, 'estoque');
+      final existente = await col
+          .where('material', isEqualTo: item.material)
+          .limit(1)
+          .get();
+      if (existente.docs.isNotEmpty) {
+        final atual = EstoqueItemModel.fromMap(
+            existente.docs.first.id, existente.docs.first.data());
+        await existente.docs.first.reference.update({
+          'quantidade': atual.quantidade + item.quantidade,
+          'atualizadoEm': DateTime.now().toIso8601String(),
+        });
+      } else {
+        await col.add(EstoqueItemModel(
+          id: '',
+          obraId: l.obraId,
+          material: item.material,
+          quantidade: item.quantidade,
+          unidade: item.unidade,
+          quantidadeMinima: 0,
+          atualizadoEm: DateTime.now(),
+        ).toMap());
+      }
+      await criarMovimento(MovimentoEstoqueModel(
+        id: '',
+        obraId: l.obraId,
+        material: item.material,
+        tipo: TipoMovimentoEstoque.entrada,
+        quantidade: item.quantidade,
+        unidade: item.unidade,
+        origem: 'aprovacao',
+        lancamentoId: l.id.isEmpty ? null : l.id,
+        data: DateTime.now(),
+      ));
+      resumo.add('+${item.resumo}');
+    }
+    return resumo;
+  }
+
+  // --------------------------------------------- Movimentos de estoque
+
+  Stream<List<MovimentoEstoqueModel>> movimentos(String obraId) =>
+      _sub(obraId, 'movimentos').snapshots().map((s) => s.docs
+          .map((d) => MovimentoEstoqueModel.fromMap(d.id, d.data()))
+          .toList()
+        ..sort((a, b) => b.data.compareTo(a.data)));
+
+  Future<void> criarMovimento(MovimentoEstoqueModel m) =>
+      _sub(m.obraId, 'movimentos').add(m.toMap());
 
   // --------------------------------------------------------------- Estoque
 

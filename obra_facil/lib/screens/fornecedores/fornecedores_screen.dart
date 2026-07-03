@@ -6,6 +6,7 @@ import '../../models/models.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/firestore_service.dart';
 import '../../utils/validators.dart';
+import '../../widgets/animacoes.dart';
 import '../../widgets/estado_vazio.dart';
 
 class FornecedoresScreen extends StatelessWidget {
@@ -76,7 +77,7 @@ class FornecedoresScreen extends StatelessWidget {
                   onTap: () =>
                       _abrirFormulario(context, usuario.id, fornecedor: f),
                 ),
-              );
+              ).aparecer(i);
             },
           );
         },

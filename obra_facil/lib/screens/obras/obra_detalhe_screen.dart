@@ -9,6 +9,7 @@ import '../../providers/auth_provider.dart';
 import '../../services/firestore_service.dart';
 import '../../services/ia/previsao_orcamento_service.dart';
 import '../../utils/formatters.dart';
+import '../../widgets/animacoes.dart';
 import '../../widgets/barra_orcamento.dart';
 import '../../widgets/cartao_resumo.dart';
 import '../../widgets/grafico_categorias.dart';
@@ -114,7 +115,7 @@ class _Dashboard extends StatelessWidget {
         padding: EdgeInsets.fromLTRB(
             16, 16, 16, MediaQuery.of(context).padding.bottom + 96),
         children: [
-          _CabecalhoObra(obra: obra, ehDono: ehDono),
+          _CabecalhoObra(obra: obra, ehDono: ehDono).aparecerSecao(0),
           const SizedBox(height: 16),
 
           // Financeiro
@@ -160,22 +161,22 @@ class _Dashboard extends StatelessWidget {
                 ],
               ],
             ),
-          ),
+          ).aparecerSecao(1),
           const SizedBox(height: 16),
 
           // Previsão IA
-          _CartaoPrevisao(previsao: previsao),
+          _CartaoPrevisao(previsao: previsao).aparecerSecao(2),
           const SizedBox(height: 16),
 
           _Secao(
             titulo: 'Gastos por categoria',
             child: GraficoCategorias(lancamentos: lancamentos),
-          ),
+          ).aparecerSecao(3),
           const SizedBox(height: 16),
           _Secao(
             titulo: 'Gastos por semana',
             child: GraficoSemanal(lancamentos: lancamentos),
-          ),
+          ).aparecerSecao(4),
           const SizedBox(height: 16),
 
           // Módulos
@@ -219,7 +220,7 @@ class _Dashboard extends StatelessWidget {
                 onTap: () => context.push('/obras/${obra.id}/relatorio'),
               ),
             ],
-          ),
+          ).aparecerSecao(5),
           const SizedBox(height: 24),
         ],
       ),

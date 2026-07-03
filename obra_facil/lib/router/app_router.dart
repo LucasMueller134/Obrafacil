@@ -17,6 +17,28 @@ import '../screens/obras/obras_screen.dart';
 import '../screens/relatorios/relatorio_screen.dart';
 import '../screens/splash_screen.dart';
 
+/// Transição padrão entre telas: fade + leve deslize lateral.
+CustomTransitionPage<void> _pagina(GoRouterState state, Widget child) =>
+    CustomTransitionPage(
+      key: state.pageKey,
+      child: child,
+      transitionDuration: const Duration(milliseconds: 280),
+      transitionsBuilder: (context, animation, _, child) {
+        final curva =
+            CurvedAnimation(parent: animation, curve: Curves.easeOutCubic);
+        return FadeTransition(
+          opacity: curva,
+          child: SlideTransition(
+            position: Tween(
+              begin: const Offset(0.04, 0),
+              end: Offset.zero,
+            ).animate(curva),
+            child: child,
+          ),
+        );
+      },
+    );
+
 /// Rotas do app. O redirect centraliza a regra de acesso:
 /// deslogado só vê login/cadastro; logado nunca volta para elas.
 GoRouter criarRouter(AuthProvider auth) {
@@ -35,65 +57,82 @@ GoRouter criarRouter(AuthProvider auth) {
     routes: [
       GoRoute(
         path: '/splash',
-        builder: (_, __) => const SplashScreen(),
+        pageBuilder: (_, state) => _pagina(state, const SplashScreen()),
       ),
       GoRoute(
         path: '/login',
-        builder: (_, __) => const LoginScreen(),
+        pageBuilder: (_, state) => _pagina(state, const LoginScreen()),
       ),
       GoRoute(
         path: '/cadastro',
-        builder: (_, __) => const CadastroScreen(),
+        pageBuilder: (_, state) => _pagina(state, const CadastroScreen()),
       ),
       GoRoute(
         path: '/obras',
-        builder: (_, __) => const ObrasScreen(),
+        pageBuilder: (_, state) => _pagina(state, const ObrasScreen()),
         routes: [
           GoRoute(
             path: 'nova',
-            builder: (_, __) => const NovaObraScreen(),
+            pageBuilder: (_, state) => _pagina(state, const NovaObraScreen()),
           ),
           GoRoute(
             path: ':obraId',
-            builder: (_, state) =>
-                ObraDetalheScreen(obraId: state.pathParameters['obraId']!),
+            pageBuilder: (_, state) => _pagina(
+              state,
+              ObraDetalheScreen(obraId: state.pathParameters['obraId']!),
+            ),
             routes: [
               GoRoute(
                 path: 'lancamentos',
-                builder: (_, state) => LancamentosScreen(
-                    obraId: state.pathParameters['obraId']!),
+                pageBuilder: (_, state) => _pagina(
+                  state,
+                  LancamentosScreen(obraId: state.pathParameters['obraId']!),
+                ),
                 routes: [
                   GoRoute(
                     path: 'novo',
-                    builder: (_, state) => NovoLancamentoScreen(
-                        obraId: state.pathParameters['obraId']!),
+                    pageBuilder: (_, state) => _pagina(
+                      state,
+                      NovoLancamentoScreen(
+                          obraId: state.pathParameters['obraId']!),
+                    ),
                   ),
                 ],
               ),
               GoRoute(
                 path: 'estoque',
-                builder: (_, state) =>
-                    EstoqueScreen(obraId: state.pathParameters['obraId']!),
+                pageBuilder: (_, state) => _pagina(
+                  state,
+                  EstoqueScreen(obraId: state.pathParameters['obraId']!),
+                ),
               ),
               GoRoute(
                 path: 'diario',
-                builder: (_, state) =>
-                    DiarioScreen(obraId: state.pathParameters['obraId']!),
+                pageBuilder: (_, state) => _pagina(
+                  state,
+                  DiarioScreen(obraId: state.pathParameters['obraId']!),
+                ),
               ),
               GoRoute(
                 path: 'cronograma',
-                builder: (_, state) =>
-                    CronogramaScreen(obraId: state.pathParameters['obraId']!),
+                pageBuilder: (_, state) => _pagina(
+                  state,
+                  CronogramaScreen(obraId: state.pathParameters['obraId']!),
+                ),
               ),
               GoRoute(
                 path: 'galeria',
-                builder: (_, state) =>
-                    GaleriaScreen(obraId: state.pathParameters['obraId']!),
+                pageBuilder: (_, state) => _pagina(
+                  state,
+                  GaleriaScreen(obraId: state.pathParameters['obraId']!),
+                ),
               ),
               GoRoute(
                 path: 'relatorio',
-                builder: (_, state) =>
-                    RelatorioScreen(obraId: state.pathParameters['obraId']!),
+                pageBuilder: (_, state) => _pagina(
+                  state,
+                  RelatorioScreen(obraId: state.pathParameters['obraId']!),
+                ),
               ),
             ],
           ),
@@ -101,7 +140,8 @@ GoRouter criarRouter(AuthProvider auth) {
       ),
       GoRoute(
         path: '/fornecedores',
-        builder: (_, __) => const FornecedoresScreen(),
+        pageBuilder: (_, state) =>
+            _pagina(state, const FornecedoresScreen()),
       ),
     ],
     errorBuilder: (_, state) => Scaffold(

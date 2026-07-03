@@ -9,6 +9,7 @@ import '../../constants/app_colors.dart';
 import '../../models/models.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/firestore_service.dart';
+import '../../services/ia/itens_parser.dart';
 import '../../services/ia/ocr_nota_service.dart';
 import '../../services/ia/voz_service.dart';
 import '../../services/imagem_service.dart';
@@ -36,6 +37,8 @@ class _NovoLancamentoScreenState extends State<NovoLancamentoScreen> {
   File? _fotoNota;
   String? _cnpjExtraido;
   String? _avisoIa;
+  String? _textoOcr;
+  List<ItemMaterialModel> _itens = [];
   bool _processando = false;
   bool _salvando = false;
 
@@ -107,6 +110,10 @@ class _NovoLancamentoScreenState extends State<NovoLancamentoScreen> {
           }
         }
         _cnpjExtraido = nota.cnpj;
+        _textoOcr = nota.textoCompleto.trim().isEmpty
+            ? null
+            : nota.textoCompleto;
+        _itens = ItensParser.deNotaOcr(nota.textoCompleto);
         _avisoIa = nota.encontrouAlgo
             ? 'Dados extraídos da nota pelo OCR — confira antes de salvar.'
             : 'Não consegui ler os dados desta nota (a foto ficou anexada). '
@@ -201,6 +208,7 @@ class _NovoLancamentoScreenState extends State<NovoLancamentoScreen> {
 
     final interpretado = VozService.interpretar(transcricao);
     setState(() {
+      _itens = ItensParser.deTexto(transcricao);
       _origem = OrigemLancamento.voz;
       _descricaoCtrl.text = interpretado.descricao;
       if (interpretado.valor != null) {
@@ -215,6 +223,48 @@ class _NovoLancamentoScreenState extends State<NovoLancamentoScreen> {
           ? 'Entendi a descrição, mas não o valor — preencha o campo.'
           : 'Lançamento interpretado da sua fala — confira antes de salvar.';
     });
+  }
+
+  void _verTextoLido() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(
+          left: 20,
+          right: 20,
+          top: 20,
+          bottom: MediaQuery.of(ctx).viewPadding.bottom + 24,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Texto lido da nota',
+                style: Theme.of(ctx).textTheme.titleMedium),
+            const SizedBox(height: 4),
+            Text(
+              'Se algum campo saiu errado, copie daqui e cole no formulário.',
+              style: Theme.of(ctx)
+                  .textTheme
+                  .bodySmall
+                  ?.copyWith(color: AppColors.textoSecundario),
+            ),
+            const SizedBox(height: 12),
+            ConstrainedBox(
+              constraints: BoxConstraints(
+                  maxHeight: MediaQuery.of(ctx).size.height * 0.5),
+              child: SingleChildScrollView(
+                child: SelectableText(
+                  _textoOcr ?? '',
+                  style: Theme.of(ctx).textTheme.bodySmall,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   // ---------------------------------------------------------------- Salvar
@@ -247,7 +297,14 @@ class _NovoLancamentoScreenState extends State<NovoLancamentoScreen> {
         fotoDataUri = await ImagemService.comprimirParaDataUri(_fotoNota!);
       }
 
-      await db.criarLancamento(LancamentoModel(
+      // Lançamento manual de material: tenta extrair itens da descrição
+      // para o estoque ("10 sacos de cimento" → +10 sc Cimento).
+      var itens = _itens;
+      if (itens.isEmpty && _categoria == CategoriaCusto.material) {
+        itens = ItensParser.deTexto(_descricaoCtrl.text);
+      }
+
+      final lancamento = LancamentoModel(
         id: '',
         obraId: widget.obraId,
         descricao: _descricaoCtrl.text.trim(),
@@ -261,17 +318,27 @@ class _NovoLancamentoScreenState extends State<NovoLancamentoScreen> {
         fornecedorId: fornecedorId,
         fornecedorNome: fornecedorNome,
         fotoNotaUrl: fotoDataUri,
+        itens: itens,
         data: _data,
         criadoPorId: usuario.id,
         criadoPorNome: usuario.nome,
         aprovadoPorId: usuario.ehDono ? usuario.id : null,
         criadoEm: DateTime.now(),
-      ));
+      );
+      await db.criarLancamento(lancamento);
+
+      // Dono lança já aprovado → estoque é alimentado na hora.
+      var resumoEstoque = const <String>[];
+      if (usuario.ehDono && lancamento.itens.isNotEmpty) {
+        resumoEstoque = await db.aplicarLancamentoNoEstoque(lancamento);
+      }
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(usuario.ehDono
-            ? 'Lançamento registrado.'
+            ? (resumoEstoque.isEmpty
+                ? 'Lançamento registrado.'
+                : 'Registrado! Estoque atualizado: ${resumoEstoque.join(' · ')}')
             : 'Lançamento enviado para aprovação do dono.'),
       ));
       context.pop();
@@ -355,6 +422,44 @@ class _NovoLancamentoScreenState extends State<NovoLancamentoScreen> {
                         ),
                       ],
                     ),
+                  ),
+                ],
+                if (_textoOcr != null)
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton.icon(
+                      onPressed: _verTextoLido,
+                      icon: const Icon(Icons.subject, size: 18),
+                      label: const Text('Ver texto lido da nota'),
+                    ),
+                  ),
+                if (_itens.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  Text('Materiais para o estoque',
+                      style: Theme.of(context).textTheme.titleSmall),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Detectados automaticamente — entram no estoque quando '
+                    'o lançamento for aprovado. Toque no ✕ para remover.',
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodySmall
+                        ?.copyWith(color: AppColors.textoSecundario),
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      for (final item in _itens)
+                        InputChip(
+                          avatar: const Icon(Icons.inventory_2,
+                              size: 16, color: AppColors.laranja),
+                          label: Text(item.resumo),
+                          onDeleted: () => setState(
+                              () => _itens = List.of(_itens)..remove(item)),
+                        ),
+                    ],
                   ),
                 ],
                 const SizedBox(height: 20),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../constants/app_colors.dart';
+import 'item_material_model.dart';
 
 enum CategoriaCusto {
   maoDeObra,
@@ -91,6 +92,9 @@ class LancamentoModel {
   final String? fornecedorId;
   final String? fornecedorNome;
   final String? fotoNotaUrl;
+
+  /// Materiais identificados no lançamento — entram no estoque na aprovação.
+  final List<ItemMaterialModel> itens;
   final DateTime data;
   final String criadoPorId;
   final String criadoPorNome;
@@ -109,6 +113,7 @@ class LancamentoModel {
     this.fornecedorId,
     this.fornecedorNome,
     this.fotoNotaUrl,
+    this.itens = const [],
     required this.data,
     required this.criadoPorId,
     required this.criadoPorNome,
@@ -127,6 +132,7 @@ class LancamentoModel {
         'fornecedorId': fornecedorId,
         'fornecedorNome': fornecedorNome,
         'fotoNotaUrl': fotoNotaUrl,
+        'itens': itens.map((i) => i.toMap()).toList(),
         'data': data.toIso8601String(),
         'criadoPorId': criadoPorId,
         'criadoPorNome': criadoPorNome,
@@ -147,6 +153,11 @@ class LancamentoModel {
         fornecedorId: map['fornecedorId'],
         fornecedorNome: map['fornecedorNome'],
         fotoNotaUrl: map['fotoNotaUrl'],
+        itens: (map['itens'] as List?)
+                ?.map((i) =>
+                    ItemMaterialModel.fromMap(Map<String, dynamic>.from(i)))
+                .toList() ??
+            const [],
         data: DateTime.tryParse(map['data'] ?? '') ?? DateTime.now(),
         criadoPorId: map['criadoPorId'] ?? '',
         criadoPorNome: map['criadoPorNome'] ?? '',
@@ -163,6 +174,7 @@ class LancamentoModel {
     String? fornecedorId,
     String? fornecedorNome,
     String? fotoNotaUrl,
+    List<ItemMaterialModel>? itens,
     DateTime? data,
     String? aprovadoPorId,
     String? motivoRejeicao,
@@ -178,6 +190,7 @@ class LancamentoModel {
         fornecedorId: fornecedorId ?? this.fornecedorId,
         fornecedorNome: fornecedorNome ?? this.fornecedorNome,
         fotoNotaUrl: fotoNotaUrl ?? this.fotoNotaUrl,
+        itens: itens ?? this.itens,
         data: data ?? this.data,
         criadoPorId: criadoPorId,
         criadoPorNome: criadoPorNome,

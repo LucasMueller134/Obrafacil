@@ -254,7 +254,7 @@ class OcrNotaService {
   // ------------------------------------------------- Fornecedor
 
   static String? _extrairFornecedor(List<String> linhas) {
-    final candidatas = linhas.take(10).toList();
+    final candidatas = linhas.take(15).toList();
 
     // 1º: rótulo explícito ("Razão Social: ...").
     for (final linha in candidatas) {
@@ -276,6 +276,13 @@ class OcrNotaService {
       final upper = linha.toUpperCase();
       if (_palavrasEmpresa.any(upper.contains)) pontos += 4;
       if (i <= 2) pontos += 2; // topo do documento
+      // a razão social costuma vir colada ao CNPJ
+      if (i + 1 < linhas.length && _regexCnpj.hasMatch(linhas[i + 1])) {
+        pontos += 3;
+      } else if (i + 2 < linhas.length &&
+          _regexCnpj.hasMatch(linhas[i + 2])) {
+        pontos += 2;
+      }
       // caixa alta é típico de razão social impressa
       final letras = linha.replaceAll(RegExp(r'[^A-Za-zÀ-ÿ]'), '');
       if (letras.isNotEmpty &&

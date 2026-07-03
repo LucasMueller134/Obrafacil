@@ -7,6 +7,7 @@ import '../../models/models.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/firestore_service.dart';
 import '../../utils/formatters.dart';
+import '../../widgets/animacoes.dart';
 import '../../widgets/estado_vazio.dart';
 import '../../widgets/imagem_obra.dart';
 
@@ -87,7 +88,7 @@ class _LancamentosScreenState extends State<LancamentosScreen> {
                   itemBuilder: (_, i) => _CartaoLancamento(
                     lancamento: itens[i],
                     onTap: () => _abrirDetalhes(context, itens[i], auth),
-                  ),
+                  ).aparecer(i),
                 );
               },
             ),
@@ -147,6 +148,9 @@ class _LancamentosScreenState extends State<LancamentosScreen> {
             _LinhaInfo('Registrado por', l.criadoPorNome),
             if (l.fornecedorNome != null)
               _LinhaInfo('Fornecedor', l.fornecedorNome!),
+            if (l.itens.isNotEmpty)
+              _LinhaInfo('Materiais → estoque',
+                  l.itens.map((i) => i.resumo).join(' · ')),
             _LinhaInfo('Status', l.status.label),
             if (l.motivoRejeicao != null)
               _LinhaInfo('Motivo da rejeição', l.motivoRejeicao!),
@@ -191,6 +195,19 @@ class _LancamentosScreenState extends State<LancamentosScreen> {
                           aprovar: true,
                           donoId: auth.usuario!.id,
                         );
+                        // Interligação: aprovou → materiais entram no estoque.
+                        if (l.itens.isNotEmpty) {
+                          final resumo =
+                              await db.aplicarLancamentoNoEstoque(l);
+                          if (context.mounted && resumo.isNotEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Estoque atualizado: '
+                                    '${resumo.join(' · ')}'),
+                              ),
+                            );
+                          }
+                        }
                       },
                       icon: const Icon(Icons.check),
                       label: const Text('Aprovar'),

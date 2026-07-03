@@ -7,8 +7,10 @@ import '../../constants/app_constants.dart';
 import '../../models/models.dart';
 import '../../services/firestore_service.dart';
 import '../../services/ia/material_vision_service.dart';
+import '../../services/ia/previsao_estoque_service.dart';
 import '../../utils/formatters.dart';
 import '../../utils/validators.dart';
+import '../../widgets/animacoes.dart';
 import '../../widgets/estado_vazio.dart';
 
 class EstoqueScreen extends StatelessWidget {
@@ -22,9 +24,15 @@ class EstoqueScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Estoque')),
-      body: StreamBuilder<List<EstoqueItemModel>>(
-        stream: db.estoque(obraId),
-        builder: (context, snapshot) {
+      body: StreamBuilder<List<MovimentoEstoqueModel>>(
+        stream: db.movimentos(obraId),
+        builder: (context, movSnap) =>
+            StreamBuilder<List<DiarioEntradaModel>>(
+          stream: db.diario(obraId),
+          builder: (context, diarioSnap) =>
+              StreamBuilder<List<EstoqueItemModel>>(
+            stream: db.estoque(obraId),
+            builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
@@ -73,21 +81,42 @@ class EstoqueScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
               ],
-              for (final item in itens) ...[
+              for (final (i, item) in itens.indexed) ...[
                 _CartaoEstoque(
                   item: item,
+                  previsao: PrevisaoEstoqueService.calcular(
+                    item: item,
+                    movimentos: movSnap.data ?? const [],
+                    diario: diarioSnap.data ?? const [],
+                  ),
                   onTap: () => _abrirFormulario(context, item: item),
                   onAjuste: (delta) {
                     final nova =
                         (item.quantidade + delta).clamp(0.0, 999999.0);
+                    if (nova == item.quantidade) return;
                     db.salvarEstoqueItem(item.copyWith(quantidade: nova));
+                    // Histórico de consumo — alimenta a previsão de término.
+                    db.criarMovimento(MovimentoEstoqueModel(
+                      id: '',
+                      obraId: obraId,
+                      material: item.material,
+                      tipo: delta > 0
+                          ? TipoMovimentoEstoque.entrada
+                          : TipoMovimentoEstoque.saida,
+                      quantidade: delta.abs(),
+                      unidade: item.unidade,
+                      origem: 'manual',
+                      data: DateTime.now(),
+                    ));
                   },
-                ),
+                ).aparecer(i),
                 const SizedBox(height: 10),
               ],
             ],
           );
-        },
+            },
+          ),
+        ),
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _abrirFormulario(context),
@@ -108,11 +137,13 @@ class EstoqueScreen extends StatelessWidget {
 
 class _CartaoEstoque extends StatelessWidget {
   final EstoqueItemModel item;
+  final PrevisaoEstoque? previsao;
   final VoidCallback onTap;
   final void Function(double delta) onAjuste;
 
   const _CartaoEstoque({
     required this.item,
+    this.previsao,
     required this.onTap,
     required this.onAjuste,
   });
@@ -164,6 +195,24 @@ class _CartaoEstoque extends StatelessWidget {
                                 : AppColors.textoSecundario,
                           ),
                     ),
+                    if (previsao != null) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        'No ritmo atual acaba em ~${previsao!.diasRestantes} '
+                        'dia${previsao!.diasRestantes == 1 ? '' : 's'} '
+                        '(${Formatters.dataCurta(previsao!.dataTermino)})'
+                        '${previsao!.consideraEquipe ? ' · ajustado pela equipe' : ''}',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: previsao!.critico
+                              ? AppColors.erro
+                              : previsao!.atencao
+                                  ? AppColors.alerta
+                                  : AppColors.info,
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),

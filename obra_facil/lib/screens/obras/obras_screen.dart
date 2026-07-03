@@ -7,6 +7,7 @@ import '../../models/models.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/firestore_service.dart';
 import '../../utils/formatters.dart';
+import '../../widgets/animacoes.dart';
 import '../../widgets/estado_vazio.dart';
 
 class ObrasScreen extends StatelessWidget {
@@ -88,7 +89,7 @@ class ObrasScreen extends StatelessWidget {
                 16, 16, 16, MediaQuery.of(context).padding.bottom + 96),
             itemCount: obras.length,
             separatorBuilder: (_, __) => const SizedBox(height: 12),
-            itemBuilder: (_, i) => _CartaoObra(obra: obras[i]),
+            itemBuilder: (_, i) => _CartaoObra(obra: obras[i]).aparecer(i),
           );
         },
       ),

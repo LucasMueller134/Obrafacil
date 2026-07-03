@@ -12,6 +12,7 @@ import '../../services/firestore_service.dart';
 import '../../services/imagem_service.dart';
 import '../../utils/formatters.dart';
 import '../../utils/validators.dart';
+import '../../widgets/animacoes.dart';
 import '../../widgets/estado_vazio.dart';
 import '../../widgets/imagem_obra.dart';
 
@@ -49,7 +50,8 @@ class DiarioScreen extends StatelessWidget {
                 16, 16, 16, MediaQuery.of(context).padding.bottom + 96),
             itemCount: entradas.length,
             separatorBuilder: (_, __) => const SizedBox(height: 12),
-            itemBuilder: (_, i) => _CartaoDiario(entrada: entradas[i]),
+            itemBuilder: (_, i) =>
+                _CartaoDiario(entrada: entradas[i]).aparecer(i),
           );
         },
       ),

@@ -6,6 +6,7 @@ import '../../models/models.dart';
 import '../../services/firestore_service.dart';
 import '../../utils/formatters.dart';
 import '../../utils/validators.dart';
+import '../../widgets/animacoes.dart';
 import '../../widgets/estado_vazio.dart';
 
 class CronogramaScreen extends StatelessWidget {
@@ -81,13 +82,13 @@ class CronogramaScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 16),
-              for (final fase in fases) ...[
+              for (final (i, fase) in fases.indexed) ...[
                 _CartaoFase(
                   fase: fase,
                   onPercentual: (v) =>
                       db.salvarFase(fase.copyWith(percentualConcluido: v)),
                   onExcluir: () => db.excluirFase(obraId, fase.id),
-                ),
+                ).aparecer(i),
                 const SizedBox(height: 10),
               ],
             ],
