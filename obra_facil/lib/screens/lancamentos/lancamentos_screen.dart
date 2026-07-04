@@ -80,15 +80,90 @@ class _LancamentosScreenState extends State<LancamentosScreen> {
                         : null,
                   );
                 }
-                return ListView.separated(
-                  padding: EdgeInsets.fromLTRB(16, 16, 16,
-                      MediaQuery.of(context).padding.bottom + 96),
-                  itemCount: itens.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 10),
-                  itemBuilder: (_, i) => _CartaoLancamento(
-                    lancamento: itens[i],
-                    onTap: () => _abrirDetalhes(context, itens[i], auth),
-                  ).aparecer(i),
+                final total =
+                    itens.fold<double>(0, (s, l) => s + l.valor);
+                final temPendenteModeravel = auth.ehDono &&
+                    itens.any((l) => l.status == StatusLancamento.pendente);
+                return Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              '${itens.length} lançamento${itens.length > 1 ? 's' : ''}'
+                              '${temPendenteModeravel ? ' · deslize para aprovar ou rejeitar' : ''}',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(
+                                      color: AppColors.textoSecundario),
+                            ),
+                          ),
+                          Text(
+                            Formatters.moeda(total),
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleSmall
+                                ?.copyWith(
+                                  color: AppColors.laranja,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Expanded(
+                      child: ListView.separated(
+                        padding: EdgeInsets.fromLTRB(16, 12, 16,
+                            MediaQuery.of(context).padding.bottom + 96),
+                        itemCount: itens.length,
+                        separatorBuilder: (_, __) =>
+                            const SizedBox(height: 10),
+                        itemBuilder: (_, i) {
+                          final l = itens[i];
+                          final card = _CartaoLancamento(
+                            lancamento: l,
+                            onTap: () => _abrirDetalhes(context, l, auth),
+                          );
+                          final podeModerar = auth.ehDono &&
+                              l.status == StatusLancamento.pendente;
+                          if (!podeModerar) return card.aparecer(i);
+                          // Interatividade: desliza → aprova / rejeita.
+                          return Dismissible(
+                            key: ValueKey(l.id),
+                            background: const _FundoSwipe(
+                              cor: AppColors.sucesso,
+                              icone: Icons.check_circle,
+                              rotulo: 'Aprovar',
+                              alinhamento: Alignment.centerLeft,
+                            ),
+                            secondaryBackground: const _FundoSwipe(
+                              cor: AppColors.erro,
+                              icone: Icons.cancel,
+                              rotulo: 'Rejeitar',
+                              alinhamento: Alignment.centerRight,
+                            ),
+                            confirmDismiss: (direcao) async {
+                              if (direcao ==
+                                  DismissDirection.startToEnd) {
+                                await _aprovar(
+                                    context, l, db, auth.usuario!.id);
+                              } else {
+                                await _rejeitar(
+                                    context, l, db, auth.usuario!.id);
+                              }
+                              // o stream atualiza o status do card;
+                              // não removemos o item da lista
+                              return false;
+                            },
+                            child: card,
+                          ).aparecer(i);
+                        },
+                      ),
+                    ),
+                  ],
                 );
               },
             ),
@@ -190,24 +265,7 @@ class _LancamentosScreenState extends State<LancamentosScreen> {
                           backgroundColor: AppColors.sucesso),
                       onPressed: () async {
                         Navigator.pop(ctx);
-                        await db.moderarLancamento(
-                          lancamento: l,
-                          aprovar: true,
-                          donoId: auth.usuario!.id,
-                        );
-                        // Interligação: aprovou → materiais entram no estoque.
-                        if (l.itens.isNotEmpty) {
-                          final resumo =
-                              await db.aplicarLancamentoNoEstoque(l);
-                          if (context.mounted && resumo.isNotEmpty) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('Estoque atualizado: '
-                                    '${resumo.join(' · ')}'),
-                              ),
-                            );
-                          }
-                        }
+                        await _aprovar(context, l, db, auth.usuario!.id);
                       },
                       icon: const Icon(Icons.check),
                       label: const Text('Aprovar'),
@@ -234,6 +292,24 @@ class _LancamentosScreenState extends State<LancamentosScreen> {
         ),
       ),
     );
+  }
+
+  /// Aprova e aplica os materiais no estoque (interligação financeiro→estoque).
+  Future<void> _aprovar(BuildContext context, LancamentoModel l,
+      FirestoreService db, String donoId) async {
+    await db.moderarLancamento(
+      lancamento: l,
+      aprovar: true,
+      donoId: donoId,
+    );
+    if (l.itens.isNotEmpty) {
+      final resumo = await db.aplicarLancamentoNoEstoque(l);
+      if (context.mounted && resumo.isNotEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Estoque atualizado: ${resumo.join(' · ')}'),
+        ));
+      }
+    }
   }
 
   Future<void> _rejeitar(BuildContext context, LancamentoModel l,
@@ -269,6 +345,46 @@ class _LancamentosScreenState extends State<LancamentosScreen> {
       aprovar: false,
       donoId: donoId,
       motivoRejeicao: motivo.trim().isEmpty ? null : motivo.trim(),
+    );
+  }
+}
+
+/// Fundo colorido exibido atrás do card durante o swipe de moderação.
+class _FundoSwipe extends StatelessWidget {
+  final Color cor;
+  final IconData icone;
+  final String rotulo;
+  final Alignment alinhamento;
+
+  const _FundoSwipe({
+    required this.cor,
+    required this.icone,
+    required this.rotulo,
+    required this.alinhamento,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      alignment: alinhamento,
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      decoration: BoxDecoration(
+        color: cor.withValues(alpha: 0.22),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: cor),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icone, color: cor, size: 26),
+          const SizedBox(height: 2),
+          Text(
+            rotulo,
+            style: TextStyle(
+                color: cor, fontSize: 11, fontWeight: FontWeight.w700),
+          ),
+        ],
+      ),
     );
   }
 }

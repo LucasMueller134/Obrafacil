@@ -43,5 +43,30 @@ void main() {
       final r = VozService.interpretar('taxa da prefeitura 75 reais');
       expect(r.categoria, CategoriaCusto.outros);
     });
+
+    test('valor falado por extenso é entendido', () {
+      final r = VozService.interpretar(
+          'comprei dez sacos de cimento por trezentos e cinquenta reais '
+          'no Depósito São José');
+      expect(r.valor, 350);
+      expect(r.categoria, CategoriaCusto.material);
+      expect(r.itens, hasLength(1));
+      expect(r.itens.first.quantidade, 10);
+      expect(r.itens.first.material, 'Cimento');
+    });
+
+    test('reais e centavos por extenso', () {
+      final r = VozService.interpretar(
+          'paguei vinte e cinco reais e cinquenta centavos de parafuso');
+      expect(r.valor, 25.50);
+      expect(r.categoria, CategoriaCusto.material);
+    });
+
+    test('milhar por extenso com mão de obra', () {
+      final r = VozService.interpretar(
+          'gastei mil e duzentos reais com o pedreiro João');
+      expect(r.valor, 1200);
+      expect(r.categoria, CategoriaCusto.maoDeObra);
+    });
   });
 }

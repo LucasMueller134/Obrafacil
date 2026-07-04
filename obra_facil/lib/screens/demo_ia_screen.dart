@@ -6,6 +6,7 @@ import '../services/ia/material_vision_service.dart';
 import '../services/ia/ocr_nota_service.dart';
 import '../services/ia/voz_service.dart';
 import '../utils/formatters.dart';
+import '../widgets/painel_voz.dart';
 
 /// Demonstração das IAs on-device — funciona sem login e sem internet.
 /// Acessível pela tela de configuração pendente, para testar o app
@@ -26,7 +27,6 @@ class _DemoIaScreenState extends State<DemoIaScreen> {
 
   String _transcricao = '';
   LancamentoPorVoz? _interpretado;
-  bool _ouvindo = false;
 
   List<MaterialDetectado>? _materiais;
   bool _reconhecendo = false;
@@ -73,41 +73,11 @@ class _DemoIaScreenState extends State<DemoIaScreen> {
   }
 
   Future<void> _demonstrarVoz() async {
-    final ok = await _voz.inicializar();
-    if (!mounted) return;
-    if (!ok) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Reconhecimento de voz indisponível — '
-              'verifique a permissão do microfone.')));
-      return;
-    }
+    final resultado = await mostrarPainelVoz(context, _voz);
+    if (!mounted || resultado == null) return;
     setState(() {
-      _ouvindo = true;
-      _transcricao = '';
-      _interpretado = null;
-    });
-    await _voz.ouvir((texto, finalizou) {
-      if (!mounted) return;
-      setState(() {
-        _transcricao = texto;
-        if (finalizou) {
-          _ouvindo = false;
-          if (texto.trim().isNotEmpty) {
-            _interpretado = VozService.interpretar(texto);
-          }
-        }
-      });
-    });
-  }
-
-  Future<void> _pararVoz() async {
-    await _voz.parar();
-    if (!mounted) return;
-    setState(() {
-      _ouvindo = false;
-      if (_transcricao.trim().isNotEmpty) {
-        _interpretado = VozService.interpretar(_transcricao);
-      }
+      _transcricao = resultado.transcricao;
+      _interpretado = resultado;
     });
   }
 
@@ -190,11 +160,12 @@ class _DemoIaScreenState extends State<DemoIaScreen> {
           _CartaoDemo(
             icone: Icons.mic,
             titulo: 'Lançamento por voz',
-            descricao: 'Diga algo como "comprei 10 sacos de cimento por 350 '
-                'reais no Depósito São José".',
-            botao: _ouvindo ? 'Parar' : 'Falar',
+            descricao: 'Diga algo como "comprei dez sacos de cimento por '
+                'trezentos e cinquenta reais no Depósito São José" — '
+                'a interpretação acontece ao vivo enquanto você fala.',
+            botao: 'Falar',
             carregando: false,
-            onPressed: _ouvindo ? _pararVoz : _demonstrarVoz,
+            onPressed: _demonstrarVoz,
             resultado: _transcricao.isEmpty && _interpretado == null
                 ? null
                 : Column(
@@ -210,11 +181,6 @@ class _DemoIaScreenState extends State<DemoIaScreen> {
                                 color: AppColors.amareloCapacete),
                           ),
                         ),
-                      if (_ouvindo)
-                        const Text('Ouvindo…',
-                            style: TextStyle(
-                                fontSize: 12,
-                                color: AppColors.textoSecundario)),
                       if (_interpretado != null) ...[
                         _Linha('Descrição', _interpretado!.descricao),
                         _Linha(
@@ -225,6 +191,12 @@ class _DemoIaScreenState extends State<DemoIaScreen> {
                         _Linha('Categoria', _interpretado!.categoria.label),
                         _Linha('Fornecedor',
                             _interpretado!.fornecedorNome ?? '—'),
+                        if (_interpretado!.itens.isNotEmpty)
+                          _Linha(
+                              'Materiais',
+                              _interpretado!.itens
+                                  .map((i) => i.resumo)
+                                  .join(' · ')),
                       ],
                     ],
                   ),

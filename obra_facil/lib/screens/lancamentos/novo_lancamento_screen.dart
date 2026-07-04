@@ -15,6 +15,7 @@ import '../../services/ia/voz_service.dart';
 import '../../services/imagem_service.dart';
 import '../../utils/formatters.dart';
 import '../../utils/validators.dart';
+import '../../widgets/painel_voz.dart';
 
 class NovoLancamentoScreen extends StatefulWidget {
   final String obraId;
@@ -131,85 +132,12 @@ class _NovoLancamentoScreenState extends State<NovoLancamentoScreen> {
   // ------------------------------------------------------------------ Voz
 
   Future<void> _lancarPorVoz() async {
-    final ok = await _voz.inicializar();
-    if (!mounted) return;
-    if (!ok) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Reconhecimento de voz indisponível. '
-              'Verifique a permissão do microfone.')));
-      return;
-    }
+    final interpretado = await mostrarPainelVoz(context, _voz);
+    if (interpretado == null || !mounted) return;
 
-    var transcricao = '';
-    await showModalBottomSheet(
-      context: context,
-      isDismissible: false,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setSheet) {
-          if (!_voz.ouvindo) {
-            _voz.ouvir((texto, finalizou) {
-              transcricao = texto;
-              setSheet(() {});
-              if (finalizou) Navigator.pop(ctx);
-            });
-          }
-          return Padding(
-            padding: EdgeInsets.only(
-              left: 24,
-              right: 24,
-              top: 24,
-              bottom: MediaQuery.of(ctx).viewPadding.bottom + 24,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.mic, size: 48, color: AppColors.laranja),
-                const SizedBox(height: 12),
-                Text('Fale o lançamento com calma',
-                    style: Theme.of(ctx).textTheme.titleMedium),
-                const SizedBox(height: 6),
-                Text(
-                  'Pode pausar entre as palavras — só encerro depois de '
-                  '6 segundos de silêncio ou quando você tocar em Concluir.\n'
-                  'Ex.: "Comprei 10 sacos de cimento por 350 reais '
-                  'no Depósito São José"',
-                  textAlign: TextAlign.center,
-                  style: Theme.of(ctx)
-                      .textTheme
-                      .bodySmall
-                      ?.copyWith(color: AppColors.textoSecundario),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  transcricao.isEmpty ? 'Ouvindo…' : transcricao,
-                  textAlign: TextAlign.center,
-                  style: Theme.of(ctx)
-                      .textTheme
-                      .bodyLarge
-                      ?.copyWith(color: AppColors.amareloCapacete),
-                ),
-                const SizedBox(height: 20),
-                OutlinedButton.icon(
-                  onPressed: () async {
-                    await _voz.parar();
-                    if (ctx.mounted) Navigator.pop(ctx);
-                  },
-                  icon: const Icon(Icons.stop),
-                  label: const Text('Concluir'),
-                ),
-              ],
-            ),
-          );
-        },
-      ),
-    );
-    await _voz.parar();
-    if (!mounted || transcricao.trim().isEmpty) return;
-
-    final interpretado = VozService.interpretar(transcricao);
     setState(() {
-      _itens = ItensParser.deTexto(transcricao);
       _origem = OrigemLancamento.voz;
+      _itens = interpretado.itens;
       _descricaoCtrl.text = interpretado.descricao;
       if (interpretado.valor != null) {
         _valorCtrl.text =
@@ -220,7 +148,7 @@ class _NovoLancamentoScreenState extends State<NovoLancamentoScreen> {
         _fornecedorCtrl.text = interpretado.fornecedorNome!;
       }
       _avisoIa = interpretado.valor == null
-          ? 'Entendi a descrição, mas não o valor — preencha o campo.'
+          ? 'Entendi a descrição, mas não o valor — confira o campo.'
           : 'Lançamento interpretado da sua fala — confira antes de salvar.';
     });
   }

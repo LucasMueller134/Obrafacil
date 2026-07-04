@@ -1,5 +1,6 @@
 import '../../constants/app_constants.dart';
 import '../../models/item_material_model.dart';
+import 'numero_extenso.dart';
 
 /// Extrai itens de material (quantidade + unidade + nome) de texto livre.
 ///
@@ -55,7 +56,9 @@ abstract class ItensParser {
       caseSensitive: false);
 
   /// Interpreta texto livre (fala ou descrição digitada).
-  static List<ItemMaterialModel> deTexto(String texto) {
+  static List<ItemMaterialModel> deTexto(String textoBruto) {
+    // "dez sacos de cimento" → "10 sacos de cimento"
+    final texto = NumeroExtenso.normalizar(textoBruto);
     final itens = <ItemMaterialModel>[];
     for (final m in _regexTexto.allMatches(texto)) {
       final quantidade =

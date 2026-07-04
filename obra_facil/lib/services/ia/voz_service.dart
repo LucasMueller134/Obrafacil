@@ -1,7 +1,10 @@
 import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 
+import '../../models/item_material_model.dart';
 import '../../models/lancamento_model.dart';
+import 'itens_parser.dart';
+import 'numero_extenso.dart';
 
 /// Lançamento interpretado a partir da fala.
 class LancamentoPorVoz {
@@ -9,6 +12,9 @@ class LancamentoPorVoz {
   final double? valor;
   final CategoriaCusto categoria;
   final String? fornecedorNome;
+
+  /// Materiais detectados na fala — vão para o estoque na aprovação.
+  final List<ItemMaterialModel> itens;
   final String transcricao;
 
   const LancamentoPorVoz({
@@ -16,15 +22,19 @@ class LancamentoPorVoz {
     this.valor,
     required this.categoria,
     this.fornecedorNome,
+    this.itens = const [],
     required this.transcricao,
   });
+
+  bool get temAlgo => valor != null || itens.isNotEmpty;
 }
 
 /// IA on-device nº 2b — lançamento por voz.
 ///
-/// A transcrição usa o reconhecimento de fala do próprio Android
-/// (speech_to_text); a interpretação da frase ("comprei 10 sacos de cimento
-/// por 350 reais no Depósito São José") é feita por um parser em Dart.
+/// Pipeline: fala → transcrição (reconhecedor do Android) →
+/// normalização de números por extenso ("trezentos e cinquenta" → 350) →
+/// parsers de valor, categoria, fornecedor e materiais. A interpretação
+/// é pura e rápida, então roda ao vivo a cada resultado parcial.
 class VozService {
   final SpeechToText _stt = SpeechToText();
   bool _inicializado = false;
@@ -56,10 +66,18 @@ class VozService {
 
   Future<void> parar() => _stt.stop();
 
+  Future<void> cancelar() => _stt.cancel();
+
   // ------------------------------------------------------------- Parser
 
-  static final RegExp _valorComMoeda = RegExp(
-      r'(?:r\$\s*)?(\d+(?:[.,]\d{1,2})?)\s*(?:reais|real|conto[s]?|pila[s]?)',
+  /// Valor em reais, com centavos opcionais:
+  /// "350 reais", "89,90 reais", "25 reais e 50 centavos", "40 conto".
+  static final RegExp _valorReais = RegExp(
+      r'(\d+(?:[.,]\d{1,2})?)\s*(?:reais|real|conto[s]?|pila[s]?)'
+      r'(?:\s*e\s*(\d{1,2})\s*centavos?)?',
+      caseSensitive: false);
+  static final RegExp _valorComRs = RegExp(
+      r'r\$\s*(\d+(?:[.,]\d{1,2})?)',
       caseSensitive: false);
   static final RegExp _valorAposPor = RegExp(
       r'\bpor\s+(?:r\$\s*)?(\d+(?:[.,]\d{1,2})?)\b',
@@ -87,19 +105,32 @@ class VozService {
   };
 
   /// Parser puro (testável): interpreta a frase transcrita.
+  /// Chamado ao vivo a cada resultado parcial — precisa ser leve.
   static LancamentoPorVoz interpretar(String transcricao) {
-    final texto = transcricao.trim();
+    final original = transcricao.trim();
+    // "trezentos e cinquenta reais" → "350 reais"
+    final texto = NumeroExtenso.normalizar(original);
     return LancamentoPorVoz(
       descricao: _limparDescricao(texto),
       valor: _extrairValor(texto),
       categoria: _classificarCategoria(texto),
-      fornecedorNome: _extrairFornecedor(texto),
-      transcricao: texto,
+      // nomes próprios ficam melhores no texto original
+      fornecedorNome: _extrairFornecedor(original),
+      itens: ItensParser.deTexto(texto),
+      transcricao: original,
     );
   }
 
   static double? _extrairValor(String texto) {
-    final m = _valorComMoeda.firstMatch(texto) ?? _valorAposPor.firstMatch(texto);
+    final comReais = _valorReais.firstMatch(texto);
+    if (comReais != null) {
+      final base =
+          double.tryParse(comReais.group(1)!.replaceAll(',', '.')) ?? 0;
+      final centavos = int.tryParse(comReais.group(2) ?? '') ?? 0;
+      final valor = base + centavos / 100;
+      if (valor > 0) return valor;
+    }
+    final m = _valorComRs.firstMatch(texto) ?? _valorAposPor.firstMatch(texto);
     if (m == null) return null;
     return double.tryParse(m.group(1)!.replaceAll(',', '.'));
   }
@@ -129,7 +160,7 @@ class VozService {
     return nome;
   }
 
-  /// Remove a parte do valor/fornecedor para deixar uma descrição limpa.
+  /// Remove o verbo inicial para deixar uma descrição limpa.
   static String _limparDescricao(String texto) {
     var d = texto
         .replaceFirst(RegExp(r'^\s*(comprei|paguei|gastei|lancei|lançei|anota(r|í)?|registra(r)?)\s+',
