@@ -144,6 +144,7 @@ class _NovoLancamentoScreenState extends State<NovoLancamentoScreen> {
             interpretado.valor!.toStringAsFixed(2).replaceAll('.', ',');
       }
       _categoria = interpretado.categoria;
+      if (interpretado.data != null) _data = interpretado.data!;
       if (interpretado.fornecedorNome != null) {
         _fornecedorCtrl.text = interpretado.fornecedorNome!;
       }

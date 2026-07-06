@@ -40,6 +40,17 @@ class _PainelVozState extends State<_PainelVoz> {
   LancamentoPorVoz? _interpretado;
   bool _ouvindo = false;
 
+  /// "Hoje"/"Ontem" comunicam melhor que a data por extenso.
+  static String _rotuloData(DateTime data) {
+    final agora = DateTime.now();
+    final hoje = DateTime(agora.year, agora.month, agora.day);
+    final dia = DateTime(data.year, data.month, data.day);
+    final diff = hoje.difference(dia).inDays;
+    if (diff == 0) return 'Hoje';
+    if (diff == 1) return 'Ontem';
+    return Formatters.data(data);
+  }
+
   @override
   void initState() {
     super.initState();
@@ -132,7 +143,7 @@ class _PainelVozState extends State<_PainelVoz> {
           ),
           const SizedBox(height: 4),
           Text(
-            'Ex.: "Comprei dez sacos de cimento por trezentos e '
+            'Ex.: "Ontem comprei dez sacos de cimento por trezentos e '
             'cinquenta reais no Depósito São José"',
             textAlign: TextAlign.center,
             style: Theme.of(context)
@@ -179,6 +190,13 @@ class _PainelVozState extends State<_PainelVoz> {
                           rotulo: 'Valor',
                           valor: _interpretado!.valor != null
                               ? Formatters.moeda(_interpretado!.valor!)
+                              : null,
+                        ),
+                        _LinhaEntendida(
+                          icone: Icons.event,
+                          rotulo: 'Data',
+                          valor: _interpretado!.data != null
+                              ? _rotuloData(_interpretado!.data!)
                               : null,
                         ),
                         _LinhaEntendida(

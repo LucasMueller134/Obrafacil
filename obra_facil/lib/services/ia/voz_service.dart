@@ -3,6 +3,7 @@ import 'package:speech_to_text/speech_to_text.dart';
 
 import '../../models/item_material_model.dart';
 import '../../models/lancamento_model.dart';
+import 'data_falada.dart';
 import 'itens_parser.dart';
 import 'numero_extenso.dart';
 
@@ -13,6 +14,10 @@ class LancamentoPorVoz {
   final CategoriaCusto categoria;
   final String? fornecedorNome;
 
+  /// Data falada ("ontem", "dia 5 de julho") — null quando o usuário
+  /// não disse quando foi, e aí a tela mantém a data de hoje.
+  final DateTime? data;
+
   /// Materiais detectados na fala — vão para o estoque na aprovação.
   final List<ItemMaterialModel> itens;
   final String transcricao;
@@ -22,6 +27,7 @@ class LancamentoPorVoz {
     this.valor,
     required this.categoria,
     this.fornecedorNome,
+    this.data,
     this.itens = const [],
     required this.transcricao,
   });
@@ -33,8 +39,9 @@ class LancamentoPorVoz {
 ///
 /// Pipeline: fala → transcrição (reconhecedor do Android) →
 /// normalização de números por extenso ("trezentos e cinquenta" → 350) →
-/// parsers de valor, categoria, fornecedor e materiais. A interpretação
-/// é pura e rápida, então roda ao vivo a cada resultado parcial.
+/// parsers de valor, data, categoria, fornecedor e materiais.
+/// A interpretação é pura e rápida, então roda ao vivo a cada
+/// resultado parcial.
 class VozService {
   final SpeechToText _stt = SpeechToText();
   bool _inicializado = false;
@@ -106,7 +113,8 @@ class VozService {
 
   /// Parser puro (testável): interpreta a frase transcrita.
   /// Chamado ao vivo a cada resultado parcial — precisa ser leve.
-  static LancamentoPorVoz interpretar(String transcricao) {
+  /// [agora] fixa o "hoje" das datas relativas nos testes.
+  static LancamentoPorVoz interpretar(String transcricao, {DateTime? agora}) {
     final original = transcricao.trim();
     // "trezentos e cinquenta reais" → "350 reais"
     final texto = NumeroExtenso.normalizar(original);
@@ -116,6 +124,8 @@ class VozService {
       categoria: _classificarCategoria(texto),
       // nomes próprios ficam melhores no texto original
       fornecedorNome: _extrairFornecedor(original),
+      // "ontem", "dia 5 de julho", "sexta passada"…
+      data: DataFalada.extrair(texto, agora: agora),
       itens: ItensParser.deTexto(texto),
       transcricao: original,
     );
@@ -160,9 +170,13 @@ class VozService {
     return nome;
   }
 
-  /// Remove o verbo inicial para deixar uma descrição limpa.
+  /// Remove data relativa e verbo iniciais para deixar uma descrição limpa
+  /// ("Ontem comprei 10 sacos…" → "10 sacos…" — a data já foi capturada).
   static String _limparDescricao(String texto) {
     var d = texto
+        .replaceFirst(
+            RegExp(r'^\s*(hoje|ontem|anteontem)\s*,?\s+', caseSensitive: false),
+            '')
         .replaceFirst(RegExp(r'^\s*(comprei|paguei|gastei|lancei|lançei|anota(r|í)?|registra(r)?)\s+',
             caseSensitive: false), '')
         .trim();

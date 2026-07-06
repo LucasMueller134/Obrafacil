@@ -188,6 +188,11 @@ class _DemoIaScreenState extends State<DemoIaScreen> {
                             _interpretado!.valor != null
                                 ? Formatters.moeda(_interpretado!.valor!)
                                 : '—'),
+                        _Linha(
+                            'Data',
+                            _interpretado!.data != null
+                                ? Formatters.data(_interpretado!.data!)
+                                : '—'),
                         _Linha('Categoria', _interpretado!.categoria.label),
                         _Linha('Fornecedor',
                             _interpretado!.fornecedorNome ?? '—'),

@@ -1,0 +1,17 @@
+# Artefatos de build e ferramentas do Flutter/Dart
+.dart_tool/
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+*.iml
+.idea/
+
+# Scaffold Android é gerado no CI (flutter create) — não versionar cópia local
+android/
+ios/
+web/
+windows/
+linux/
+macos/
+
+# pubspec.lock fica versionado de propósito: builds reprodutíveis no CI
