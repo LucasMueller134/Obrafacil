@@ -8,7 +8,9 @@ import '../../providers/auth_provider.dart';
 import '../../services/firestore_service.dart';
 import '../../utils/formatters.dart';
 import '../../widgets/animacoes.dart';
+import '../../widgets/carregando_obra.dart';
 import '../../widgets/estado_vazio.dart';
+import '../../widgets/ilustracoes.dart';
 
 class ObrasScreen extends StatelessWidget {
   const ObrasScreen({super.key});
@@ -53,7 +55,7 @@ class ObrasScreen extends StatelessWidget {
         stream: db.obrasDoUsuario(usuario.id),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return const CarregandoObra(mensagem: 'Buscando suas obras…');
           }
           if (snapshot.hasError) {
             return EstadoVazio(
@@ -67,6 +69,7 @@ class ObrasScreen extends StatelessWidget {
             return usuario.ehDono
                 ? EstadoVazio(
                     icone: Icons.apartment,
+                    ilustracao: const IlustracaoTrabalhador(),
                     titulo: 'Nenhuma obra ainda',
                     mensagem:
                         'Cadastre sua primeira obra para começar a controlar '
@@ -76,6 +79,7 @@ class ObrasScreen extends StatelessWidget {
                   )
                 : EstadoVazio(
                     icone: Icons.qr_code,
+                    ilustracao: const IlustracaoTrabalhador(),
                     titulo: 'Você ainda não está em nenhuma obra',
                     mensagem:
                         'Peça ao dono da obra o código de convite e entre '

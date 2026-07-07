@@ -11,7 +11,9 @@ import '../../services/ia/previsao_estoque_service.dart';
 import '../../utils/formatters.dart';
 import '../../utils/validators.dart';
 import '../../widgets/animacoes.dart';
+import '../../widgets/carregando_obra.dart';
 import '../../widgets/estado_vazio.dart';
+import '../../widgets/ilustracoes.dart';
 
 class EstoqueScreen extends StatelessWidget {
   final String obraId;
@@ -34,12 +36,13 @@ class EstoqueScreen extends StatelessWidget {
             stream: db.estoque(obraId),
             builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return const CarregandoObra(mensagem: 'Contando os materiais…');
           }
           final itens = snapshot.data ?? const <EstoqueItemModel>[];
           if (itens.isEmpty) {
             return EstadoVazio(
               icone: Icons.inventory_2,
+              ilustracao: const IlustracaoSacoCimento(),
               titulo: 'Estoque vazio',
               mensagem:
                   'Cadastre os materiais do canteiro para receber alertas '

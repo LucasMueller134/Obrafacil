@@ -7,6 +7,7 @@ import '../../services/firestore_service.dart';
 import '../../services/ia/relatorio_semanal_service.dart';
 import '../../utils/formatters.dart';
 import '../../widgets/animacoes.dart';
+import '../../widgets/carregando_obra.dart';
 
 /// Relatório semanal gerado no aparelho, cruzando lançamentos, diário,
 /// cronograma e estoque da obra.
@@ -90,16 +91,7 @@ class _RelatorioScreenState extends State<RelatorioScreen> {
       body: _erro != null
           ? Center(child: Text('Erro ao gerar relatório: $_erro'))
           : r == null
-              ? const Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      CircularProgressIndicator(),
-                      SizedBox(height: 12),
-                      Text('Cruzando os dados da obra…'),
-                    ],
-                  ),
-                )
+              ? const CarregandoObra(mensagem: 'Cruzando os dados da obra…')
               : ListView(
                   padding: EdgeInsets.fromLTRB(16, 16, 16,
                       MediaQuery.of(context).padding.bottom + 16),

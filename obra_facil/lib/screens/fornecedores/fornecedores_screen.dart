@@ -7,7 +7,9 @@ import '../../providers/auth_provider.dart';
 import '../../services/firestore_service.dart';
 import '../../utils/validators.dart';
 import '../../widgets/animacoes.dart';
+import '../../widgets/carregando_obra.dart';
 import '../../widgets/estado_vazio.dart';
+import '../../widgets/ilustracoes.dart';
 
 class FornecedoresScreen extends StatelessWidget {
   const FornecedoresScreen({super.key});
@@ -24,12 +26,13 @@ class FornecedoresScreen extends StatelessWidget {
         stream: db.fornecedores(usuario.id),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return const CarregandoObra(mensagem: 'Chamando os fornecedores…');
           }
           final fornecedores = snapshot.data ?? const <FornecedorModel>[];
           if (fornecedores.isEmpty) {
             return EstadoVazio(
               icone: Icons.storefront,
+              ilustracao: const IlustracaoLoja(),
               titulo: 'Nenhum fornecedor',
               mensagem:
                   'Fornecedores são cadastrados automaticamente quando '

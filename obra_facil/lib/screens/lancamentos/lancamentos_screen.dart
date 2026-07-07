@@ -8,7 +8,9 @@ import '../../providers/auth_provider.dart';
 import '../../services/firestore_service.dart';
 import '../../utils/formatters.dart';
 import '../../widgets/animacoes.dart';
+import '../../widgets/carregando_obra.dart';
 import '../../widgets/estado_vazio.dart';
+import '../../widgets/ilustracoes.dart';
 import '../../widgets/imagem_obra.dart';
 
 class LancamentosScreen extends StatefulWidget {
@@ -59,7 +61,8 @@ class _LancamentosScreenState extends State<LancamentosScreen> {
               stream: db.lancamentos(widget.obraId),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
+                  return const CarregandoObra(
+                      mensagem: 'Somando os lançamentos…');
                 }
                 var itens = snapshot.data ?? const <LancamentoModel>[];
                 if (_filtro != null) {
@@ -68,6 +71,7 @@ class _LancamentosScreenState extends State<LancamentosScreen> {
                 if (itens.isEmpty) {
                   return EstadoVazio(
                     icone: Icons.receipt_long,
+                    ilustracao: const IlustracaoRecibo(),
                     titulo: 'Nenhum lançamento',
                     mensagem: _filtro == null
                         ? 'Registre o primeiro gasto da obra — digitando, '

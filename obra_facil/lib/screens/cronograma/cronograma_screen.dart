@@ -7,7 +7,9 @@ import '../../services/firestore_service.dart';
 import '../../utils/formatters.dart';
 import '../../utils/validators.dart';
 import '../../widgets/animacoes.dart';
+import '../../widgets/carregando_obra.dart';
 import '../../widgets/estado_vazio.dart';
+import '../../widgets/ilustracoes.dart';
 
 class CronogramaScreen extends StatelessWidget {
   final String obraId;
@@ -24,12 +26,13 @@ class CronogramaScreen extends StatelessWidget {
         stream: db.cronograma(obraId),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return const CarregandoObra(mensagem: 'Montando o cronograma…');
           }
           final fases = snapshot.data ?? const <CronogramaFaseModel>[];
           if (fases.isEmpty) {
             return EstadoVazio(
               icone: Icons.timeline,
+              ilustracao: const IlustracaoBetoneira(),
               titulo: 'Sem cronograma',
               mensagem: 'Adicione as fases da obra para acompanhar o '
                   'percentual de conclusão de cada etapa.',

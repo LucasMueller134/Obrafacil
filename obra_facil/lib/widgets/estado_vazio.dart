@@ -9,6 +9,9 @@ class EstadoVazio extends StatelessWidget {
   final String? rotuloAcao;
   final VoidCallback? onAcao;
 
+  /// Ilustração temática de canteiro — quando presente, substitui o ícone.
+  final Widget? ilustracao;
+
   const EstadoVazio({
     super.key,
     required this.icone,
@@ -16,6 +19,7 @@ class EstadoVazio extends StatelessWidget {
     required this.mensagem,
     this.rotuloAcao,
     this.onAcao,
+    this.ilustracao,
   });
 
   @override
@@ -26,15 +30,18 @@ class EstadoVazio extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 72,
-              height: 72,
-              decoration: BoxDecoration(
-                color: AppColors.superficieAlta,
-                borderRadius: BorderRadius.circular(20),
+            if (ilustracao != null)
+              SizedBox(width: 170, height: 160, child: ilustracao)
+            else
+              Container(
+                width: 72,
+                height: 72,
+                decoration: BoxDecoration(
+                  color: AppColors.superficieAlta,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Icon(icone, size: 36, color: AppColors.laranja),
               ),
-              child: Icon(icone, size: 36, color: AppColors.laranja),
-            ),
             const SizedBox(height: 20),
             Text(
               titulo,

@@ -13,7 +13,9 @@ import '../../services/imagem_service.dart';
 import '../../utils/formatters.dart';
 import '../../utils/validators.dart';
 import '../../widgets/animacoes.dart';
+import '../../widgets/carregando_obra.dart';
 import '../../widgets/estado_vazio.dart';
+import '../../widgets/ilustracoes.dart';
 import '../../widgets/imagem_obra.dart';
 
 class DiarioScreen extends StatelessWidget {
@@ -31,12 +33,13 @@ class DiarioScreen extends StatelessWidget {
         stream: db.diario(obraId),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return const CarregandoObra(mensagem: 'Abrindo o diário…');
           }
           final entradas = snapshot.data ?? const <DiarioEntradaModel>[];
           if (entradas.isEmpty) {
             return EstadoVazio(
               icone: Icons.menu_book,
+              ilustracao: const IlustracaoPrancheta(),
               titulo: 'Diário vazio',
               mensagem:
                   'Registre o que aconteceu no canteiro hoje: atividades, '

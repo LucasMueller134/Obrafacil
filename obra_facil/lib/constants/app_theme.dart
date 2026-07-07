@@ -133,9 +133,13 @@ abstract class AppTheme {
           ),
         ),
       ),
-      floatingActionButtonTheme: const FloatingActionButtonThemeData(
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
         backgroundColor: AppColors.laranja,
         foregroundColor: Colors.white,
+        elevation: 6,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(18),
+        ),
       ),
       chipTheme: ChipThemeData(
         backgroundColor: AppColors.superficieAlta,

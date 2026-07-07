@@ -11,6 +11,7 @@ import '../../services/ia/previsao_orcamento_service.dart';
 import '../../utils/formatters.dart';
 import '../../widgets/animacoes.dart';
 import '../../widgets/barra_orcamento.dart';
+import '../../widgets/carregando_obra.dart';
 import '../../widgets/cartao_resumo.dart';
 import '../../widgets/grafico_categorias.dart';
 import '../../widgets/grafico_semanal.dart';
@@ -32,7 +33,7 @@ class ObraDetalheScreen extends StatelessWidget {
         final obra = obraSnap.data;
         if (obra == null) {
           return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
+            body: CarregandoObra(mensagem: 'Abrindo a obra…'),
           );
         }
         return StreamBuilder<List<LancamentoModel>>(

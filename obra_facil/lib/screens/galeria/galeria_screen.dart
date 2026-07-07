@@ -14,7 +14,9 @@ import '../../services/firestore_service.dart';
 import '../../services/ia/progresso_foto_service.dart';
 import '../../services/imagem_service.dart';
 import '../../utils/formatters.dart';
+import '../../widgets/carregando_obra.dart';
 import '../../widgets/estado_vazio.dart';
+import '../../widgets/ilustracoes.dart';
 import '../../widgets/imagem_obra.dart';
 
 class GaleriaScreen extends StatefulWidget {
@@ -57,12 +59,13 @@ class _GaleriaScreenState extends State<GaleriaScreen> {
         stream: db.fotos(widget.obraId),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return const CarregandoObra(mensagem: 'Revelando as fotos…');
           }
           final fotos = snapshot.data ?? const <FotoObraModel>[];
           if (fotos.isEmpty) {
             return EstadoVazio(
               icone: Icons.photo_library,
+              ilustracao: const IlustracaoPolaroids(),
               titulo: 'Nenhuma foto ainda',
               mensagem: 'Registre a evolução da obra com fotos — elas viram '
                   'uma linha do tempo do canteiro.',
