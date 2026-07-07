@@ -12,6 +12,7 @@ import '../../utils/formatters.dart';
 import '../../widgets/animacoes.dart';
 import '../../widgets/barra_orcamento.dart';
 import '../../widgets/carregando_obra.dart';
+import '../../widgets/ilustracoes.dart';
 import '../../widgets/cartao_resumo.dart';
 import '../../widgets/grafico_categorias.dart';
 import '../../widgets/grafico_semanal.dart';
@@ -193,31 +194,37 @@ class _Dashboard extends StatelessWidget {
               _Modulo(
                 icone: Icons.receipt_long,
                 rotulo: 'Lançamentos',
+                cor: AppColors.laranja,
                 onTap: () => context.push('/obras/${obra.id}/lancamentos'),
               ),
               _Modulo(
                 icone: Icons.inventory_2,
                 rotulo: 'Estoque',
+                cor: AppColors.info,
                 onTap: () => context.push('/obras/${obra.id}/estoque'),
               ),
               _Modulo(
                 icone: Icons.menu_book,
                 rotulo: 'Diário',
+                cor: AppColors.amareloCapacete,
                 onTap: () => context.push('/obras/${obra.id}/diario'),
               ),
               _Modulo(
                 icone: Icons.timeline,
                 rotulo: 'Cronograma',
+                cor: AppColors.catEquipamento,
                 onTap: () => context.push('/obras/${obra.id}/cronograma'),
               ),
               _Modulo(
                 icone: Icons.photo_library,
                 rotulo: 'Galeria',
+                cor: AppColors.sucesso,
                 onTap: () => context.push('/obras/${obra.id}/galeria'),
               ),
               _Modulo(
                 icone: Icons.auto_awesome,
                 rotulo: 'Relatório IA',
+                cor: const Color(0xFF2DD4BF),
                 onTap: () => context.push('/obras/${obra.id}/relatorio'),
               ),
             ],
@@ -279,64 +286,124 @@ class _CabecalhoObra extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            const Icon(Icons.place, size: 15, color: AppColors.textoSecundario),
-            const SizedBox(width: 4),
-            Expanded(
-              child: Text(
-                obra.endereco +
-                    (obra.cliente != null ? ' · ${obra.cliente}' : ''),
-                style: Theme.of(context)
-                    .textTheme
-                    .bodySmall
-                    ?.copyWith(color: AppColors.textoSecundario),
-              ),
-            ),
-          ],
+    return Container(
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(18),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [AppColors.laranjaEscuro, AppColors.laranja],
         ),
-        if (ehDono) ...[
-          const SizedBox(height: 12),
-          InkWell(
-            onTap: () {
-              Clipboard.setData(ClipboardData(text: obra.codigoConvite));
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                  content: Text('Código copiado! Envie para o mestre de obras.')));
-            },
-            borderRadius: BorderRadius.circular(12),
-            child: Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-              decoration: BoxDecoration(
-                color: AppColors.superficie,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.borda),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.qr_code,
-                      size: 18, color: AppColors.amareloCapacete),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Código da equipe: ${obra.codigoConvite}',
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodyMedium
-                        ?.copyWith(fontWeight: FontWeight.w600),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.laranja.withValues(alpha: 0.30),
+            blurRadius: 18,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Stack(
+        children: [
+          const Positioned(
+            right: -12,
+            bottom: -4,
+            width: 170,
+            height: 80,
+            child: IgnorePointer(
+              child: Opacity(opacity: 0.20, child: IlustracaoSkyline()),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.22),
+                    borderRadius: BorderRadius.circular(8),
                   ),
-                  const SizedBox(width: 8),
-                  const Icon(Icons.copy,
-                      size: 15, color: AppColors.textoSecundario),
+                  child: Text(
+                    obra.status.label,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    const Icon(Icons.place, size: 15, color: Colors.white70),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: Text(
+                        obra.endereco +
+                            (obra.cliente != null
+                                ? ' · ${obra.cliente}'
+                                : ''),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                if (ehDono) ...[
+                  const SizedBox(height: 12),
+                  InkWell(
+                    onTap: () {
+                      Clipboard.setData(
+                          ClipboardData(text: obra.codigoConvite));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                              content: Text(
+                                  'Código copiado! Envie para o mestre de obras.')));
+                    },
+                    borderRadius: BorderRadius.circular(10),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.18),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.35)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.qr_code,
+                              size: 16, color: Colors.white),
+                          const SizedBox(width: 7),
+                          Text(
+                            'Equipe: ${obra.codigoConvite}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 13,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                          const SizedBox(width: 7),
+                          const Icon(Icons.copy,
+                              size: 13, color: Colors.white70),
+                        ],
+                      ),
+                    ),
+                  ),
                 ],
-              ),
+              ],
             ),
           ),
         ],
-      ],
+      ),
     );
   }
 }
@@ -444,11 +511,13 @@ class _Secao extends StatelessWidget {
 class _Modulo extends StatelessWidget {
   final IconData icone;
   final String rotulo;
+  final Color cor;
   final VoidCallback onTap;
 
   const _Modulo({
     required this.icone,
     required this.rotulo,
+    required this.cor,
     required this.onTap,
   });
 
@@ -466,7 +535,15 @@ class _Modulo extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icone, color: AppColors.laranja, size: 26),
+            Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color: cor.withValues(alpha: 0.16),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icone, color: cor, size: 22),
+            ),
             const SizedBox(height: 8),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 4),

@@ -170,6 +170,8 @@ abstract class AppTheme {
       ),
       bottomSheetTheme: const BottomSheetThemeData(
         backgroundColor: AppColors.superficie,
+        showDragHandle: true,
+        dragHandleColor: AppColors.cinzaCimento,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),

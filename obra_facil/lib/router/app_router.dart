@@ -17,23 +17,37 @@ import '../screens/obras/obras_screen.dart';
 import '../screens/relatorios/relatorio_screen.dart';
 import '../screens/splash_screen.dart';
 
-/// Transição padrão entre telas: fade + leve deslize lateral.
+/// Transição padrão entre telas, com sensação de profundidade:
+/// a tela nova sobe com fade + zoom sutil; a que fica embaixo
+/// encolhe e escurece levemente, como uma pilha de camadas.
 CustomTransitionPage<void> _pagina(GoRouterState state, Widget child) =>
     CustomTransitionPage(
       key: state.pageKey,
       child: child,
-      transitionDuration: const Duration(milliseconds: 280),
-      transitionsBuilder: (context, animation, _, child) {
-        final curva =
+      transitionDuration: const Duration(milliseconds: 340),
+      reverseTransitionDuration: const Duration(milliseconds: 280),
+      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+        final entrada =
             CurvedAnimation(parent: animation, curve: Curves.easeOutCubic);
+        final saida = CurvedAnimation(
+            parent: secondaryAnimation, curve: Curves.easeInOut);
         return FadeTransition(
-          opacity: curva,
+          opacity: entrada,
           child: SlideTransition(
             position: Tween(
-              begin: const Offset(0.04, 0),
+              begin: const Offset(0, 0.06),
               end: Offset.zero,
-            ).animate(curva),
-            child: child,
+            ).animate(entrada),
+            child: ScaleTransition(
+              scale: Tween(begin: 0.985, end: 1.0).animate(entrada),
+              child: ScaleTransition(
+                scale: Tween(begin: 1.0, end: 0.97).animate(saida),
+                child: FadeTransition(
+                  opacity: Tween(begin: 1.0, end: 0.85).animate(saida),
+                  child: child,
+                ),
+              ),
+            ),
           ),
         );
       },

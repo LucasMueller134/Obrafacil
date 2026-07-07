@@ -188,10 +188,16 @@ class _CartaoObra extends StatelessWidget {
     };
 
     return Card(
+      clipBehavior: Clip.antiAlias,
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
         onTap: () => context.push('/obras/${obra.id}'),
-        child: Padding(
+        child: Container(
+          decoration: BoxDecoration(
+            border: Border(
+              left: BorderSide(color: corStatus, width: 5),
+            ),
+          ),
           padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

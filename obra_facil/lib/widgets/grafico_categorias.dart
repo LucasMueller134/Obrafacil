@@ -40,21 +40,46 @@ class GraficoCategorias extends StatelessWidget {
         SizedBox(
           width: 130,
           height: 130,
-          child: PieChart(
-            PieChartData(
-              sectionsSpace: 3,
-              centerSpaceRadius: 38,
-              startDegreeOffset: -90,
-              sections: [
-                for (final e in entradas)
-                  PieChartSectionData(
-                    value: e.value,
-                    color: e.key.cor,
-                    radius: 20,
-                    showTitle: false,
-                  ),
-              ],
-            ),
+          child: Stack(
+            children: [
+              PieChart(
+                PieChartData(
+                  sectionsSpace: 3,
+                  centerSpaceRadius: 38,
+                  startDegreeOffset: -90,
+                  sections: [
+                    for (final e in entradas)
+                      PieChartSectionData(
+                        value: e.value,
+                        color: e.key.cor,
+                        radius: 20,
+                        showTitle: false,
+                      ),
+                  ],
+                ),
+              ),
+              Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Total',
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodySmall
+                          ?.copyWith(color: AppColors.textoSecundario),
+                    ),
+                    Text(
+                      Formatters.moedaCompacta(total),
+                      style: Theme.of(context)
+                          .textTheme
+                          .titleSmall
+                          ?.copyWith(fontWeight: FontWeight.w800),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
         const SizedBox(width: 20),

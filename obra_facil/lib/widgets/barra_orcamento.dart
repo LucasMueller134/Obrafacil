@@ -50,11 +50,30 @@ class BarraOrcamento extends StatelessWidget {
         const SizedBox(height: 8),
         ClipRRect(
           borderRadius: BorderRadius.circular(8),
-          child: LinearProgressIndicator(
-            value: fracao,
-            minHeight: 10,
-            color: cor,
-            backgroundColor: AppColors.cinzaCimento,
+          child: Container(
+            height: 12,
+            color: AppColors.cinzaCimento,
+            alignment: Alignment.centerLeft,
+            // preenchimento animado com gradiente
+            child: TweenAnimationBuilder<double>(
+              tween: Tween(begin: 0, end: fracao),
+              duration: const Duration(milliseconds: 700),
+              curve: Curves.easeOutCubic,
+              builder: (_, valor, __) => FractionallySizedBox(
+                widthFactor: valor.clamp(0.0, 1.0),
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(8),
+                    gradient: LinearGradient(
+                      colors: [
+                        cor,
+                        Color.lerp(cor, Colors.white, 0.30)!,
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
           ),
         ),
         if (estourou) ...[
