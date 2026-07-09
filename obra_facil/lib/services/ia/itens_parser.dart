@@ -31,7 +31,9 @@ abstract class ItensParser {
     'vergalhão': 'Vergalhão de aço',
     'ceramica': 'Piso cerâmico',
     'cerâmica': 'Piso cerâmico',
+    'porcelanato': 'Piso cerâmico',
     'massa': 'Argamassa',
+    'rejunte': 'Argamassa',
     'bloco': 'Bloco de concreto',
     'blocos': 'Bloco de concreto',
     'fio': 'Fio elétrico',
@@ -40,6 +42,13 @@ abstract class ItensParser {
     'cano': 'Cano PVC',
     'canos': 'Cano PVC',
     'pvc': 'Cano PVC',
+    'tubo': 'Cano PVC',
+    'tubos': 'Cano PVC',
+    'tabua': 'Madeira',
+    'tábua': 'Madeira',
+    'ripa': 'Madeira',
+    'caibro': 'Madeira',
+    'sarrafo': 'Madeira',
   };
 
   static final RegExp _regexTexto = RegExp(

@@ -97,17 +97,25 @@ class VozService {
       'pedreiro', 'servente', 'diária', 'diaria', 'mão de obra', 'mao de obra',
       'eletricista', 'encanador', 'pintor', 'ajudante', 'empreiteiro',
       'carpinteiro', 'salário', 'salario', 'pagamento do', 'semana do',
+      'gesseiro', 'azulejista', 'armador', 'soldador', 'marceneiro',
+      'serralheiro', 'jardineiro', 'mestre de obra', 'empreita',
     ],
     CategoriaCusto.material: [
       'cimento', 'areia', 'brita', 'tijolo', 'bloco', 'vergalhão', 'vergalhao',
       'ferro', 'madeira', 'telha', 'tinta', 'cano', 'pvc', 'fio', 'cabo',
       'argamassa', 'cal', 'piso', 'cerâmica', 'ceramica', 'porta', 'janela',
       'prego', 'parafuso', 'material', 'saco', 'massa corrida', 'reboco',
+      'gesso', 'vidro', 'esquadria', 'tubo', 'conexão', 'conexao', 'granito',
+      'mármore', 'marmore', 'concreto', 'laje', 'manta', 'impermeabilizante',
+      'rejunte', 'selador', 'verniz', 'disjuntor', 'tomada', 'interruptor',
+      'registro', 'torneira', 'caixa d', 'ripa', 'caibro', 'viga',
     ],
     CategoriaCusto.equipamento: [
       'betoneira', 'andaime', 'furadeira', 'serra', 'martelete',
       'aluguel', 'alugou', 'locação', 'locacao', 'equipamento', 'máquina',
-      'maquina', 'compactador', 'gerador',
+      'maquina', 'compactador', 'gerador', 'escora', 'caçamba', 'cacamba',
+      'container', 'retroescavadeira', 'vibrador', 'bomba de concreto',
+      'esmerilhadeira', 'lixadeira', 'guincho',
     ],
   };
 
