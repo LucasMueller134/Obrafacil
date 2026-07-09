@@ -192,9 +192,10 @@ class _ChatObraState extends State<_ChatObra>
   bool _ouvindoVoz = false;
   late final List<_MsgChat> _mensagens = [
     _MsgChat(
-      'Oi! Sou o assistente da ${widget.dados.obra.nome}. Pergunte '
-      'qualquer coisa sobre gastos, estoque, orçamento, cronograma ou '
-      'equipe — respondo com os dados reais da obra, sem internet. 👷',
+      'Oi! Sou o assistente da ${widget.dados.obra.nome}. Pode perguntar '
+      'do seu jeito — "como está a obra?", "quando acaba o cimento?", '
+      '"quanto gastei essa semana?" — que eu respondo com os dados reais, '
+      'sem internet. Erro de digitação não me assusta. 👷',
       deUsuario: false,
       sugestoes: PerguntasObraService.sugestoesIniciais,
     ),

@@ -21,6 +21,7 @@ DadosObraChat _dados() {
   LancamentoModel lanc(String id, int diasAtras, double valor,
           CategoriaCusto cat,
           {String? fornecedor,
+          List<ItemMaterialModel> itens = const [],
           StatusLancamento status = StatusLancamento.aprovado}) =>
       LancamentoModel(
         id: id,
@@ -30,6 +31,7 @@ DadosObraChat _dados() {
         categoria: cat,
         status: status,
         fornecedorNome: fornecedor,
+        itens: itens,
         data: _ref.subtract(Duration(days: diasAtras)),
         criadoPorId: 'u1',
         criadoPorNome: 'Mestre',
@@ -40,7 +42,11 @@ DadosObraChat _dados() {
     obra: obra,
     lancamentos: [
       lanc('a', 3, 3000, CategoriaCusto.material,
-          fornecedor: 'Depósito São José'),
+          fornecedor: 'Depósito São José',
+          itens: const [
+            ItemMaterialModel(
+                material: 'Cimento', quantidade: 10, unidade: 'sc'),
+          ]),
       lanc('b', 10, 1500, CategoriaCusto.maoDeObra),
       lanc('c', 1, 800, CategoriaCusto.material,
           status: StatusLancamento.pendente),
@@ -192,6 +198,51 @@ void main() {
       final resposta = r('qual a cor do cavalo branco de napoleão?');
       expect(resposta.sugestoes, isNotEmpty);
       expect(resposta.texto, contains('sei responder'));
+    });
+  });
+
+  group('Conversa natural e tolerância a erros', () {
+    test('saudação pura recebe resposta cordial', () {
+      final resposta = r('Boa tarde!');
+      expect(resposta.texto, contains('Boa tarde'));
+      expect(resposta.texto, contains('Casa Teste'));
+      expect(resposta.sugestoes, isNotEmpty);
+    });
+
+    test('a pergunta do print: saudação + contexto + erro de digitação', () {
+      final resposta =
+          r('Boa tarde como está o contexto da minha olha?');
+      expect(resposta.texto, contains('Panorama'));
+      expect(resposta.texto, contains('%'));
+    });
+
+    test('"como está a obra?" traz o resumo executivo', () {
+      final resposta = r('como está a obra?');
+      expect(resposta.texto, contains('Panorama'));
+      expect(resposta.texto, contains('orçamento'));
+    });
+
+    test('agradecimento', () {
+      expect(r('valeu!').texto, contains('junto'));
+    });
+
+    test('erro de digitação no material ("cimeto")', () {
+      expect(r('quanto tem de cimeto?').texto, contains('20 sc'));
+    });
+
+    test('erro de digitação na intenção ("orsamento")', () {
+      expect(r('como ta o orsamento?').texto, contains('Restam'));
+    });
+
+    test('"a obra tá em dia?" cai no cronograma', () {
+      final resposta = r('a obra tá em dia?');
+      expect(resposta.texto, contains('%'));
+    });
+
+    test('gasto ligado a um material específico', () {
+      final resposta = r('quanto gastei com cimento?');
+      expect(resposta.texto, contains('3.000,00'));
+      expect(resposta.texto, contains('Cimento'));
     });
   });
 }

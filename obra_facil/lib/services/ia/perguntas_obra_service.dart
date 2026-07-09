@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import '../../models/models.dart';
 import '../../utils/formatters.dart';
 import 'numero_extenso.dart';
@@ -42,74 +44,181 @@ class RespostaObra {
 
 /// IA on-device nº 7 — assistente de perguntas da obra.
 ///
-/// Entende perguntas em português sobre a obra (intenção + entidades:
-/// categoria, material, fornecedor e período) e responde em linguagem
-/// natural cruzando lançamentos, estoque, previsões, cronograma e diário.
-/// Roda 100% no aparelho, sem internet.
+/// Compreensão em camadas: normalização (números por extenso, acentos,
+/// saudações) → correção fuzzy de digitação (distância de edição contra o
+/// vocabulário do domínio e os nomes reais da obra) → extração de entidades
+/// (categoria, material, fornecedor, período) → intenção por sinônimos.
+/// Responde em linguagem natural cruzando todos os dados. 100% offline.
 abstract class PerguntasObraService {
   static const sugestoesIniciais = [
+    'Como está a obra?',
     'Quanto já gastei?',
-    'Como está o orçamento?',
     'O que está acabando no estoque?',
     'Estamos atrasados?',
   ];
+
+  static final RegExp _saudacaoRegex = RegExp(
+      r'^(bom dia|boa tarde|boa noite|oi|ola|eai|e ai|opa|salve|fala|hey)'
+      r'(?=[\s,!.?]|$)[\s,!.?]*',
+      caseSensitive: false);
 
   static RespostaObra responder(String pergunta, DadosObraChat dados,
       {DateTime? agora}) {
     final ref = agora ?? DateTime.now();
     final hoje = DateTime(ref.year, ref.month, ref.day);
-    // normaliza: números por extenso, minúsculas, sem acentos
-    final t = _semAcentos(NumeroExtenso.normalizar(pergunta).toLowerCase());
 
-    final material = _acharMaterial(t, dados);
+    // normaliza: números por extenso, minúsculas, sem acentos
+    var t = _semAcentos(NumeroExtenso.normalizar(pergunta).toLowerCase())
+        .trim();
+
+    // saudação: responde se for só isso, senão remove e segue
+    final saudacao = _saudacaoRegex.firstMatch(t);
+    if (saudacao != null) {
+      final resto = t.substring(saudacao.end).trim();
+      if (resto.isEmpty || resto == 'tudo bem' || resto == 'tudo bem?') {
+        return RespostaObra(
+          '${_saudacaoDeVolta(saudacao.group(1)!)} Tudo pronto por aqui. '
+          'O que você quer saber sobre a ${dados.obra.nome}?',
+          sugestoes: sugestoesIniciais,
+        );
+      }
+      t = resto;
+    }
+
+    final tokens = _tokens(t);
+    bool tem(List<String> termos) => _casa(t, tokens, termos);
+
+    if (tem(['obrigado', 'obrigada', 'valeu', 'brigado', 'show', 'perfeito', 'boa!'])) {
+      return const RespostaObra(
+          'Tamo junto! 👷 Qualquer coisa é só perguntar.',
+          sugestoes: sugestoesIniciais);
+    }
+    if (tem(['o que voce sabe', 'o que voce faz', 'o que posso perguntar', 'me ajuda', 'ajuda', 'comandos'])) {
+      return _naoEntendi(inicio: 'Posso te contar tudo sobre a obra:');
+    }
+
+    final material = _acharMaterial(t, tokens, dados);
     final fornecedor = _acharFornecedor(t, dados);
-    final categoria = _acharCategoria(t);
+    final categoria = _acharCategoria(t, tokens);
     final periodo = _acharPeriodo(t, hoje);
 
     // Da intenção mais específica para a mais genérica.
-    if (material != null && _tem(t, ['quando acaba', 'vai acabar', 'vai durar', 'termina'])) {
+    if (material != null &&
+        tem(['quando acaba', 'vai acabar', 'vai durar', 'termina', 'quando falta'])) {
       return _terminoMaterial(material, dados, hoje);
     }
     if (material != null &&
-        _tem(t, ['quanto tem', 'quantos', 'quantas', 'estoque', 'sobra', 'resta', 'tem de', 'tem no'])) {
+        tem(['gastei', 'gasto', 'gastamos', 'custou', 'custa', 'paguei', 'comprei', 'investi'])) {
+      return _gastoDeMaterial(material, dados);
+    }
+    if (material != null) {
       return _estoqueMaterial(material, dados, hoje);
     }
-    if (_tem(t, ['acabando', 'faltando', 'repor', 'comprar material']) ||
-        (_tem(t, ['estoque']) && material == null)) {
+    if (tem(['acabando', 'faltando', 'repor', 'comprar material', 'estoque', 'material sobrando'])) {
       return _estoqueGeral(dados, hoje);
     }
-    if (_tem(t, ['pendente', 'pendencia', 'aprovar', 'aguardando', 'falta aprovar'])) {
+    if (tem(['pendente', 'pendencia', 'aprovar', 'aguardando', 'falta aprovar', 'para aprovar'])) {
       return _pendencias(dados, hoje);
     }
-    if (_tem(t, ['maior gasto', 'mais caro', 'maior lancamento', 'maior despesa', 'maior compra'])) {
+    if (tem(['maior gasto', 'mais caro', 'maior lancamento', 'maior despesa', 'maior compra', 'gasto mais alto'])) {
       return _maiorGasto(dados, periodo);
     }
-    if (_tem(t, ['ultimos', 'ultimo']) &&
-        _tem(t, ['gasto', 'lancamento', 'compra', 'despesa'])) {
+    if (tem(['ultimos gastos', 'ultimo gasto', 'ultimos lancamentos', 'ultimo lancamento', 'ultimas compras', 'ultima compra', 'recentes'])) {
       return _ultimosGastos(dados);
     }
     if (fornecedor != null) {
       return _gastoFornecedor(fornecedor, dados);
     }
-    if (_tem(t, ['fornecedor', 'fornecedores', 'onde compro', 'onde mais compro'])) {
+    if (tem(['fornecedor', 'fornecedores', 'onde compro', 'onde mais compro', 'de quem compro'])) {
       return _topFornecedores(dados);
     }
-    if (_tem(t, ['orcamento', 'estourar', 'estouro', 'vai faltar dinheiro', 'quanto resta', 'quanto sobra'])) {
+    if (tem(['orcamento', 'estourar', 'estouro', 'vai faltar dinheiro', 'quanto resta', 'quanto sobra', 'saldo', 'falta gastar', 'posso gastar', 'quanto ainda tenho'])) {
       return _orcamento(dados);
     }
-    if (_tem(t, ['atrasad', 'cronograma', 'fase', 'prazo', 'quando termina a obra', 'quando acaba a obra', 'quanto falta da obra'])) {
+    if (tem(['atrasad', 'cronograma', 'fase', 'prazo', 'em dia', 'no prazo', 'adiantad', 'quando termina a obra', 'quando acaba a obra', 'quanto falta da obra', 'falta muito', 'vai demorar'])) {
       return _cronograma(dados, hoje);
     }
-    if (_tem(t, ['equipe', 'pessoas', 'trabalhador', 'choveu', 'chuva', 'clima', 'canteiro', 'diario'])) {
+    if (tem(['equipe', 'pessoas', 'trabalhador', 'trabalharam', 'choveu', 'chuva', 'clima', 'canteiro', 'diario'])) {
       return _canteiro(dados, hoje);
     }
-    if (_tem(t, ['quanto', 'gast', 'custou', 'custo', 'total', 'paguei', 'comprei'])) {
+    if (tem(['quanto', 'gastei', 'gasto', 'gastamos', 'gastou', 'custou', 'custo', 'total', 'paguei', 'pagamos', 'comprei', 'despesa', 'investi'])) {
       return _gasto(dados, categoria: categoria, periodo: periodo);
+    }
+    // "como está a obra?", "situação", "contexto", "resumo", "novidades"…
+    if (tem(['como esta', 'como vai', 'como anda', 'como estao', 'situacao', 'contexto', 'resumo', 'panorama', 'status', 'andamento', 'novidade', 'visao geral', 'me atualiza', 'tudo bem'])) {
+      return _resumoGeral(dados, hoje);
     }
     return _naoEntendi();
   }
 
   // ================================================== Respostas por intenção
+
+  /// Panorama executivo — a resposta para "como está a obra?".
+  static RespostaObra _resumoGeral(DadosObraChat dados, DateTime hoje) {
+    final obra = dados.obra;
+    final gasto = dados.aprovados.fold<double>(0, (s, l) => s + l.valor);
+    final pctGasto =
+        obra.orcamento <= 0 ? 0 : (gasto / obra.orcamento * 100).round();
+    final pctPrazo = obra.duracaoDias <= 0
+        ? 0
+        : (obra.diasDecorridos / obra.duracaoDias * 100).round();
+
+    final b = StringBuffer(
+        'Panorama da ${obra.nome}: ${obra.diasDecorridos}º dia de '
+        '${obra.duracaoDias} ($pctPrazo% do prazo). Gasto aprovado de '
+        '${Formatters.moeda(gasto)} — $pctGasto% do orçamento de '
+        '${Formatters.moeda(obra.orcamento)}.');
+
+    if (dados.cronograma.isNotEmpty) {
+      final pctFisico = (dados.cronograma
+                  .fold<int>(0, (s, f) => s + f.percentualConcluido) /
+              dados.cronograma.length)
+          .round();
+      b.write(' Avanço físico: $pctFisico%');
+      final atual = dados.cronograma.where((f) => f.emAndamento).toList();
+      if (atual.isNotEmpty) {
+        b.write(' (fase atual: ${atual.map((f) => f.nome).join(' e ')})');
+      }
+      b.write(pctPrazo >= pctFisico + 15
+          ? ' — atrasada em relação ao calendário.'
+          : '.');
+    }
+
+    if (dados.pendentes.isNotEmpty) {
+      final totalPend =
+          dados.pendentes.fold<double>(0, (s, l) => s + l.valor);
+      b.write(' Há ${dados.pendentes.length} lançamento'
+          '${dados.pendentes.length > 1 ? 's' : ''} pendente'
+          '${dados.pendentes.length > 1 ? 's' : ''} '
+          '(${Formatters.moeda(totalPend)}).');
+    }
+
+    final criticos = <String>[];
+    for (final item in dados.estoque) {
+      if (item.estoqueBaixo) {
+        criticos.add(item.material);
+        continue;
+      }
+      final p = PrevisaoEstoqueService.calcular(
+          item: item,
+          movimentos: dados.movimentos,
+          diario: dados.diario,
+          referencia: hoje);
+      if (p != null && p.atencao) criticos.add(item.material);
+    }
+    if (criticos.isNotEmpty) {
+      b.write(' No estoque, fique de olho em: ${criticos.join(', ')}.');
+    }
+
+    return RespostaObra(
+      b.toString(),
+      sugestoes: const [
+        'Como está o orçamento?',
+        'Estamos atrasados?',
+        'Tem lançamento pendente?',
+      ],
+    );
+  }
 
   static RespostaObra _gasto(DadosObraChat dados,
       {CategoriaCusto? categoria, _Periodo? periodo}) {
@@ -303,6 +412,39 @@ abstract class PerguntasObraService {
     );
   }
 
+  /// "Quanto gastei com cimento?" — soma os lançamentos ligados ao material
+  /// (pelos itens estruturados ou pela descrição).
+  static RespostaObra _gastoDeMaterial(
+      EstoqueItemModel item, DadosObraChat dados) {
+    final chave = _semAcentos(item.material.toLowerCase()).split(' ').first;
+    final ligados = dados.aprovados.where((l) {
+      if (l.itens.any(
+          (i) => _semAcentos(i.material.toLowerCase()).contains(chave))) {
+        return true;
+      }
+      return _semAcentos(l.descricao.toLowerCase()).contains(chave);
+    }).toList();
+
+    if (ligados.isEmpty) {
+      return RespostaObra(
+        'Não encontrei gastos aprovados ligados a ${item.material}. '
+        'No estoque há ${Formatters.quantidade(item.quantidade)} '
+        '${item.unidade}.',
+        sugestoes: ['Quanto tem de ${item.material.toLowerCase()}?'],
+      );
+    }
+    final total = ligados.fold<double>(0, (s, l) => s + l.valor);
+    final ultimo =
+        ligados.reduce((a, b) => a.data.isAfter(b.data) ? a : b);
+    return RespostaObra(
+      'Com ${item.material} você gastou ${Formatters.moeda(total)} em '
+      '${ligados.length} lançamento${ligados.length > 1 ? 's' : ''}. '
+      'O mais recente foi "${ultimo.descricao}" em '
+      '${Formatters.data(ultimo.data)}.',
+      sugestoes: ['Quando acaba o ${item.material.toLowerCase()}?'],
+    );
+  }
+
   static RespostaObra _estoqueMaterial(
       EstoqueItemModel item, DadosObraChat dados, DateTime hoje) {
     final b = StringBuffer(
@@ -475,37 +617,94 @@ abstract class PerguntasObraService {
     );
   }
 
-  static RespostaObra _naoEntendi() => const RespostaObra(
-        'Não entendi essa — mas sei responder sobre gastos ("quanto gastei '
-        'com material este mês?"), orçamento ("vai estourar?"), estoque '
-        '("quando acaba o cimento?"), fornecedores, cronograma, pendências '
-        'e equipe. Tenta uma dessas 👇',
+  static RespostaObra _naoEntendi({String? inicio}) => RespostaObra(
+        '${inicio ?? 'Não entendi essa — mas sei responder sobre'} '
+        'gastos ("quanto gastei com material este mês?"), orçamento '
+        '("vai estourar?"), estoque ("quando acaba o cimento?"), '
+        'fornecedores, cronograma, pendências, equipe e um resumo geral '
+        '("como está a obra?"). Tenta uma dessas 👇',
         sugestoes: sugestoesIniciais,
       );
 
-  // ======================================================== Entidades
+  static String _saudacaoDeVolta(String saudacao) {
+    if (saudacao.startsWith('bom dia')) return 'Bom dia! ☀️';
+    if (saudacao.startsWith('boa tarde')) return 'Boa tarde!';
+    if (saudacao.startsWith('boa noite')) return 'Boa noite!';
+    return 'Opa!';
+  }
 
-  static bool _tem(String t, List<String> termos) =>
-      termos.any(t.contains);
+  // ================================== Compreensão (fuzzy + entidades)
 
-  static CategoriaCusto? _acharCategoria(String t) {
-    if (_tem(t, ['mao de obra', 'pedreiro', 'diaria', 'servente', 'salario'])) {
+  static List<String> _tokens(String t) => t
+      .split(RegExp(r'[^a-z0-9]+'))
+      .where((p) => p.isNotEmpty)
+      .toList();
+
+  /// Um termo casa se aparece no texto ou, para palavras únicas, se algum
+  /// token está a 1-2 erros de digitação dele ("orsamento" → "orcamento").
+  static bool _casa(String t, List<String> tokens, List<String> termos) {
+    for (final termo in termos) {
+      if (t.contains(termo)) return true;
+      if (!termo.contains(' ') && termo.length >= 5) {
+        for (final token in tokens) {
+          if (_parecido(token, termo)) return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  static bool _parecido(String token, String palavra) {
+    if (token == palavra) return true;
+    if (palavra.length < 5) return false;
+    final maxErros = palavra.length >= 8 ? 2 : 1;
+    if ((token.length - palavra.length).abs() > maxErros) return false;
+    return _distancia(token, palavra) <= maxErros;
+  }
+
+  /// Distância de edição (Levenshtein) com duas linhas de memória.
+  static int _distancia(String a, String b) {
+    var anterior = List<int>.generate(b.length + 1, (i) => i);
+    final atual = List<int>.filled(b.length + 1, 0);
+    for (var i = 1; i <= a.length; i++) {
+      atual[0] = i;
+      for (var j = 1; j <= b.length; j++) {
+        final custo = a.codeUnitAt(i - 1) == b.codeUnitAt(j - 1) ? 0 : 1;
+        atual[j] = math.min(
+            math.min(atual[j - 1] + 1, anterior[j] + 1),
+            anterior[j - 1] + custo);
+      }
+      anterior = List<int>.from(atual);
+    }
+    return anterior[b.length];
+  }
+
+  static CategoriaCusto? _acharCategoria(String t, List<String> tokens) {
+    if (_casa(t, tokens, ['mao de obra', 'pedreiro', 'diaria', 'servente', 'salario'])) {
       return CategoriaCusto.maoDeObra;
     }
-    if (_tem(t, ['equipamento', 'aluguel', 'betoneira', 'andaime', 'maquina'])) {
+    if (_casa(t, tokens, ['equipamento', 'aluguel', 'betoneira', 'andaime', 'maquina'])) {
       return CategoriaCusto.equipamento;
     }
-    if (_tem(t, ['material', 'materiais'])) return CategoriaCusto.material;
+    if (_casa(t, tokens, ['material', 'materiais'])) {
+      return CategoriaCusto.material;
+    }
     return null;
   }
 
-  static EstoqueItemModel? _acharMaterial(String t, DadosObraChat dados) {
+  static EstoqueItemModel? _acharMaterial(
+      String t, List<String> tokens, DadosObraChat dados) {
     for (final item in dados.estoque) {
       final nome = _semAcentos(item.material.toLowerCase());
       if (t.contains(nome)) return item;
-      // primeira palavra ("cimento" acha "Cimento CP-II")
       final primeira = nome.split(' ').first;
-      if (primeira.length >= 4 && t.contains(primeira)) return item;
+      if (primeira.length >= 4) {
+        if (t.contains(primeira)) return item;
+        // tolera digitação: "cimeto" acha "cimento"
+        for (final token in tokens) {
+          if (_parecido(token, primeira)) return item;
+        }
+      }
     }
     return null;
   }
@@ -518,7 +717,6 @@ abstract class PerguntasObraService {
     for (final nome in nomes) {
       final limpo = _semAcentos(nome.toLowerCase());
       if (limpo.length >= 4 && t.contains(limpo)) return limpo;
-      // duas primeiras palavras ("deposito sao jose" acha por "sao jose")
       final palavras =
           limpo.split(' ').where((p) => p.length >= 4).toList();
       if (palavras.length >= 2 &&
@@ -535,7 +733,7 @@ abstract class PerguntasObraService {
       final d = hoje.subtract(const Duration(days: 1));
       return _Periodo(d, d, 'ontem');
     }
-    if (_tem(t, ['essa semana', 'esta semana', 'nessa semana', 'ultimos 7'])) {
+    if (_casaSimples(t, ['essa semana', 'esta semana', 'nessa semana', 'ultimos 7'])) {
       return _Periodo(
           hoje.subtract(const Duration(days: 6)), hoje, 'nos últimos 7 dias');
     }
@@ -543,7 +741,7 @@ abstract class PerguntasObraService {
       return _Periodo(hoje.subtract(const Duration(days: 13)),
           hoje.subtract(const Duration(days: 7)), 'na semana passada');
     }
-    if (_tem(t, ['esse mes', 'este mes', 'neste mes', 'nesse mes'])) {
+    if (_casaSimples(t, ['esse mes', 'este mes', 'neste mes', 'nesse mes'])) {
       return _Periodo(DateTime(hoje.year, hoje.month, 1), hoje, 'neste mês');
     }
     if (t.contains('mes passado')) {
@@ -567,6 +765,9 @@ abstract class PerguntasObraService {
     }
     return null;
   }
+
+  static bool _casaSimples(String t, List<String> termos) =>
+      termos.any(t.contains);
 
   static String _semAcentos(String s) {
     const de = 'áàâãäéèêëíìîïóòôõöúùûüç';
