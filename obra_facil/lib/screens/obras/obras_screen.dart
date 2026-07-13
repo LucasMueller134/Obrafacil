@@ -6,14 +6,27 @@ import '../../constants/app_colors.dart';
 import '../../models/models.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/firestore_service.dart';
+import '../../services/notificacoes/tarefa_segundo_plano.dart';
 import '../../utils/formatters.dart';
 import '../../widgets/animacoes.dart';
 import '../../widgets/carregando_obra.dart';
 import '../../widgets/estado_vazio.dart';
 import '../../widgets/ilustracoes.dart';
 
-class ObrasScreen extends StatelessWidget {
+class ObrasScreen extends StatefulWidget {
   const ObrasScreen({super.key});
+
+  @override
+  State<ObrasScreen> createState() => _ObrasScreenState();
+}
+
+class _ObrasScreenState extends State<ObrasScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // permissão + lembretes agendados + verificador em segundo plano
+    NotificacaoBootstrap.aplicar();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -38,6 +51,11 @@ class ObrasScreen extends StatelessWidget {
           ],
         ),
         actions: [
+          IconButton(
+            tooltip: 'Notificações',
+            icon: const Icon(Icons.notifications_outlined),
+            onPressed: () => context.push('/notificacoes'),
+          ),
           if (usuario.ehDono)
             IconButton(
               tooltip: 'Fornecedores',

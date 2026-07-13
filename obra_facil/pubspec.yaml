@@ -38,6 +38,13 @@ dependencies:
   google_mlkit_image_labeling: ^0.13.0 # reconhecimento de materiais (offline)
   speech_to_text: ^7.0.0 # lançamento por voz
 
+  # Notificações fora do app
+  flutter_local_notifications: ^19.0.0
+  timezone: ^0.10.0
+  flutter_timezone: ^4.0.0
+  workmanager: ^0.9.0 # verificador em segundo plano (aprovações, alertas)
+  shared_preferences: ^2.3.0
+
   # Utilitários
   intl: any # versão gerenciada pelo flutter_localizations
   uuid: ^4.5.1

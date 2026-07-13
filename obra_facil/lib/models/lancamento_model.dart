@@ -100,6 +100,9 @@ class LancamentoModel {
   final String criadoPorNome;
   final String? aprovadoPorId;
   final String? motivoRejeicao;
+
+  /// Quando o dono aprovou/rejeitou — usado pelas notificações do mestre.
+  final DateTime? moderadoEm;
   final DateTime criadoEm;
 
   const LancamentoModel({
@@ -119,6 +122,7 @@ class LancamentoModel {
     required this.criadoPorNome,
     this.aprovadoPorId,
     this.motivoRejeicao,
+    this.moderadoEm,
     required this.criadoEm,
   });
 
@@ -138,6 +142,7 @@ class LancamentoModel {
         'criadoPorNome': criadoPorNome,
         'aprovadoPorId': aprovadoPorId,
         'motivoRejeicao': motivoRejeicao,
+        'moderadoEm': moderadoEm?.toIso8601String(),
         'criadoEm': criadoEm.toIso8601String(),
       };
 
@@ -163,6 +168,7 @@ class LancamentoModel {
         criadoPorNome: map['criadoPorNome'] ?? '',
         aprovadoPorId: map['aprovadoPorId'],
         motivoRejeicao: map['motivoRejeicao'],
+        moderadoEm: DateTime.tryParse(map['moderadoEm'] ?? ''),
         criadoEm: DateTime.tryParse(map['criadoEm'] ?? '') ?? DateTime.now(),
       );
 
@@ -196,6 +202,7 @@ class LancamentoModel {
         criadoPorNome: criadoPorNome,
         aprovadoPorId: aprovadoPorId ?? this.aprovadoPorId,
         motivoRejeicao: motivoRejeicao ?? this.motivoRejeicao,
+        moderadoEm: moderadoEm,
         criadoEm: criadoEm,
       );
 }

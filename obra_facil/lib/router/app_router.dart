@@ -11,6 +11,7 @@ import '../screens/fornecedores/fornecedores_screen.dart';
 import '../screens/galeria/galeria_screen.dart';
 import '../screens/lancamentos/lancamentos_screen.dart';
 import '../screens/lancamentos/novo_lancamento_screen.dart';
+import '../screens/notificacoes/notificacoes_screen.dart';
 import '../screens/obras/nova_obra_screen.dart';
 import '../screens/obras/obra_detalhe_screen.dart';
 import '../screens/obras/obras_screen.dart';
@@ -156,6 +157,11 @@ GoRouter criarRouter(AuthProvider auth) {
         path: '/fornecedores',
         pageBuilder: (_, state) =>
             _pagina(state, const FornecedoresScreen()),
+      ),
+      GoRoute(
+        path: '/notificacoes',
+        pageBuilder: (_, state) =>
+            _pagina(state, const NotificacoesScreen()),
       ),
     ],
     errorBuilder: (_, state) => Scaffold(

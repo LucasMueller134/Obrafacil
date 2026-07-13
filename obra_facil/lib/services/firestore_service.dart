@@ -106,6 +106,7 @@ class FirestoreService {
             : StatusLancamento.rejeitado.name,
         'aprovadoPorId': donoId,
         'motivoRejeicao': motivoRejeicao,
+        'moderadoEm': DateTime.now().toIso8601String(),
       });
 
   /// Interligação financeiro → estoque: dá entrada no estoque de cada
