@@ -69,16 +69,18 @@ jobs:
           # flutter_local_notifications exige core library desugaring
           cat >> android/app/build.gradle.kts <<'EOF'
 
-android {
-    compileOptions {
-        isCoreLibraryDesugaringEnabled = true
-    }
-}
+          android {
+              compileOptions {
+                  isCoreLibraryDesugaringEnabled = true
+              }
+          }
 
-dependencies {
-    add("coreLibraryDesugaring", "com.android.tools:desugar_jdk_libs:2.1.4")
-}
-EOF
+          dependencies {
+              add("coreLibraryDesugaring", "com.android.tools:desugar_jdk_libs:2.1.4")
+          }
+          EOF
+          echo "--- Fim do build.gradle.kts ---"
+          tail -n 15 android/app/build.gradle.kts
 
       - name: Dependências
         run: flutter pub get
