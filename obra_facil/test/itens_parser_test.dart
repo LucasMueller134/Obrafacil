@@ -34,6 +34,25 @@ void main() {
           ItensParser.deTexto('paguei 150 reais a diária do pedreiro');
       expect(itens, isEmpty);
     });
+
+    test('"300 reais de cimento" é dinheiro, não 300 sacos', () {
+      final itens =
+          ItensParser.deTexto('gastei 300 reais de cimento na obra');
+      expect(itens, isEmpty);
+    });
+
+    test('"e meio" soma meia unidade, antes ou depois da unidade', () {
+      expect(
+          ItensParser.deTexto('2 sacos e meio de cimento')
+              .first
+              .quantidade,
+          2.5);
+      expect(
+          ItensParser.deTexto('comprei 1 e meia lata de tinta')
+              .first
+              .quantidade,
+          1.5);
+    });
   });
 
   group('ItensParser — linhas de nota fiscal (OCR)', () {

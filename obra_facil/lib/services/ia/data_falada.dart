@@ -65,6 +65,13 @@ abstract class DataFalada {
       r'(?:\s+(passad[ao]|retrasad[ao]))?',
       caseSensitive: false);
 
+  /// Padrões de data, para limpar a frase depois que a data foi entendida
+  /// (a descrição do lançamento não precisa repetir "dia 5 de julho").
+  static List<RegExp> get padroesLimpeza => [
+        _diasAtras, _semanaPassada, _mesPassado, _anteontem, _ontem, _hoje,
+        _comPalavraDia, _diaDeMesNome, _numerica, _diaSemana,
+      ];
+
   /// Data mais provável falada no [texto], ou null se nenhuma foi dita.
   /// [agora] existe para os testes fixarem o "hoje".
   static DateTime? extrair(String texto, {DateTime? agora}) {

@@ -37,11 +37,11 @@ class LancamentoPorVoz {
 
 /// IA on-device nº 2b — lançamento por voz.
 ///
-/// Pipeline: fala → transcrição (reconhecedor do Android) →
-/// normalização de números por extenso ("trezentos e cinquenta" → 350) →
-/// parsers de valor, data, categoria, fornecedor e materiais.
-/// A interpretação é pura e rápida, então roda ao vivo a cada
-/// resultado parcial.
+/// Interpreta a frase como um todo, não só palavras soltas:
+/// fala → transcrição → números por extenso → extração de valor (com soma
+/// de múltiplos valores e preço unitário "cada"), fornecedor (em qualquer
+/// posição, mesmo minúsculo), data, materiais e categoria por peso de
+/// evidência — e a descrição é reconstruída sem os trechos já entendidos.
 class VozService {
   final SpeechToText _stt = SpeechToText();
   bool _inicializado = false;
@@ -75,7 +75,7 @@ class VozService {
 
   Future<void> cancelar() => _stt.cancel();
 
-  // ------------------------------------------------------------- Parser
+  // ============================================================= Parser
 
   /// Valor em reais, com centavos opcionais:
   /// "350 reais", "89,90 reais", "25 reais e 50 centavos", "40 conto".
@@ -89,8 +89,42 @@ class VozService {
   static final RegExp _valorAposPor = RegExp(
       r'\bpor\s+(?:r\$\s*)?(\d+(?:[.,]\d{1,2})?)\b',
       caseSensitive: false);
-  static final RegExp _fornecedorRegex = RegExp(
-      r'\b(?:n[ao]|d[ao])\s+((?:loja|dep[oó]sito|mercado|madeireira|material(?:es)?)\s+[\wÀ-ÿ ]{2,30}|[A-ZÀ-Ý][\wÀ-ÿ]+(?:\s+[A-ZÀ-Ý][\wÀ-ÿ]+){0,3})\s*$');
+
+  /// Fornecedor em qualquer posição da frase, mesmo todo minúsculo
+  /// (a transcrição de voz raramente capitaliza): "no depósito são josé",
+  /// "na casa do construtor", "no atacadão da construção".
+  static final RegExp _fornecedorComTipo = RegExp(
+      r'\b(?:n[oa]|d[oa]|em|l[aá] n[oa])\s+'
+      r'((?:loja|dep[oó]sito|deposito|casa|mercado|supermercado|madeireira|'
+      r'ferragens?|ferragista|atacad(?:o|ao|ão)|agropecu[aá]ria|'
+      r'distribuidora|comercial|construtora|materiais|material)\b'
+      r'[a-zA-Zà-ÿÀ-Ý ]{0,34})',
+      caseSensitive: false);
+
+  /// Nome próprio capitalizado após na/no/da/do (quando a transcrição
+  /// capitaliza): "no Depósito São José", "na Leroy".
+  static final RegExp _fornecedorCapitalizado = RegExp(
+      r'\b(?:n[oa]|d[oa]|em)\s+'
+      r'([A-ZÀ-Ý][\wà-ÿ]+(?:\s+(?:d[oae]s?\s+)?[A-ZÀ-Ý][\wà-ÿ]+){0,3})');
+
+  /// Onde o nome do fornecedor termina dentro da captura.
+  static final RegExp _corteFornecedor = RegExp(
+      r'\s+(por|que|onde|quando|ontem|hoje|anteontem|dia|valendo|custou|'
+      r'custando|saiu|deu|foi|com|para|pra|e)\b.*$',
+      caseSensitive: false);
+
+  static const List<String> _naoFornecedor = [
+    'obra', 'total', 'terreno', 'servico', 'serviço', 'canteiro',
+    'estoque', 'valor',
+  ];
+
+  /// Verbos/aberturas de comando no começo da frase.
+  static final RegExp _aberturas = RegExp(
+      r'^\s*(?:anota(?:r)?\s+a[ií]|anota(?:r)?|registra(?:r)?(?:\s+pra\s+mim)?|'
+      r'lan[cç]a(?:r)?|faz\s+um\s+lan[cç]amento\s+de|lan[cç]amento\s+de|'
+      r'coloca(?:r)?|bota(?:r)?|comprei|compramos|paguei|pagamos|gastei|'
+      r'gastamos|aluguei|alugamos)\s+',
+      caseSensitive: false);
 
   static const Map<CategoriaCusto, List<String>> _palavrasCategoria = {
     CategoriaCusto.maoDeObra: [
@@ -112,12 +146,23 @@ class VozService {
     ],
     CategoriaCusto.equipamento: [
       'betoneira', 'andaime', 'furadeira', 'serra', 'martelete',
-      'aluguel', 'alugou', 'locação', 'locacao', 'equipamento', 'máquina',
-      'maquina', 'compactador', 'gerador', 'escora', 'caçamba', 'cacamba',
-      'container', 'retroescavadeira', 'vibrador', 'bomba de concreto',
-      'esmerilhadeira', 'lixadeira', 'guincho',
+      'aluguel', 'alugou', 'aluguei', 'locação', 'locacao', 'equipamento',
+      'máquina', 'maquina', 'compactador', 'gerador', 'escora', 'caçamba',
+      'cacamba', 'container', 'retroescavadeira', 'vibrador',
+      'bomba de concreto', 'esmerilhadeira', 'lixadeira', 'guincho',
     ],
   };
+
+  /// Sinais fortes (profissões, aluguel): pesam o dobro na classificação.
+  /// "Paguei a diária do pedreiro e comprei cimento" é mão de obra,
+  /// mesmo com material citado — e o cimento ainda vai para o estoque.
+  static const List<String> _sinaisFortes = [
+    'pedreiro', 'servente', 'diária', 'diaria', 'mão de obra', 'mao de obra',
+    'eletricista', 'encanador', 'pintor', 'ajudante', 'empreiteiro',
+    'carpinteiro', 'gesseiro', 'azulejista', 'armador', 'soldador',
+    'salário', 'salario', 'aluguel', 'alugou', 'aluguei', 'locação',
+    'locacao', 'empreita',
+  ];
 
   /// Parser puro (testável): interpreta a frase transcrita.
   /// Chamado ao vivo a cada resultado parcial — precisa ser leve.
@@ -126,40 +171,133 @@ class VozService {
     final original = transcricao.trim();
     // "trezentos e cinquenta reais" → "350 reais"
     final texto = NumeroExtenso.normalizar(original);
+
+    final valorInfo = _extrairValorInfo(texto);
+    final fornecedorInfo = _extrairFornecedorInfo(texto);
+    final data = DataFalada.extrair(texto, agora: agora);
+    final itens = ItensParser.deTexto(texto);
+
+    // Preço unitário: "5 sacos por 40 reais cada" → 5 × 40 = 200.
+    var valor = valorInfo.valor;
+    if (valor != null && valorInfo.unitario && itens.isNotEmpty) {
+      valor = valor * itens.first.quantidade;
+    }
+
     return LancamentoPorVoz(
-      descricao: _limparDescricao(texto),
-      valor: _extrairValor(texto),
+      descricao: _montarDescricao(
+        texto,
+        remover: [
+          ...valorInfo.trechos,
+          if (fornecedorInfo != null) fornecedorInfo.trecho,
+        ],
+        removerData: data != null,
+        itens: itens,
+      ),
+      valor: valor,
       categoria: _classificarCategoria(texto),
-      // nomes próprios ficam melhores no texto original
-      fornecedorNome: _extrairFornecedor(original),
-      // "ontem", "dia 5 de julho", "sexta passada"…
-      data: DataFalada.extrair(texto, agora: agora),
-      itens: ItensParser.deTexto(texto),
+      fornecedorNome: fornecedorInfo?.nome,
+      data: data,
+      itens: itens,
       transcricao: original,
     );
   }
 
-  static double? _extrairValor(String texto) {
-    final comReais = _valorReais.firstMatch(texto);
-    if (comReais != null) {
-      final base =
-          double.tryParse(comReais.group(1)!.replaceAll(',', '.')) ?? 0;
-      final centavos = int.tryParse(comReais.group(2) ?? '') ?? 0;
-      final valor = base + centavos / 100;
-      if (valor > 0) return valor;
+  // ------------------------------------------------------------- Valor
+
+  static _ValorInfo _extrairValorInfo(String texto) {
+    final ocorrencias = <(int, int, double)>[];
+
+    void adicionar(int inicio, int fim, double valor) {
+      if (valor <= 0) return;
+      for (final o in ocorrencias) {
+        if (inicio < o.$2 && fim > o.$1) return; // sobrepõe
+      }
+      ocorrencias.add((inicio, fim, valor));
     }
-    final m = _valorComRs.firstMatch(texto) ?? _valorAposPor.firstMatch(texto);
-    if (m == null) return null;
-    return double.tryParse(m.group(1)!.replaceAll(',', '.'));
+
+    for (final m in _valorReais.allMatches(texto)) {
+      final base = double.tryParse(m.group(1)!.replaceAll(',', '.')) ?? 0;
+      final centavos = int.tryParse(m.group(2) ?? '') ?? 0;
+      adicionar(m.start, m.end, base + centavos / 100);
+    }
+    for (final m in _valorComRs.allMatches(texto)) {
+      adicionar(m.start, m.end,
+          double.tryParse(m.group(1)!.replaceAll(',', '.')) ?? 0);
+    }
+    for (final m in _valorAposPor.allMatches(texto)) {
+      adicionar(m.start, m.end,
+          double.tryParse(m.group(1)!.replaceAll(',', '.')) ?? 0);
+    }
+
+    if (ocorrencias.isEmpty) return const _ValorInfo(null, false, []);
+    ocorrencias.sort((a, b) => a.$1.compareTo(b.$1));
+
+    // "cada" logo após o valor → preço unitário.
+    final unitario = ocorrencias.length == 1 &&
+        RegExp(r'^\s*cada\b')
+            .hasMatch(texto.substring(ocorrencias.first.$2));
+
+    // Vários valores na frase ("300 de cimento e 150 de areia") → soma.
+    final total = ocorrencias.fold<double>(0, (s, o) => s + o.$3);
+
+    final trechos = ocorrencias.map((o) {
+      var inicio = o.$1;
+      var fim = o.$2;
+      // inclui o "por " anterior e o "cada" seguinte na limpeza
+      final antes = texto.substring(0, inicio);
+      final porAntes = RegExp(r'(?:\bpor|\bde)\s+$').firstMatch(antes);
+      if (porAntes != null) inicio = porAntes.start;
+      final cadaDepois =
+          RegExp(r'^\s*cada\b').firstMatch(texto.substring(fim));
+      if (cadaDepois != null) fim += cadaDepois.end;
+      return (inicio, fim);
+    }).toList();
+
+    return _ValorInfo(
+        unitario ? ocorrencias.first.$3 : total, unitario, trechos);
   }
+
+  // -------------------------------------------------------- Fornecedor
+
+  static _FornecedorInfo? _extrairFornecedorInfo(String texto) {
+    final m = _fornecedorComTipo.firstMatch(texto) ??
+        _fornecedorCapitalizado.firstMatch(texto);
+    if (m == null) return null;
+
+    final bruto = m.group(1)!;
+    final nome = bruto.replaceFirst(_corteFornecedor, '').trim();
+    if (nome.length < 3) return null;
+    if (_naoFornecedor.contains(nome.toLowerCase())) return null;
+
+    // fim do trecho na frase original = início do grupo + nome mantido
+    final inicioGrupo = m.end - bruto.length;
+    return _FornecedorInfo(
+      _capitalizarNome(nome),
+      (m.start, inicioGrupo + nome.length),
+    );
+  }
+
+  static String _capitalizarNome(String nome) {
+    const minusculas = {'de', 'do', 'da', 'dos', 'das', 'e'};
+    return nome.split(' ').where((p) => p.isNotEmpty).map((p) {
+      final lower = p.toLowerCase();
+      if (minusculas.contains(lower)) return lower;
+      return lower[0].toUpperCase() + lower.substring(1);
+    }).join(' ');
+  }
+
+  // --------------------------------------------------------- Categoria
 
   static CategoriaCusto _classificarCategoria(String texto) {
     final t = texto.toLowerCase();
     var melhor = CategoriaCusto.outros;
     var melhorPontos = 0;
     for (final entry in _palavrasCategoria.entries) {
-      final pontos =
-          entry.value.where((palavra) => t.contains(palavra)).length;
+      var pontos = 0;
+      for (final palavra in entry.value) {
+        if (!t.contains(palavra)) continue;
+        pontos += _sinaisFortes.contains(palavra) ? 2 : 1;
+      }
       if (pontos > melhorPontos) {
         melhorPontos = pontos;
         melhor = entry.key;
@@ -168,27 +306,66 @@ class VozService {
     return melhor;
   }
 
-  static String? _extrairFornecedor(String texto) {
-    final m = _fornecedorRegex.firstMatch(texto);
-    if (m == null) return null;
-    final nome = m.group(1)!.trim();
-    // Evita capturar restos de frase como "no total" ou "na obra".
-    const ruido = ['total', 'obra', 'casa', 'terreno', 'serviço', 'servico'];
-    if (ruido.any((r) => nome.toLowerCase() == r)) return null;
-    return nome;
-  }
+  // --------------------------------------------------------- Descrição
 
-  /// Remove data relativa e verbo iniciais para deixar uma descrição limpa
-  /// ("Ontem comprei 10 sacos…" → "10 sacos…" — a data já foi capturada).
-  static String _limparDescricao(String texto) {
-    var d = texto
-        .replaceFirst(
-            RegExp(r'^\s*(hoje|ontem|anteontem)\s*,?\s+', caseSensitive: false),
-            '')
-        .replaceFirst(RegExp(r'^\s*(comprei|paguei|gastei|lancei|lançei|anota(r|í)?|registra(r)?)\s+',
-            caseSensitive: false), '')
-        .trim();
-    if (d.isEmpty) return texto;
+  /// Reconstrói a descrição a partir do que sobrou da frase depois de
+  /// remover o que já foi entendido (valor, fornecedor, data, verbo).
+  static String _montarDescricao(
+    String texto, {
+    required List<(int, int)> remover,
+    required bool removerData,
+    required List<ItemMaterialModel> itens,
+  }) {
+    var d = texto;
+
+    final ordenados = List<(int, int)>.from(remover)
+      ..sort((a, b) => b.$1.compareTo(a.$1));
+    for (final (inicio, fim) in ordenados) {
+      if (inicio < 0 || fim > d.length || inicio >= fim) continue;
+      d = d.replaceRange(inicio, fim, ' ');
+    }
+
+    if (removerData) {
+      for (final padrao in DataFalada.padroesLimpeza) {
+        d = d.replaceFirst(padrao, ' ');
+      }
+    }
+
+    d = d.replaceFirst(_aberturas, '');
+    // conectores órfãos nas pontas ("de", "no", "por", "e"…)
+    final orfaos =
+        RegExp(r'^(?:de|do|da|no|na|em|por|com|e|a|o|,|\.)\s+', caseSensitive: false);
+    final orfaosFim = RegExp(r'\s+(?:de|do|da|no|na|em|por|com|e|a|o|que|,|\.)$',
+        caseSensitive: false);
+    var anterior = '';
+    while (anterior != d) {
+      anterior = d;
+      d = d.trim().replaceFirst(orfaos, '').trim();
+      d = d.replaceFirst(orfaosFim, '').trim();
+    }
+    d = d.replaceAll(RegExp(r'\s{2,}'), ' ').trim();
+
+    if (d.length < 3) {
+      if (itens.isNotEmpty) {
+        return itens.map((i) => i.resumo).join(' e ');
+      }
+      d = texto.trim();
+    }
     return d[0].toUpperCase() + d.substring(1);
   }
+}
+
+class _ValorInfo {
+  final double? valor;
+  final bool unitario;
+  final List<(int, int)> trechos;
+
+  const _ValorInfo(this.valor, this.unitario, this.trechos);
+}
+
+class _FornecedorInfo {
+  final String nome;
+  final (int, int) trecho;
+
+  const _FornecedorInfo(this.nome, this.trecho);
 }

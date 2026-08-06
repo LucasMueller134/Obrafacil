@@ -52,11 +52,21 @@ abstract class ItensParser {
   };
 
   static final RegExp _regexTexto = RegExp(
-      r'(\d+(?:[.,]\d+)?)\s*'
+      r'(\d+(?:[.,]\d+)?)'
+      // "2 e meio sacos" — meia unidade antes da unidade
+      r'((?:\s+e\s+mei[oa])?)\s*'
       // unidade precisa terminar em fronteira ("3 madeiras" não é "3 m")
-      r'(?:(sacos?|sc|kg|quilos?|kilos?|litros?|latas?|barras?|pacotes?|caixas?|unidades?|pe[cç]as?|metros?|m[23²³]?)(?![a-zA-ZÀ-ÿ0-9]))?\s*'
+      r'(?:(sacos?|sc|kg|quilos?|kilos?|litros?|latas?|barras?|pacotes?|caixas?|unidades?|pe[cç]as?|metros?|m[23²³]?)(?![a-zA-ZÀ-ÿ0-9]))?'
+      // "2 sacos e meio de cimento" — meia unidade depois da unidade
+      r'((?:\s+e\s+mei[oa])?)\s*'
       r'(?:de\s+)?'
       r'([a-zA-ZÀ-ÿ][a-zA-ZÀ-ÿ ]{2,30})',
+      caseSensitive: false);
+
+  /// Palavras de dinheiro no lugar do material ("300 reais de cimento"
+  /// é valor, não 300 unidades de cimento).
+  static final RegExp _comecaComMoeda = RegExp(
+      r'^(reais|real|conto|pila|centavo)',
       caseSensitive: false);
 
   /// Palavras onde o nome do material termina ("...cimento POR 350 reais").
@@ -70,13 +80,21 @@ abstract class ItensParser {
     final texto = NumeroExtenso.normalizar(textoBruto);
     final itens = <ItemMaterialModel>[];
     for (final m in _regexTexto.allMatches(texto)) {
-      final quantidade =
+      var quantidade =
           double.tryParse(m.group(1)!.replaceAll(',', '.')) ?? 0;
+      // "e meio" antes ou depois da unidade soma 0,5
+      if ((m.group(2)?.isNotEmpty ?? false) ||
+          (m.group(4)?.isNotEmpty ?? false)) {
+        quantidade += 0.5;
+      }
       if (quantidade <= 0 || quantidade > 100000) continue;
 
-      final unidadeBruta = m.group(2)?.toLowerCase();
-      final nomeBruto =
-          m.group(3)!.replaceFirst(_corteNome, '').trim();
+      final unidadeBruta = m.group(3)?.toLowerCase();
+      final nomeCru = m.group(5)!.trim();
+      // "300 reais de cimento" é dinheiro, não quantidade de material
+      if (_comecaComMoeda.hasMatch(nomeCru)) continue;
+
+      final nomeBruto = nomeCru.replaceFirst(_corteNome, '').trim();
       if (nomeBruto.length < 3) continue;
 
       final canonico = _materialCanonico(nomeBruto);

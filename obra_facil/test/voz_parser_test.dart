@@ -70,6 +70,77 @@ void main() {
     });
   });
 
+  group('Interpretação da frase como um todo', () {
+    test('descrição sai limpa: sem valor, fornecedor nem verbo', () {
+      final r = VozService.interpretar(
+          'comprei 10 sacos de cimento por 350 reais no Depósito São José');
+      expect(r.descricao, '10 sacos de cimento');
+    });
+
+    test('fornecedor minúsculo no meio da frase', () {
+      final r = VozService.interpretar(
+          'comprei no depósito são josé 10 sacos de cimento por 350 reais');
+      expect(r.fornecedorNome, 'Depósito São José');
+      expect(r.valor, 350);
+      expect(r.itens, hasLength(1));
+    });
+
+    test('fornecedor "na casa do construtor"', () {
+      final r = VozService.interpretar(
+          'comprei 3 latas de tinta por 90 reais na casa do construtor');
+      expect(r.fornecedorNome, 'Casa do Construtor');
+    });
+
+    test('preço unitário: "por 40 reais cada" multiplica pela quantidade',
+        () {
+      final r = VozService.interpretar(
+          'comprei 5 sacos de cimento por 40 reais cada');
+      expect(r.valor, 200);
+      expect(r.itens.first.quantidade, 5);
+    });
+
+    test('vários valores na frase são somados', () {
+      final r = VozService.interpretar(
+          'gastei 300 reais de cimento e 150 reais de areia');
+      expect(r.valor, 450);
+      expect(r.categoria, CategoriaCusto.material);
+    });
+
+    test('"2 sacos e meio" vira 2,5 no estoque', () {
+      final r = VozService.interpretar(
+          'comprei 2 sacos e meio de cimento por 100 reais');
+      expect(r.itens.first.quantidade, 2.5);
+    });
+
+    test('abertura "anota aí" some da descrição', () {
+      final r = VozService.interpretar('anota aí 100 reais de brita');
+      expect(r.valor, 100);
+      expect(r.descricao.toLowerCase(), isNot(contains('anota')));
+    });
+
+    test('profissão pesa mais que material citado de passagem', () {
+      final r = VozService.interpretar(
+          'paguei a diária do pedreiro João e comprei 2 sacos de cimento '
+          'por 80 reais');
+      expect(r.categoria, CategoriaCusto.maoDeObra);
+      expect(r.itens.any((i) => i.material == 'Cimento'), isTrue);
+    });
+
+    test('data falada some da descrição', () {
+      final r = VozService.interpretar(
+          'comprei 2 latas de tinta dia 5 de julho por 90 reais',
+          agora: DateTime(2026, 7, 10));
+      expect(r.data, DateTime(2026, 7, 5));
+      expect(r.descricao.toLowerCase(), isNot(contains('julho')));
+      expect(r.descricao, contains('tinta'));
+    });
+
+    test('"na obra" não vira fornecedor', () {
+      final r = VozService.interpretar('gastei 50 reais na obra');
+      expect(r.fornecedorNome, isNull);
+    });
+  });
+
   group('Data falada no lançamento por voz', () {
     // Segunda-feira, 6 de julho de 2026 — fixa o "hoje" dos testes.
     final agora = DateTime(2026, 7, 6);
