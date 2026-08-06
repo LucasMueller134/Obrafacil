@@ -33,6 +33,10 @@ jobs:
 
       - uses: subosito/flutter-action@v2
         with:
+          # Versão fixa: o canal "stable" mudou sozinho e quebrou a
+          # compilação do workmanager (build #20). Builds reprodutíveis
+          # pedem versão pinada — atualizar aqui de forma consciente.
+          flutter-version: '3.44.4'
           channel: stable
           cache: true
 
