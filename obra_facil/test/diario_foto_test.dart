@@ -16,9 +16,12 @@ void main() {
       expect(a.encontrouAlgo, isTrue);
     });
 
-    test('telhado indica cobertura', () {
+    test('telhado com madeiramento indica cobertura', () {
+      // "Roof" precisa de um segundo rótulo de telhado para valer: sozinho
+      // ele aparece em qualquer estrutura vista de cima.
       final a = DiarioFotoService.interpretar(const [
         RotuloFoto('Roof', 0.88),
+        RotuloFoto('Shingle', 0.66),
         RotuloFoto('Wood', 0.61),
       ]);
       expect(a.faseSugerida, 'Cobertura');
@@ -66,6 +69,70 @@ void main() {
       expect(a.encontrouAlgo, isFalse);
       expect(a.descricaoSugerida, isEmpty);
       expect(a.materiais, isEmpty);
+    });
+
+    test('baldrame armado não vira cobertura (caso do canteiro real)', () {
+      // Foto de fundação: formas de madeira, armação de ferragem, sapatas
+      // concretadas e o barranco da escavação. O modelo genérico devolve
+      // "Roof" para a laje vista de cima — sozinho isso não pode decidir.
+      final a = DiarioFotoService.interpretar(const [
+        RotuloFoto('Roof', 0.72),
+        RotuloFoto('Wood', 0.68),
+        RotuloFoto('Soil', 0.63),
+        RotuloFoto('Metal', 0.57),
+        RotuloFoto('Concrete', 0.51),
+      ]);
+
+      expect(a.faseSugerida, 'Fundação');
+      expect(a.materiais, isNot(contains('Telha')));
+      expect(a.materiais, contains('Vergalhão de aço'));
+      expect(a.materiais, containsAll(<String>['Madeira', 'Concreto']));
+    });
+
+    test('"Roof" sozinho não sugere cobertura nem telha', () {
+      final a = DiarioFotoService.interpretar(const [
+        RotuloFoto('Roof', 0.80),
+        RotuloFoto('Wood', 0.55),
+      ]);
+      expect(a.faseSugerida, isNull);
+      expect(a.materiais, isNot(contains('Telha')));
+    });
+
+    test('telhado confirmado por um segundo rótulo continua valendo', () {
+      final a = DiarioFotoService.interpretar(const [
+        RotuloFoto('Roof', 0.86),
+        RotuloFoto('Shingle', 0.61),
+      ]);
+      expect(a.faseSugerida, 'Cobertura');
+      expect(a.materiais, contains('Telha'));
+    });
+
+    test('tela de ferragem não vira instalação elétrica', () {
+      final a = DiarioFotoService.interpretar(const [
+        RotuloFoto('Wire', 0.74),
+        RotuloFoto('Metal', 0.66),
+        RotuloFoto('Soil', 0.58),
+      ]);
+      expect(a.materiais, isNot(contains('Fio elétrico')));
+      expect(a.materiais, contains('Vergalhão de aço'));
+      expect(a.faseSugerida, isNot('Instalações elétricas'));
+    });
+
+    test('contrapiso de concreto não vira piso cerâmico', () {
+      final a = DiarioFotoService.interpretar(const [
+        RotuloFoto('Floor', 0.77),
+        RotuloFoto('Concrete', 0.70),
+      ]);
+      expect(a.materiais, isNot(contains('Piso cerâmico')));
+      expect(a.materiais, contains('Concreto'));
+    });
+
+    test('sem terra à mostra, concreto e ferragem são estrutura', () {
+      final a = DiarioFotoService.interpretar(const [
+        RotuloFoto('Concrete', 0.81),
+        RotuloFoto('Scaffolding', 0.60),
+      ]);
+      expect(a.faseSugerida, 'Estrutura');
     });
 
     test('rascunho de descrição cita fase e materiais', () {

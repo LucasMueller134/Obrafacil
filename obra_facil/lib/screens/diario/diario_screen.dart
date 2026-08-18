@@ -217,11 +217,16 @@ class _FormDiarioState extends State<_FormDiario> {
   final _descricaoCtrl = TextEditingController();
   final _pessoasCtrl = TextEditingController(text: '1');
   String _clima = 'Ensolarado';
+
+  /// O clima veio da fala ou do toque do usuário — a foto não sobrescreve.
+  /// 'Ensolarado' é só o padrão do formulário, não uma escolha.
+  bool _climaDefinido = false;
   String? _fase;
   DateTime _data = DateTime.now();
   final List<File> _fotos = [];
   String? _avisoIa;
   List<String> _materiaisVistos = const [];
+  List<RotuloFoto> _rotulosVistos = const [];
   bool _analisando = false;
   bool _salvando = false;
 
@@ -248,7 +253,10 @@ class _FormDiarioState extends State<_FormDiario> {
 
     setState(() {
       _descricaoCtrl.text = relato.descricao;
-      if (relato.clima != null) _clima = relato.clima!;
+      if (relato.clima != null) {
+        _clima = relato.clima!;
+        _climaDefinido = true;
+      }
       if (relato.numeroPessoas != null) {
         _pessoasCtrl.text = relato.numeroPessoas!.toString();
       }
@@ -309,10 +317,14 @@ class _FormDiarioState extends State<_FormDiario> {
       if (!mounted) return;
       setState(() {
         _materiaisVistos = analise.materiais;
+        _rotulosVistos = analise.rotulos;
         if (analise.faseSugerida != null && _fase == null) {
           _fase = analise.faseSugerida;
         }
-        if (analise.climaSugerido != null) _clima = analise.climaSugerido!;
+        // O céu da foto é palpite; o que você falou ou marcou, não.
+        if (analise.climaSugerido != null && !_climaDefinido) {
+          _clima = analise.climaSugerido!;
+        }
         // A foto sugere o texto só quando o campo ainda está vazio — nunca
         // por cima do que a pessoa escreveu ou ditou.
         if (_descricaoCtrl.text.trim().isEmpty &&
@@ -331,6 +343,69 @@ class _FormDiarioState extends State<_FormDiario> {
     } finally {
       if (mounted) setState(() => _analisando = false);
     }
+  }
+
+  /// Mostra os rótulos crus do modelo. O classificador é de uso geral, não
+  /// de construção: quando ele errar a fase, é aqui que dá para ver por quê.
+  void _verOQueIaViu() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(
+          left: 20,
+          right: 20,
+          top: 20,
+          bottom: MediaQuery.of(ctx).viewPadding.bottom + 24,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('O que a IA viu na foto',
+                style: Theme.of(ctx).textTheme.titleMedium),
+            const SizedBox(height: 4),
+            Text(
+              'Estes são os rótulos do modelo de visão, com a confiança de '
+              'cada um. A fase é deduzida deles — se ela saiu errada, a '
+              'lista abaixo explica o motivo.',
+              style: Theme.of(ctx)
+                  .textTheme
+                  .bodySmall
+                  ?.copyWith(color: AppColors.textoSecundario),
+            ),
+            const SizedBox(height: 12),
+            ConstrainedBox(
+              constraints: BoxConstraints(
+                  maxHeight: MediaQuery.of(ctx).size.height * 0.45),
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    for (final r in _rotulosVistos)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: Row(
+                          children: [
+                            Expanded(child: SelectableText(r.label)),
+                            Text(
+                              '${(r.confianca * 100).toStringAsFixed(0)}%',
+                              style: Theme.of(ctx)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(color: AppColors.laranja),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   // --------------------------------------------------------------- Salvar
@@ -451,6 +526,15 @@ class _FormDiarioState extends State<_FormDiario> {
                 const SizedBox(height: 16),
                 AvisoIa(mensagem: _avisoIa!),
               ],
+              if (_rotulosVistos.isNotEmpty)
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton.icon(
+                    onPressed: _verOQueIaViu,
+                    icon: const Icon(Icons.visibility, size: 18),
+                    label: const Text('Ver o que a IA viu na foto'),
+                  ),
+                ),
               if (_materiaisVistos.isNotEmpty) ...[
                 const SizedBox(height: 12),
                 Align(
@@ -533,7 +617,10 @@ class _FormDiarioState extends State<_FormDiario> {
                     ChoiceChip(
                       label: Text(c),
                       selected: _clima == c,
-                      onSelected: (_) => setState(() => _clima = c),
+                      onSelected: (_) => setState(() {
+                        _clima = c;
+                        _climaDefinido = true;
+                      }),
                     ),
                 ],
               ),
