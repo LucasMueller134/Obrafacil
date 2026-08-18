@@ -62,16 +62,19 @@ Um aplicativo **Android** com **dois perfis de acesso** e **fluxo de aprovação
 
 ---
 
-## 🤖 A inovação: 4 IAs embarcadas (on-device)
+## 🤖 A inovação: 6 IAs embarcadas (on-device)
 
 O diferencial central do ObraFácil é rodar inteligência **dentro do próprio celular**, sem depender de servidor pago nem de internet no canteiro:
 
 | # | Módulo | Tecnologia | O que faz |
 |---|--------|-----------|-----------|
 | 1 | Reconhecimento de material | **TensorFlow Lite** | Identifica o material pela câmera em tempo real |
-| 2 | OCR de notas fiscais | **Google ML Kit** | Lê a nota fiscal offline e extrai os dados |
+| 2 | OCR de notas fiscais | **Google ML Kit** | Lê a nota fiscal offline em até 4 passes de imagem (realce, binarização Otsu, rotação) e extrai fornecedor, CNPJ validado, data de emissão, total e itens |
+| 2b | Lançamento por voz | **Speech-to-Text + parser pt-BR** | Entende a frase falada inteira: valor (inclusive por extenso, gíria e "cada"), fornecedor, data, materiais e categoria |
 | 3 | Previsão de estouro | Modelo de **regressão** | Antecipa quando o orçamento vai estourar |
 | 4 | Progresso por foto | Análise comparativa de imagens | Estima o avanço real da obra a partir de fotos |
+| 5 | Diário de obra por voz | **Speech-to-Text + parser pt-BR** | Transforma o relato falado do dia em clima, tamanho da equipe, fase e data |
+| 6 | Leitura da foto do canteiro | **Google ML Kit** | Reconhece a cena da obra e sugere fase, material aparente, clima e um rascunho do registro do dia |
 
 ---
 

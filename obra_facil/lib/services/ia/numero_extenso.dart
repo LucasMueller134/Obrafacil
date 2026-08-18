@@ -16,7 +16,8 @@ abstract class NumeroExtenso {
 
   static const Map<String, int> _dezenas = {
     'vinte': 20, 'trinta': 30, 'quarenta': 40, 'cinquenta': 50,
-    'sessenta': 60, 'setenta': 70, 'oitenta': 80, 'noventa': 90,
+    'cinqüenta': 50, 'sessenta': 60, 'setenta': 70, 'oitenta': 80,
+    'noventa': 90,
   };
 
   static const Map<String, int> _centenas = {
@@ -31,6 +32,15 @@ abstract class NumeroExtenso {
     'novecentos': 900, 'novecentas': 900,
   };
 
+  /// Multiplicadores ditos depois do número ("dois mil", "um milhão").
+  static const Map<String, int> _escalas = {
+    'mil': 1000,
+    'milhao': 1000000, 'milhão': 1000000,
+    'milhoes': 1000000, 'milhões': 1000000,
+  };
+
+  static final RegExp _soDigitos = RegExp(r'^\d+$');
+
   /// Reescreve todo número por extenso do texto como dígitos.
   static String normalizar(String texto) {
     final tokens = texto.split(RegExp(r'\s+'));
@@ -39,21 +49,43 @@ abstract class NumeroExtenso {
     while (i < tokens.length) {
       final numero = _lerNumero(tokens, i);
       if (numero != null) {
-        saida.add(numero.$1.toString());
-        i = numero.$2;
-      } else {
-        saida.add(tokens[i]);
-        i++;
+        final (valor, proximo) = _comDecimal(tokens, numero.$1.toString(),
+            numero.$2);
+        saida.add(valor);
+        i = proximo;
+        continue;
       }
+      // Dígito já transcrito seguido de decimal falado: "35 vírgula 50".
+      if (_soDigitos.hasMatch(tokens[i])) {
+        final (valor, proximo) = _comDecimal(tokens, tokens[i], i + 1);
+        saida.add(valor);
+        i = proximo;
+        continue;
+      }
+      saida.add(tokens[i]);
+      i++;
     }
     return saida.join(' ');
   }
+
+  /// Junta a parte decimal falada ("35 vírgula 50" → "35,50").
+  static (String, int) _comDecimal(
+      List<String> tokens, String inteiro, int indice) {
+    if (indice >= tokens.length || !_ehVirgula(_limpa(tokens[indice]))) {
+      return (inteiro, indice);
+    }
+    final decimal = _lerNumero(tokens, indice + 1);
+    if (decimal == null) return (inteiro, indice);
+    return ('$inteiro,${decimal.$1}', decimal.$2);
+  }
+
+  static bool _ehVirgula(String w) => w == 'virgula' || w == 'vírgula';
 
   static bool _ehPalavraNumero(String w) =>
       _unidades.containsKey(w) ||
       _dezenas.containsKey(w) ||
       _centenas.containsKey(w) ||
-      w == 'mil';
+      _escalas.containsKey(w);
 
   static String _limpa(String token) =>
       token.toLowerCase().replaceAll(RegExp(r'[^\wà-ÿ]'), '');
@@ -77,8 +109,9 @@ abstract class NumeroExtenso {
         i++;
         continue;
       }
-      if (w == 'mil') {
-        total += (corrente == 0 ? 1 : corrente) * 1000;
+      final escala = _escalas[w];
+      if (escala != null) {
+        total += (corrente == 0 ? 1 : corrente) * escala;
         corrente = 0;
         achou = true;
         i++;

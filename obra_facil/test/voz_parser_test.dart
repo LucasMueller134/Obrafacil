@@ -229,4 +229,116 @@ void main() {
       expect(r.descricao.toLowerCase(), isNot(startsWith('ontem')));
     });
   });
+
+  group('Jeitos de falar o preço', () {
+    test('sem a palavra "reais": custou, saiu, ficou em, deu', () {
+      expect(VozService.interpretar('a areia custou 320').valor, 320);
+      expect(VozService.interpretar('o frete saiu 150').valor, 150);
+      expect(VozService.interpretar('a tinta ficou em 89,90').valor, 89.90);
+      expect(VozService.interpretar('deu 45 no cimento').valor, 45);
+      expect(VozService.interpretar('no valor de 1200').valor, 1200);
+    });
+
+    test('milhar com ponto não vira número quebrado', () {
+      expect(VozService.interpretar('paguei 1.200 reais ao empreiteiro').valor,
+          1200);
+      expect(VozService.interpretar('a nota deu R\$ 1.234,56').valor, 1234.56);
+    });
+
+    test('decimal falado com "vírgula"', () {
+      expect(
+          VozService.interpretar('a tinta custou trinta e cinco vírgula '
+                  'cinquenta')
+              .valor,
+          35.50);
+    });
+
+    test('milhão por extenso', () {
+      final r = VozService.interpretar('o terreno custou um milhão e '
+          'duzentos mil reais');
+      expect(r.valor, 1200000);
+    });
+
+    test('gíria de dinheiro', () {
+      expect(VozService.interpretar('paguei 80 mango de frete').valor, 80);
+      expect(VozService.interpretar('foram 200 pila de areia').valor, 200);
+    });
+
+    test('total anunciado não é somado com as parcelas', () {
+      final r = VozService.interpretar(
+          'gastei 300 de cimento e 150 de areia, no total 450 reais');
+      expect(r.valor, 450);
+    });
+
+    test('valor que é a soma dos outros é reconhecido como total', () {
+      final r = VozService.interpretar(
+          'comprei 200 reais de tinta, 100 reais de massa e 50 reais de '
+          'lixa, 350 reais no cartão');
+      expect(r.valor, 350);
+    });
+
+    test('preço unitário multiplica pela quantidade', () {
+      final r = VozService.interpretar('comprei 5 sacos de cimento por 40 '
+          'reais cada');
+      expect(r.valor, 200);
+      expect(r.itens.first.quantidade, 5);
+    });
+
+    test('"a unidade" também marca preço unitário', () {
+      final r = VozService.interpretar('peguei 3 latas de tinta por 90 reais '
+          'a unidade');
+      expect(r.valor, 270);
+    });
+  });
+
+  group('Palavra inteira e sem acento na classificação', () {
+    test('calçada não é classificada como o material cal', () {
+      final r = VozService.interpretar('paguei 500 reais para fazer a calçada');
+      expect(r.categoria, isNot(CategoriaCusto.material));
+    });
+
+    test('acento errado na transcrição não atrapalha', () {
+      // O reconhecedor escreve "diaria" e "eletrica" sem acento.
+      expect(VozService.interpretar('paguei 180 reais a diaria do pedreiro')
+          .categoria, CategoriaCusto.maoDeObra);
+      expect(VozService.interpretar('comprei fio para a instalacao eletrica')
+          .categoria, CategoriaCusto.material);
+    });
+
+    test('plural do material é reconhecido', () {
+      expect(VozService.interpretar('comprei 20 tijolos por 60 reais')
+          .categoria, CategoriaCusto.material);
+    });
+
+    test('locação de equipamento continua sendo equipamento', () {
+      final r = VozService.interpretar(
+          'aluguei a placa vibratória por 250 reais no sábado');
+      expect(r.categoria, CategoriaCusto.equipamento);
+    });
+  });
+
+  group('Fornecedor', () {
+    test('rede conhecida é entendida mesmo sem preposição', () {
+      final r = VozService.interpretar('comprei tinta na leroy merlin por 200 '
+          'reais');
+      expect(r.fornecedorNome, 'Leroy Merlin');
+    });
+
+    test('palavra genérica sozinha não vira fornecedor', () {
+      expect(VozService.interpretar('gastei 100 reais em casa').fornecedorNome,
+          isNull);
+      expect(VozService.interpretar('paguei 90 reais na obra').fornecedorNome,
+          isNull);
+    });
+  });
+
+  group('Materiais para o estoque', () {
+    test('"meio saco de cimento" vira 0,5 no estoque', () {
+      final itens =
+          VozService.interpretar('usei meio saco de cimento hoje').itens;
+      expect(itens, hasLength(1));
+      expect(itens.first.quantidade, 0.5);
+      expect(itens.first.material, 'Cimento');
+    });
+  });
 }

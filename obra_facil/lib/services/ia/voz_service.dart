@@ -6,6 +6,7 @@ import '../../models/lancamento_model.dart';
 import 'data_falada.dart';
 import 'itens_parser.dart';
 import 'numero_extenso.dart';
+import 'texto_br.dart';
 
 /// Lançamento interpretado a partir da fala.
 class LancamentoPorVoz {
@@ -39,9 +40,14 @@ class LancamentoPorVoz {
 ///
 /// Interpreta a frase como um todo, não só palavras soltas:
 /// fala → transcrição → números por extenso → extração de valor (com soma
-/// de múltiplos valores e preço unitário "cada"), fornecedor (em qualquer
-/// posição, mesmo minúsculo), data, materiais e categoria por peso de
-/// evidência — e a descrição é reconstruída sem os trechos já entendidos.
+/// de múltiplos valores, preço unitário "cada" e detecção de qual número é
+/// o total), fornecedor (em qualquer posição, mesmo minúsculo), data,
+/// materiais e categoria por peso de evidência — e a descrição é
+/// reconstruída sem os trechos já entendidos.
+///
+/// Toda comparação de palavra passa pelo [TextoBr]: sem acento (a
+/// transcrição erra acento o tempo todo) e por palavra inteira, para
+/// "calçada" não ser classificada como o material cal.
 class VozService {
   final SpeechToText _stt = SpeechToText();
   bool _inicializado = false;
@@ -54,7 +60,8 @@ class VozService {
 
   bool get ouvindo => _stt.isListening;
 
-  Future<void> ouvir(void Function(String textoParcial, bool finalizou) onTexto) async {
+  Future<void> ouvir(
+      void Function(String textoParcial, bool finalizou) onTexto) async {
     await _stt.listen(
       // Modo ditado: tolera pausas na fala em vez de encerrar na primeira
       // respiração. Encerra após ~6s de silêncio ou quando o usuário toca
@@ -77,17 +84,50 @@ class VozService {
 
   // ============================================================= Parser
 
+  /// Um número em português, com milhar e centavos opcionais:
+  /// "350", "1.200", "1.234,56", "89,90".
+  static const String _numeroBr =
+      r'\d{1,3}(?:\.\d{3})+(?:,\d{1,2})?|\d+(?:[.,]\d{1,2})?';
+
   /// Valor em reais, com centavos opcionais:
   /// "350 reais", "89,90 reais", "25 reais e 50 centavos", "40 conto".
   static final RegExp _valorReais = RegExp(
-      r'(\d+(?:[.,]\d{1,2})?)\s*(?:reais|real|conto[s]?|pila[s]?)'
+      '($_numeroBr)'
+      r'\s*(?:reais|real|conto[s]?|pila[s]?|mango[s]?|prata[s]?|pau)'
       r'(?:\s*e\s*(\d{1,2})\s*centavos?)?',
       caseSensitive: false);
-  static final RegExp _valorComRs = RegExp(
-      r'r\$\s*(\d+(?:[.,]\d{1,2})?)',
+  static final RegExp _valorComRs =
+      RegExp('r\\\$\\s*($_numeroBr)', caseSensitive: false);
+
+  /// Valor anunciado por um verbo de preço, sem a palavra "reais":
+  /// "por 350", "custou 89,90", "saiu 1200", "ficou em 300", "deu 450".
+  static final RegExp _valorAposVerbo = RegExp(
+      r'\b(?:por|custou|custaram|saiu|sairam|sa[ií]ram|deu|deram|foi|ficou'
+      r'(?:\s+em)?|fechou(?:\s+em)?|no\s+valor\s+de|valor\s+de|total\s+de)\s+'
+      '(?:r\\\$\\s*)?($_numeroBr)'
+      r'\b',
       caseSensitive: false);
-  static final RegExp _valorAposPor = RegExp(
-      r'\bpor\s+(?:r\$\s*)?(\d+(?:[.,]\d{1,2})?)\b',
+
+  /// Lê o número no formato brasileiro: ponto separa milhar, vírgula separa
+  /// centavos. "1.200" é mil e duzentos, não um vírgula dois.
+  static double? _lerNumeroBr(String bruto) {
+    final s = bruto.trim();
+    if (RegExp(r'^\d{1,3}(?:\.\d{3})+(?:,\d{1,2})?$').hasMatch(s)) {
+      return double.tryParse(s.replaceAll('.', '').replaceAll(',', '.'));
+    }
+    return double.tryParse(s.replaceAll(',', '.'));
+  }
+
+  /// Marca de que aquele número é o total, e não mais uma parcela a somar.
+  static final RegExp _antecedeTotal = RegExp(
+      r'\b(?:no\s+total|ao\s+todo|total\s+de|deu\s+tudo|tudo|fechou'
+      r'(?:\s+em)?|somou)\s*(?:de\s+)?$',
+      caseSensitive: false);
+
+  /// Preço unitário logo depois do valor: "40 reais cada", "35 a unidade".
+  static final RegExp _marcaUnitario = RegExp(
+      r'^\s*(?:cada(?:\s+um[a]?)?|a\s+unidade|por\s+unidade|o\s+saco|'
+      r'a\s+pe[cç]a)\b',
       caseSensitive: false);
 
   /// Fornecedor em qualquer posição da frase, mesmo todo minúsculo
@@ -97,7 +137,8 @@ class VozService {
       r'\b(?:n[oa]|d[oa]|em|l[aá] n[oa])\s+'
       r'((?:loja|dep[oó]sito|deposito|casa|mercado|supermercado|madeireira|'
       r'ferragens?|ferragista|atacad(?:o|ao|ão)|agropecu[aá]ria|'
-      r'distribuidora|comercial|construtora|materiais|material)\b'
+      r'distribuidora|comercial|construtora|materiais|material|serralheria|'
+      r'vidra[cç]aria|marmoraria|home\s*center)\b'
       r'[a-zA-Zà-ÿÀ-Ý ]{0,34})',
       caseSensitive: false);
 
@@ -107,15 +148,24 @@ class VozService {
       r'\b(?:n[oa]|d[oa]|em)\s+'
       r'([A-ZÀ-Ý][\wà-ÿ]+(?:\s+(?:d[oae]s?\s+)?[A-ZÀ-Ý][\wà-ÿ]+){0,3})');
 
+  /// Redes conhecidas ditas sem preposição ("comprei na leroy merlin").
+  static const List<String> _redesConhecidas = [
+    'leroy merlin', 'leroy', 'telhanorte', 'obramax', 'cassol', 'balaroti',
+    'tumelero', 'chatuba', 'dicico', 'sodimac', 'ferreira costa',
+    'tenda atacado', 'havan', 'casa do construtor',
+  ];
+
   /// Onde o nome do fornecedor termina dentro da captura.
   static final RegExp _corteFornecedor = RegExp(
       r'\s+(por|que|onde|quando|ontem|hoje|anteontem|dia|valendo|custou|'
-      r'custando|saiu|deu|foi|com|para|pra|e)\b.*$',
+      r'custando|custaram|saiu|deu|foi|ficou|fechou|com|para|pra|e)\b.*$',
       caseSensitive: false);
 
+  /// Palavras que sozinhas não são nome de estabelecimento.
   static const List<String> _naoFornecedor = [
-    'obra', 'total', 'terreno', 'servico', 'serviço', 'canteiro',
-    'estoque', 'valor',
+    'obra', 'total', 'terreno', 'servico', 'canteiro', 'estoque', 'valor',
+    'casa', 'loja', 'mercado', 'material', 'materiais', 'deposito',
+    'oficina', 'semana', 'conta',
   ];
 
   /// Verbos/aberturas de comando no começo da frase.
@@ -123,33 +173,38 @@ class VozService {
       r'^\s*(?:anota(?:r)?\s+a[ií]|anota(?:r)?|registra(?:r)?(?:\s+pra\s+mim)?|'
       r'lan[cç]a(?:r)?|faz\s+um\s+lan[cç]amento\s+de|lan[cç]amento\s+de|'
       r'coloca(?:r)?|bota(?:r)?|comprei|compramos|paguei|pagamos|gastei|'
-      r'gastamos|aluguei|alugamos)\s+',
+      r'gastamos|aluguei|alugamos|peguei|pegamos|levei|levamos|adquiri|'
+      r'contratei|contratamos|mandei|fiz)\s+',
       caseSensitive: false);
 
+  /// Palavras por categoria — sem acento e comparadas por palavra inteira
+  /// (o plural é aceito automaticamente).
   static const Map<CategoriaCusto, List<String>> _palavrasCategoria = {
     CategoriaCusto.maoDeObra: [
-      'pedreiro', 'servente', 'diária', 'diaria', 'mão de obra', 'mao de obra',
-      'eletricista', 'encanador', 'pintor', 'ajudante', 'empreiteiro',
-      'carpinteiro', 'salário', 'salario', 'pagamento do', 'semana do',
-      'gesseiro', 'azulejista', 'armador', 'soldador', 'marceneiro',
-      'serralheiro', 'jardineiro', 'mestre de obra', 'empreita',
+      'pedreiro', 'servente', 'diaria', 'mao de obra', 'eletricista',
+      'encanador', 'bombeiro hidraulico', 'pintor', 'ajudante', 'empreiteiro',
+      'carpinteiro', 'salario', 'pagamento do', 'semana do', 'gesseiro',
+      'azulejista', 'armador', 'soldador', 'marceneiro', 'serralheiro',
+      'jardineiro', 'mestre de obra', 'empreita', 'funcionario', 'equipe',
+      'peao', 'meio dia de trabalho', 'vale',
     ],
     CategoriaCusto.material: [
-      'cimento', 'areia', 'brita', 'tijolo', 'bloco', 'vergalhão', 'vergalhao',
-      'ferro', 'madeira', 'telha', 'tinta', 'cano', 'pvc', 'fio', 'cabo',
-      'argamassa', 'cal', 'piso', 'cerâmica', 'ceramica', 'porta', 'janela',
-      'prego', 'parafuso', 'material', 'saco', 'massa corrida', 'reboco',
-      'gesso', 'vidro', 'esquadria', 'tubo', 'conexão', 'conexao', 'granito',
-      'mármore', 'marmore', 'concreto', 'laje', 'manta', 'impermeabilizante',
-      'rejunte', 'selador', 'verniz', 'disjuntor', 'tomada', 'interruptor',
-      'registro', 'torneira', 'caixa d', 'ripa', 'caibro', 'viga',
+      'cimento', 'areia', 'brita', 'tijolo', 'bloco', 'vergalhao', 'ferro',
+      'aco', 'madeira', 'telha', 'tinta', 'cano', 'pvc', 'fio', 'cabo',
+      'argamassa', 'cal', 'piso', 'ceramica', 'porcelanato', 'porta',
+      'janela', 'prego', 'parafuso', 'material', 'saco', 'massa corrida',
+      'reboco', 'gesso', 'vidro', 'esquadria', 'tubo', 'conexao', 'granito',
+      'marmore', 'concreto', 'laje', 'manta', 'impermeabilizante', 'rejunte',
+      'selador', 'verniz', 'disjuntor', 'tomada', 'interruptor', 'registro',
+      'torneira', 'caixa d', 'ripa', 'caibro', 'viga', 'pedrisco', 'arame',
+      'lixa', 'silicone', 'espuma expansiva', 'azulejo', 'rodape',
     ],
     CategoriaCusto.equipamento: [
-      'betoneira', 'andaime', 'furadeira', 'serra', 'martelete',
-      'aluguel', 'alugou', 'aluguei', 'locação', 'locacao', 'equipamento',
-      'máquina', 'maquina', 'compactador', 'gerador', 'escora', 'caçamba',
-      'cacamba', 'container', 'retroescavadeira', 'vibrador',
-      'bomba de concreto', 'esmerilhadeira', 'lixadeira', 'guincho',
+      'betoneira', 'andaime', 'furadeira', 'serra', 'martelete', 'aluguel',
+      'alugou', 'aluguei', 'locacao', 'equipamento', 'maquina', 'compactador',
+      'gerador', 'escora', 'cacamba', 'container', 'retroescavadeira',
+      'vibrador', 'bomba de concreto', 'esmerilhadeira', 'lixadeira',
+      'guincho', 'placa vibratoria', 'britadeira', 'policorte',
     ],
   };
 
@@ -157,11 +212,10 @@ class VozService {
   /// "Paguei a diária do pedreiro e comprei cimento" é mão de obra,
   /// mesmo com material citado — e o cimento ainda vai para o estoque.
   static const List<String> _sinaisFortes = [
-    'pedreiro', 'servente', 'diária', 'diaria', 'mão de obra', 'mao de obra',
-    'eletricista', 'encanador', 'pintor', 'ajudante', 'empreiteiro',
-    'carpinteiro', 'gesseiro', 'azulejista', 'armador', 'soldador',
-    'salário', 'salario', 'aluguel', 'alugou', 'aluguei', 'locação',
-    'locacao', 'empreita',
+    'pedreiro', 'servente', 'diaria', 'mao de obra', 'eletricista',
+    'encanador', 'pintor', 'ajudante', 'empreiteiro', 'carpinteiro',
+    'gesseiro', 'azulejista', 'armador', 'soldador', 'salario', 'aluguel',
+    'alugou', 'aluguei', 'locacao', 'empreita',
   ];
 
   /// Parser puro (testável): interpreta a frase transcrita.
@@ -205,61 +259,88 @@ class VozService {
   // ------------------------------------------------------------- Valor
 
   static _ValorInfo _extrairValorInfo(String texto) {
-    final ocorrencias = <(int, int, double)>[];
+    final ocorrencias = <_Ocorrencia>[];
 
     void adicionar(int inicio, int fim, double valor) {
       if (valor <= 0) return;
       for (final o in ocorrencias) {
-        if (inicio < o.$2 && fim > o.$1) return; // sobrepõe
+        if (inicio < o.fim && fim > o.inicio) return; // sobrepõe
       }
-      ocorrencias.add((inicio, fim, valor));
+      ocorrencias.add(_Ocorrencia(inicio, fim, valor,
+          ehTotal: _antecedeTotal.hasMatch(texto.substring(0, inicio))));
     }
 
     for (final m in _valorReais.allMatches(texto)) {
-      final base = double.tryParse(m.group(1)!.replaceAll(',', '.')) ?? 0;
+      final base = _lerNumeroBr(m.group(1)!) ?? 0;
       final centavos = int.tryParse(m.group(2) ?? '') ?? 0;
       adicionar(m.start, m.end, base + centavos / 100);
     }
     for (final m in _valorComRs.allMatches(texto)) {
-      adicionar(m.start, m.end,
-          double.tryParse(m.group(1)!.replaceAll(',', '.')) ?? 0);
+      adicionar(m.start, m.end, _lerNumeroBr(m.group(1)!) ?? 0);
     }
-    for (final m in _valorAposPor.allMatches(texto)) {
-      adicionar(m.start, m.end,
-          double.tryParse(m.group(1)!.replaceAll(',', '.')) ?? 0);
+    for (final m in _valorAposVerbo.allMatches(texto)) {
+      adicionar(m.start, m.end, _lerNumeroBr(m.group(1)!) ?? 0);
     }
 
     if (ocorrencias.isEmpty) return const _ValorInfo(null, false, []);
-    ocorrencias.sort((a, b) => a.$1.compareTo(b.$1));
+    ocorrencias.sort((a, b) => a.inicio.compareTo(b.inicio));
 
     // "cada" logo após o valor → preço unitário.
     final unitario = ocorrencias.length == 1 &&
-        RegExp(r'^\s*cada\b')
-            .hasMatch(texto.substring(ocorrencias.first.$2));
-
-    // Vários valores na frase ("300 de cimento e 150 de areia") → soma.
-    final total = ocorrencias.fold<double>(0, (s, o) => s + o.$3);
+        _marcaUnitario.hasMatch(texto.substring(ocorrencias.first.fim));
 
     final trechos = ocorrencias.map((o) {
-      var inicio = o.$1;
-      var fim = o.$2;
+      var inicio = o.inicio;
+      var fim = o.fim;
       // inclui o "por " anterior e o "cada" seguinte na limpeza
-      final antes = texto.substring(0, inicio);
-      final porAntes = RegExp(r'(?:\bpor|\bde)\s+$').firstMatch(antes);
+      final porAntes =
+          RegExp(r'(?:\bpor|\bde)\s+$').firstMatch(texto.substring(0, inicio));
       if (porAntes != null) inicio = porAntes.start;
-      final cadaDepois =
-          RegExp(r'^\s*cada\b').firstMatch(texto.substring(fim));
+      final cadaDepois = _marcaUnitario.firstMatch(texto.substring(fim));
       if (cadaDepois != null) fim += cadaDepois.end;
       return (inicio, fim);
     }).toList();
 
-    return _ValorInfo(
-        unitario ? ocorrencias.first.$3 : total, unitario, trechos);
+    return _ValorInfo(_totalDe(ocorrencias, unitario), unitario, trechos);
+  }
+
+  /// Decide qual número da frase é o valor do lançamento.
+  static double? _totalDe(List<_Ocorrencia> ocorrencias, bool unitario) {
+    if (unitario) return ocorrencias.first.valor;
+    if (ocorrencias.length == 1) return ocorrencias.first.valor;
+
+    // "…cimento 300 e areia 150, no total 450" — quem foi anunciado como
+    // total manda, senão somaríamos o total junto com as parcelas.
+    final anunciado = ocorrencias.where((o) => o.ehTotal);
+    if (anunciado.isNotEmpty) return anunciado.last.valor;
+
+    // Um dos valores é a soma dos outros: ele é o total, os demais são as
+    // parcelas detalhadas. Com só dois números seria ambíguo (150 e 150),
+    // então a regra vale a partir de três.
+    if (ocorrencias.length >= 3) {
+      for (final o in ocorrencias) {
+        final resto = ocorrencias
+            .where((x) => !identical(x, o))
+            .fold<double>(0, (s, x) => s + x.valor);
+        if (resto > 0 && (resto - o.valor).abs() < 0.01) return o.valor;
+      }
+    }
+
+    // Vários gastos na mesma frase ("300 de cimento e 150 de areia") → soma.
+    return ocorrencias.fold<double>(0, (s, o) => s + o.valor);
   }
 
   // -------------------------------------------------------- Fornecedor
 
   static _FornecedorInfo? _extrairFornecedorInfo(String texto) {
+    final normalizado = TextoBr.normalizar(texto);
+    for (final rede in _redesConhecidas) {
+      if (!TextoBr.contemPalavra(normalizado, rede)) continue;
+      final inicio = normalizado.indexOf(rede);
+      return _FornecedorInfo(
+          _capitalizarNome(rede), (inicio, inicio + rede.length));
+    }
+
     final m = _fornecedorComTipo.firstMatch(texto) ??
         _fornecedorCapitalizado.firstMatch(texto);
     if (m == null) return null;
@@ -267,7 +348,7 @@ class VozService {
     final bruto = m.group(1)!;
     final nome = bruto.replaceFirst(_corteFornecedor, '').trim();
     if (nome.length < 3) return null;
-    if (_naoFornecedor.contains(nome.toLowerCase())) return null;
+    if (_naoFornecedor.contains(TextoBr.normalizar(nome))) return null;
 
     // fim do trecho na frase original = início do grupo + nome mantido
     final inicioGrupo = m.end - bruto.length;
@@ -289,13 +370,13 @@ class VozService {
   // --------------------------------------------------------- Categoria
 
   static CategoriaCusto _classificarCategoria(String texto) {
-    final t = texto.toLowerCase();
+    final t = TextoBr.normalizar(texto);
     var melhor = CategoriaCusto.outros;
     var melhorPontos = 0;
     for (final entry in _palavrasCategoria.entries) {
       var pontos = 0;
       for (final palavra in entry.value) {
-        if (!t.contains(palavra)) continue;
+        if (!TextoBr.contemPalavra(t, palavra)) continue;
         pontos += _sinaisFortes.contains(palavra) ? 2 : 1;
       }
       if (pontos > melhorPontos) {
@@ -333,8 +414,8 @@ class VozService {
 
     d = d.replaceFirst(_aberturas, '');
     // conectores órfãos nas pontas ("de", "no", "por", "e"…)
-    final orfaos =
-        RegExp(r'^(?:de|do|da|no|na|em|por|com|e|a|o|,|\.)\s+', caseSensitive: false);
+    final orfaos = RegExp(r'^(?:de|do|da|no|na|em|por|com|e|a|o|,|\.)\s+',
+        caseSensitive: false);
     final orfaosFim = RegExp(r'\s+(?:de|do|da|no|na|em|por|com|e|a|o|que|,|\.)$',
         caseSensitive: false);
     var anterior = '';
@@ -353,6 +434,18 @@ class VozService {
     }
     return d[0].toUpperCase() + d.substring(1);
   }
+}
+
+class _Ocorrencia {
+  final int inicio;
+  final int fim;
+  final double valor;
+
+  /// A frase anunciou este número como o total ("no total 450").
+  final bool ehTotal;
+
+  const _Ocorrencia(this.inicio, this.fim, this.valor,
+      {required this.ehTotal});
 }
 
 class _ValorInfo {
