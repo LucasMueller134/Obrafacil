@@ -15,6 +15,7 @@ import '../../services/ia/voz_service.dart';
 import '../../services/imagem_service.dart';
 import '../../utils/formatters.dart';
 import '../../utils/validators.dart';
+import '../../widgets/botao_ia.dart';
 import '../../widgets/painel_voz.dart';
 
 class NovoLancamentoScreen extends StatefulWidget {
@@ -116,7 +117,10 @@ class _NovoLancamentoScreenState extends State<NovoLancamentoScreen> {
             : nota.textoCompleto;
         _itens = ItensParser.deNotaOcr(nota.textoCompleto);
         _avisoIa = nota.encontrouAlgo
-            ? 'Dados extraídos da nota pelo OCR — confira antes de salvar.'
+            ? (nota.passes > 1
+                ? 'A foto estava difícil de ler: recuperei os dados '
+                    'realçando a imagem. Confira campo a campo.'
+                : 'Dados extraídos da nota pelo OCR — confira antes de salvar.')
             : 'Não consegui ler os dados desta nota (a foto ficou anexada). '
                 'Notas impressas funcionam melhor que manuscritas — tente '
                 'fotografar de frente, com boa luz e sem sombra.';
@@ -296,7 +300,7 @@ class _NovoLancamentoScreenState extends State<NovoLancamentoScreen> {
                 Row(
                   children: [
                     Expanded(
-                      child: _BotaoIa(
+                      child: BotaoIa(
                         icone: Icons.document_scanner,
                         rotulo: 'Foto da nota',
                         descricao: 'OCR preenche sozinho',
@@ -305,7 +309,7 @@ class _NovoLancamentoScreenState extends State<NovoLancamentoScreen> {
                     ),
                     const SizedBox(width: 12),
                     Expanded(
-                      child: _BotaoIa(
+                      child: BotaoIa(
                         icone: Icons.mic,
                         rotulo: 'Por voz',
                         descricao: 'Fale o gasto',
@@ -331,27 +335,7 @@ class _NovoLancamentoScreenState extends State<NovoLancamentoScreen> {
                 ],
                 if (_avisoIa != null) ...[
                   const SizedBox(height: 16),
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: AppColors.amareloCapacete.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                          color:
-                              AppColors.amareloCapacete.withValues(alpha: 0.5)),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.auto_awesome,
-                            size: 18, color: AppColors.amareloCapacete),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(_avisoIa!,
-                              style: Theme.of(context).textTheme.bodySmall),
-                        ),
-                      ],
-                    ),
-                  ),
+                  AvisoIa(mensagem: _avisoIa!),
                 ],
                 if (_textoOcr != null)
                   Align(
@@ -511,52 +495,3 @@ class _NovoLancamentoScreenState extends State<NovoLancamentoScreen> {
   }
 }
 
-class _BotaoIa extends StatelessWidget {
-  final IconData icone;
-  final String rotulo;
-  final String descricao;
-  final VoidCallback? onTap;
-
-  const _BotaoIa({
-    required this.icone,
-    required this.rotulo,
-    required this.descricao,
-    this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
-        decoration: BoxDecoration(
-          color: AppColors.laranja.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(16),
-          border:
-              Border.all(color: AppColors.laranja.withValues(alpha: 0.45)),
-        ),
-        child: Column(
-          children: [
-            Icon(icone, color: AppColors.laranja, size: 26),
-            const SizedBox(height: 8),
-            Text(rotulo,
-                style: Theme.of(context)
-                    .textTheme
-                    .titleSmall
-                    ?.copyWith(fontWeight: FontWeight.w700)),
-            const SizedBox(height: 2),
-            Text(
-              descricao,
-              style: Theme.of(context)
-                  .textTheme
-                  .bodySmall
-                  ?.copyWith(color: AppColors.textoSecundario),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}

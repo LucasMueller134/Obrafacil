@@ -2,13 +2,74 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
 import '../constants/app_colors.dart';
+import '../services/ia/diario_voz_service.dart';
 import '../services/ia/voz_service.dart';
 import '../utils/formatters.dart';
 
-/// Abre o painel de lançamento por voz com interpretação ao vivo.
+/// Um campo que a IA entendeu (ou não) enquanto o usuário fala.
+class LinhaEntendida {
+  final IconData icone;
+  final String rotulo;
+
+  /// null = ainda não entendi este campo.
+  final String? valor;
+
+  const LinhaEntendida(this.icone, this.rotulo, this.valor);
+}
+
+/// Abre o painel de voz do lançamento, com interpretação ao vivo.
 /// Retorna o lançamento interpretado, ou null se o usuário cancelar.
 Future<LancamentoPorVoz?> mostrarPainelVoz(
-    BuildContext context, VozService voz) async {
+        BuildContext context, VozService voz) =>
+    _abrirPainel<LancamentoPorVoz>(
+      context,
+      voz,
+      exemplo: 'Ex.: "Ontem comprei dez sacos de cimento por trezentos e '
+          'cinquenta reais no Depósito São José"',
+      interpretar: VozService.interpretar,
+      linhas: (r) => [
+        LinhaEntendida(Icons.payments, 'Valor',
+            r.valor != null ? Formatters.moeda(r.valor!) : null),
+        LinhaEntendida(Icons.event, 'Data',
+            r.data != null ? _rotuloData(r.data!) : null),
+        LinhaEntendida(r.categoria.icone, 'Categoria', r.categoria.label),
+        LinhaEntendida(Icons.storefront, 'Fornecedor', r.fornecedorNome),
+        LinhaEntendida(
+            Icons.inventory_2,
+            'Materiais',
+            r.itens.isEmpty
+                ? null
+                : r.itens.map((i) => i.resumo).join(' · ')),
+      ],
+    );
+
+/// Abre o painel de voz do diário de obra: o encarregado conta o dia e a
+/// IA separa clima, equipe, fase e data.
+Future<DiarioPorVoz?> mostrarPainelVozDiario(
+        BuildContext context, VozService voz) =>
+    _abrirPainel<DiarioPorVoz>(
+      context,
+      voz,
+      exemplo: 'Ex.: "Hoje choveu de manhã, trabalharam três pedreiros e '
+          'dois serventes, terminamos o reboco da fachada"',
+      interpretar: DiarioVozService.interpretar,
+      linhas: (r) => [
+        LinhaEntendida(Icons.cloud, 'Clima', r.clima),
+        LinhaEntendida(Icons.groups, 'Pessoas',
+            r.numeroPessoas != null ? '${r.numeroPessoas} no canteiro' : null),
+        LinhaEntendida(Icons.construction, 'Fase', r.fase),
+        LinhaEntendida(Icons.event, 'Dia',
+            r.data != null ? _rotuloData(r.data!) : null),
+      ],
+    );
+
+Future<T?> _abrirPainel<T>(
+  BuildContext context,
+  VozService voz, {
+  required String exemplo,
+  required T Function(String texto) interpretar,
+  required List<LinhaEntendida> Function(T) linhas,
+}) async {
   final ok = await voz.inicializar();
   if (!context.mounted) return null;
   if (!ok) {
@@ -17,39 +78,52 @@ Future<LancamentoPorVoz?> mostrarPainelVoz(
             'Verifique a permissão do microfone nas configurações.')));
     return null;
   }
-  return showModalBottomSheet<LancamentoPorVoz>(
+  return showModalBottomSheet<T>(
     context: context,
     isScrollControlled: true,
     isDismissible: false,
     enableDrag: false,
-    builder: (_) => _PainelVoz(voz: voz),
+    builder: (_) => _PainelVoz<T>(
+      voz: voz,
+      exemplo: exemplo,
+      interpretar: interpretar,
+      linhas: linhas,
+    ),
   );
 }
 
-class _PainelVoz extends StatefulWidget {
-  final VozService voz;
-
-  const _PainelVoz({required this.voz});
-
-  @override
-  State<_PainelVoz> createState() => _PainelVozState();
+/// "Hoje"/"Ontem" comunicam melhor que a data por extenso.
+String _rotuloData(DateTime data) {
+  final agora = DateTime.now();
+  final hoje = DateTime(agora.year, agora.month, agora.day);
+  final dia = DateTime(data.year, data.month, data.day);
+  final diff = hoje.difference(dia).inDays;
+  if (diff == 0) return 'Hoje';
+  if (diff == 1) return 'Ontem';
+  return Formatters.data(data);
 }
 
-class _PainelVozState extends State<_PainelVoz> {
-  String _transcricao = '';
-  LancamentoPorVoz? _interpretado;
-  bool _ouvindo = false;
+class _PainelVoz<T> extends StatefulWidget {
+  final VozService voz;
+  final String exemplo;
+  final T Function(String texto) interpretar;
+  final List<LinhaEntendida> Function(T) linhas;
 
-  /// "Hoje"/"Ontem" comunicam melhor que a data por extenso.
-  static String _rotuloData(DateTime data) {
-    final agora = DateTime.now();
-    final hoje = DateTime(agora.year, agora.month, agora.day);
-    final dia = DateTime(data.year, data.month, data.day);
-    final diff = hoje.difference(dia).inDays;
-    if (diff == 0) return 'Hoje';
-    if (diff == 1) return 'Ontem';
-    return Formatters.data(data);
-  }
+  const _PainelVoz({
+    required this.voz,
+    required this.exemplo,
+    required this.interpretar,
+    required this.linhas,
+  });
+
+  @override
+  State<_PainelVoz<T>> createState() => _PainelVozState<T>();
+}
+
+class _PainelVozState<T> extends State<_PainelVoz<T>> {
+  String _transcricao = '';
+  T? _interpretado;
+  bool _ouvindo = false;
 
   @override
   void initState() {
@@ -70,7 +144,7 @@ class _PainelVozState extends State<_PainelVoz> {
         // Interpretação ao vivo: o usuário vê os campos sendo
         // preenchidos enquanto fala.
         _interpretado =
-            texto.trim().isEmpty ? null : VozService.interpretar(texto);
+            texto.trim().isEmpty ? null : widget.interpretar(texto);
         if (finalizou) _ouvindo = false;
       });
     });
@@ -86,7 +160,7 @@ class _PainelVozState extends State<_PainelVoz> {
     if (!mounted) return;
     final resultado = _transcricao.trim().isEmpty
         ? null
-        : (_interpretado ?? VozService.interpretar(_transcricao));
+        : (_interpretado ?? widget.interpretar(_transcricao));
     Navigator.pop(context, resultado);
   }
 
@@ -110,13 +184,8 @@ class _PainelVozState extends State<_PainelVoz> {
           size: 40, color: Colors.white),
     );
     if (_ouvindo) {
-      microfone = microfone
-          .animate(onPlay: (c) => c.repeat(reverse: true))
-          .scaleXY(
-              begin: 1.0,
-              end: 1.12,
-              duration: 600.ms,
-              curve: Curves.easeInOut);
+      microfone = microfone.animate(onPlay: (c) => c.repeat(reverse: true)).scaleXY(
+          begin: 1.0, end: 1.12, duration: 600.ms, curve: Curves.easeInOut);
     }
 
     return Padding(
@@ -143,8 +212,7 @@ class _PainelVozState extends State<_PainelVoz> {
           ),
           const SizedBox(height: 4),
           Text(
-            'Ex.: "Ontem comprei dez sacos de cimento por trezentos e '
-            'cinquenta reais no Depósito São José"',
+            widget.exemplo,
             textAlign: TextAlign.center,
             style: Theme.of(context)
                 .textTheme
@@ -185,39 +253,8 @@ class _PainelVozState extends State<_PainelVoz> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _LinhaEntendida(
-                          icone: Icons.payments,
-                          rotulo: 'Valor',
-                          valor: _interpretado!.valor != null
-                              ? Formatters.moeda(_interpretado!.valor!)
-                              : null,
-                        ),
-                        _LinhaEntendida(
-                          icone: Icons.event,
-                          rotulo: 'Data',
-                          valor: _interpretado!.data != null
-                              ? _rotuloData(_interpretado!.data!)
-                              : null,
-                        ),
-                        _LinhaEntendida(
-                          icone: _interpretado!.categoria.icone,
-                          rotulo: 'Categoria',
-                          valor: _interpretado!.categoria.label,
-                        ),
-                        _LinhaEntendida(
-                          icone: Icons.storefront,
-                          rotulo: 'Fornecedor',
-                          valor: _interpretado!.fornecedorNome,
-                        ),
-                        _LinhaEntendida(
-                          icone: Icons.inventory_2,
-                          rotulo: 'Materiais',
-                          valor: _interpretado!.itens.isEmpty
-                              ? null
-                              : _interpretado!.itens
-                                  .map((i) => i.resumo)
-                                  .join(' · '),
-                        ),
+                        for (final linha in widget.linhas(_interpretado as T))
+                          _LinhaEntendida(linha: linha),
                       ],
                     ),
                   ),
@@ -256,33 +293,26 @@ class _PainelVozState extends State<_PainelVoz> {
 }
 
 class _LinhaEntendida extends StatelessWidget {
-  final IconData icone;
-  final String rotulo;
-  final String? valor;
+  final LinhaEntendida linha;
 
-  const _LinhaEntendida({
-    required this.icone,
-    required this.rotulo,
-    this.valor,
-  });
+  const _LinhaEntendida({required this.linha});
 
   @override
   Widget build(BuildContext context) {
-    final entendido = valor != null;
+    final entendido = linha.valor != null;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 3),
       child: Row(
         children: [
-          Icon(icone,
+          Icon(linha.icone,
               size: 16,
-              color: entendido
-                  ? AppColors.laranja
-                  : AppColors.textoDesabilitado),
+              color:
+                  entendido ? AppColors.laranja : AppColors.textoDesabilitado),
           const SizedBox(width: 8),
           SizedBox(
             width: 86,
             child: Text(
-              rotulo,
+              linha.rotulo,
               style: Theme.of(context)
                   .textTheme
                   .bodySmall
@@ -291,10 +321,9 @@ class _LinhaEntendida extends StatelessWidget {
           ),
           Expanded(
             child: Text(
-              valor ?? '—',
+              linha.valor ?? '—',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    fontWeight:
-                        entendido ? FontWeight.w600 : FontWeight.normal,
+                    fontWeight: entendido ? FontWeight.w600 : FontWeight.normal,
                     color: entendido
                         ? AppColors.textoPrimario
                         : AppColors.textoDesabilitado,
