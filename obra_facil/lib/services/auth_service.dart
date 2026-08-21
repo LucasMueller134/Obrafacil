@@ -37,7 +37,34 @@ class AuthService {
     );
     await _db.collection('usuarios').doc(usuario.id).set(usuario.toMap());
     await cred.user!.updateDisplayName(usuario.nome);
+    // Confirmação do e-mail: é o que separa um endereço real de um
+    // inventado no cadastro. Falhar aqui (sem rede, cota do Firebase) não
+    // pode derrubar o cadastro que já foi feito — a tela de confirmação
+    // tem botão de reenviar.
+    try {
+      await cred.user!.sendEmailVerification();
+    } catch (_) {}
     return usuario;
+  }
+
+  /// O e-mail desta sessão já foi confirmado?
+  bool get emailVerificado => _auth.currentUser?.emailVerified ?? false;
+
+  String? get emailAtual => _auth.currentUser?.email;
+
+  Future<void> reenviarVerificacao() async {
+    final user = _auth.currentUser;
+    if (user == null || user.emailVerified) return;
+    await user.sendEmailVerification();
+  }
+
+  /// Rebusca o usuário no Firebase para ver se o link já foi clicado —
+  /// a confirmação acontece fora do app, então o estado local envelhece.
+  Future<bool> recarregarVerificacao() async {
+    final user = _auth.currentUser;
+    if (user == null) return false;
+    await user.reload();
+    return _auth.currentUser?.emailVerified ?? false;
   }
 
   Future<UsuarioModel?> entrar({
@@ -74,6 +101,10 @@ class AuthService {
           return 'Sem conexão. Verifique sua internet.';
         case 'too-many-requests':
           return 'Muitas tentativas. Aguarde alguns minutos.';
+        case 'invalid-recipient-email':
+        case 'auth/invalid-email-verified':
+          return 'Não foi possível enviar para este e-mail. Confira se '
+              'está escrito certo.';
       }
     }
     return 'Não foi possível concluir. Tente novamente.';

@@ -4,6 +4,9 @@ import 'package:go_router/go_router.dart';
 import '../providers/auth_provider.dart';
 import '../screens/auth/cadastro_screen.dart';
 import '../screens/auth/login_screen.dart';
+import '../screens/auth/verificar_email_screen.dart';
+import '../screens/cliente/cliente_obra_screen.dart';
+import '../screens/cliente/cliente_obras_screen.dart';
 import '../screens/cronograma/cronograma_screen.dart';
 import '../screens/diario/diario_screen.dart';
 import '../screens/estoque/estoque_screen.dart';
@@ -17,45 +20,16 @@ import '../screens/obras/obra_detalhe_screen.dart';
 import '../screens/obras/obras_screen.dart';
 import '../screens/relatorios/relatorio_screen.dart';
 import '../screens/splash_screen.dart';
+import 'transicoes.dart';
 
-/// Transição padrão entre telas, com sensação de profundidade:
-/// a tela nova sobe com fade + zoom sutil; a que fica embaixo
-/// encolhe e escurece levemente, como uma pilha de camadas.
+/// Transição padrão entre telas — definida em router/transicoes.dart para
+/// que os `Navigator.push` fora do router usem exatamente a mesma.
 CustomTransitionPage<void> _pagina(GoRouterState state, Widget child) =>
-    CustomTransitionPage(
-      key: state.pageKey,
-      child: child,
-      transitionDuration: const Duration(milliseconds: 340),
-      reverseTransitionDuration: const Duration(milliseconds: 280),
-      transitionsBuilder: (context, animation, secondaryAnimation, child) {
-        final entrada =
-            CurvedAnimation(parent: animation, curve: Curves.easeOutCubic);
-        final saida = CurvedAnimation(
-            parent: secondaryAnimation, curve: Curves.easeInOut);
-        return FadeTransition(
-          opacity: entrada,
-          child: SlideTransition(
-            position: Tween(
-              begin: const Offset(0, 0.06),
-              end: Offset.zero,
-            ).animate(entrada),
-            child: ScaleTransition(
-              scale: Tween(begin: 0.985, end: 1.0).animate(entrada),
-              child: ScaleTransition(
-                scale: Tween(begin: 1.0, end: 0.97).animate(saida),
-                child: FadeTransition(
-                  opacity: Tween(begin: 1.0, end: 0.85).animate(saida),
-                  child: child,
-                ),
-              ),
-            ),
-          ),
-        );
-      },
-    );
+    paginaSuave(state, child);
 
-/// Rotas do app. O redirect centraliza a regra de acesso:
-/// deslogado só vê login/cadastro; logado nunca volta para elas.
+/// Rotas do app. O redirect centraliza a regra de acesso: deslogado só vê
+/// login/cadastro; logado nunca volta para elas; e cliente vive na área
+/// dele, sem caminho para as telas de dinheiro da equipe.
 GoRouter criarRouter(AuthProvider auth) {
   return GoRouter(
     initialLocation: '/splash',
@@ -66,7 +40,19 @@ GoRouter criarRouter(AuthProvider auth) {
 
       if (auth.inicializando) return local == '/splash' ? null : '/splash';
       if (!auth.logado) return rotaPublica ? null : '/login';
-      if (rotaPublica || local == '/splash') return '/obras';
+
+      // Cliente é gente de fora: só entra com o e-mail confirmado.
+      if (auth.ehCliente && !auth.emailVerificado) {
+        return local == '/verificar-email' ? null : '/verificar-email';
+      }
+      final inicio = auth.ehCliente ? '/cliente' : '/obras';
+      if (local == '/verificar-email') return inicio;
+
+      // Cada perfil na sua área — inclusive se alguém digitar a rota.
+      if (auth.ehCliente && !local.startsWith('/cliente')) return '/cliente';
+      if (!auth.ehCliente && local.startsWith('/cliente')) return '/obras';
+
+      if (rotaPublica || local == '/splash') return inicio;
       return null;
     },
     routes: [
@@ -81,6 +67,26 @@ GoRouter criarRouter(AuthProvider auth) {
       GoRoute(
         path: '/cadastro',
         pageBuilder: (_, state) => _pagina(state, const CadastroScreen()),
+      ),
+      GoRoute(
+        path: '/verificar-email',
+        pageBuilder: (_, state) =>
+            _pagina(state, const VerificarEmailScreen()),
+      ),
+      // Área do cliente: acompanha a obra, sem nenhuma tela de dinheiro.
+      GoRoute(
+        path: '/cliente',
+        pageBuilder: (_, state) =>
+            _pagina(state, const ClienteObrasScreen()),
+        routes: [
+          GoRoute(
+            path: ':obraId',
+            pageBuilder: (_, state) => _pagina(
+              state,
+              ClienteObraScreen(obraId: state.pathParameters['obraId']!),
+            ),
+          ),
+        ],
       ),
       GoRoute(
         path: '/obras',

@@ -278,6 +278,88 @@ class _Dashboard extends StatelessWidget {
   }
 }
 
+/// Copia o código da equipe, republicando o convite antes.
+///
+/// As obras criadas antes da coleção de convites não têm o código
+/// publicado lá, e sem isso o mestre não consegue entrar. Republicar no
+/// momento em que o dono vai compartilhar conserta essas obras sozinho.
+Future<void> _convidarEquipe(BuildContext context, ObraModel obra) async {
+  final db = context.read<FirestoreService>();
+  final messenger = ScaffoldMessenger.of(context);
+  try {
+    await db.garantirConvites(obra);
+  } catch (_) {
+    // Sem rede o convite já publicado antes continua valendo.
+  }
+  await Clipboard.setData(ClipboardData(text: obra.codigoConvite));
+  messenger.showSnackBar(const SnackBar(
+      content: Text('Código copiado! Envie para o mestre de obras.')));
+}
+
+/// Gera (na primeira vez) e copia o código de acompanhamento do cliente.
+Future<void> _convidarCliente(BuildContext context, ObraModel obra) async {
+  final db = context.read<FirestoreService>();
+  final messenger = ScaffoldMessenger.of(context);
+  try {
+    final codigo = await db.codigoDoClienteDaObra(obra);
+    await Clipboard.setData(ClipboardData(text: codigo));
+    messenger.showSnackBar(SnackBar(
+      content: Text('Código do cliente: $codigo (copiado). Ele acompanha o '
+          'andamento da obra, sem ver custos.'),
+      duration: const Duration(seconds: 5),
+    ));
+  } catch (e) {
+    messenger.showSnackBar(
+        SnackBar(content: Text('Não foi possível gerar o código: $e')));
+  }
+}
+
+class _Codigo extends StatelessWidget {
+  final IconData icone;
+  final String rotulo;
+  final VoidCallback aoCopiar;
+
+  const _Codigo({
+    required this.icone,
+    required this.rotulo,
+    required this.aoCopiar,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: aoCopiar,
+      borderRadius: BorderRadius.circular(10),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.18),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.35)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icone, size: 16, color: Colors.white),
+            const SizedBox(width: 7),
+            Text(
+              rotulo,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+                fontSize: 13,
+                letterSpacing: 0.5,
+              ),
+            ),
+            const SizedBox(width: 7),
+            const Icon(Icons.copy, size: 13, color: Colors.white70),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _CabecalhoObra extends StatelessWidget {
   final ObraModel obra;
   final bool ehDono;
@@ -357,46 +439,23 @@ class _CabecalhoObra extends StatelessWidget {
                 ),
                 if (ehDono) ...[
                   const SizedBox(height: 12),
-                  InkWell(
-                    onTap: () {
-                      Clipboard.setData(
-                          ClipboardData(text: obra.codigoConvite));
-                      ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                              content: Text(
-                                  'Código copiado! Envie para o mestre de obras.')));
-                    },
-                    borderRadius: BorderRadius.circular(10),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.18),
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.35)),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      _Codigo(
+                        icone: Icons.qr_code,
+                        rotulo: 'Equipe: ${obra.codigoConvite}',
+                        aoCopiar: () => _convidarEquipe(context, obra),
                       ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.qr_code,
-                              size: 16, color: Colors.white),
-                          const SizedBox(width: 7),
-                          Text(
-                            'Equipe: ${obra.codigoConvite}',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w700,
-                              fontSize: 13,
-                              letterSpacing: 0.5,
-                            ),
-                          ),
-                          const SizedBox(width: 7),
-                          const Icon(Icons.copy,
-                              size: 13, color: Colors.white70),
-                        ],
+                      _Codigo(
+                        icone: Icons.holiday_village,
+                        rotulo: obra.codigoCliente.isEmpty
+                            ? 'Convidar cliente'
+                            : 'Cliente: ${obra.codigoCliente}',
+                        aoCopiar: () => _convidarCliente(context, obra),
                       ),
-                    ),
+                    ],
                   ),
                 ],
               ],

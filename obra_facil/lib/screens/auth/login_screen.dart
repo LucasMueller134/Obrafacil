@@ -180,7 +180,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ?.copyWith(color: AppColors.textoSecundario),
                           ),
                           TextButton(
-                            onPressed: () => context.go('/cadastro'),
+                            onPressed: () => context.push('/cadastro'),
                             child: const Text('Criar conta'),
                           ),
                         ],

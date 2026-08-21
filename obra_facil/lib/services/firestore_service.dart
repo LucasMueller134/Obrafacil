@@ -9,6 +9,7 @@ import '../models/models.dart';
 /// Estrutura de dados:
 /// - usuarios/{uid}
 /// - obras/{obraId} (subcoleções: lancamentos, estoque, diario, cronograma, fotos)
+/// - convites/{codigo} (aponta para a obra, sem carregar dado financeiro)
 /// - fornecedores/{id} (campo donoId — compartilhados entre as obras do dono)
 ///
 /// O modo offline usa a persistência local nativa do Firestore: leituras vêm
@@ -18,6 +19,9 @@ class FirestoreService {
 
   CollectionReference<Map<String, dynamic>> get _obras =>
       _db.collection('obras');
+
+  CollectionReference<Map<String, dynamic>> get _convites =>
+      _db.collection('convites');
 
   CollectionReference<Map<String, dynamic>> _sub(
           String obraId, String nome) =>
@@ -39,12 +43,58 @@ class FirestoreService {
           ..sort((a, b) => b.criadoEm.compareTo(a.criadoEm)));
   }
 
+  /// Obras que o cliente acompanha.
+  ///
+  /// Consulta separada de propósito: o Firestore aceita um único
+  /// `arrayContains` por consulta, então juntar equipe e clientes num OR
+  /// quebraria — e manter separado deixa explícito que é outro acesso.
+  Stream<List<ObraModel>> obrasDoCliente(String uid) => _obras
+      .where('clientesIds', arrayContains: uid)
+      .snapshots()
+      .map((s) => s.docs.map((d) => ObraModel.fromMap(d.id, d.data())).toList()
+        ..sort((a, b) => b.criadoEm.compareTo(a.criadoEm)));
+
   Stream<ObraModel?> obra(String obraId) => _obras.doc(obraId).snapshots().map(
       (d) => d.exists ? ObraModel.fromMap(d.id, d.data()!) : null);
 
   Future<String> criarObra(ObraModel obra) async {
     final ref = await _obras.add(obra.toMap());
+    await _publicarConvite(obra.codigoConvite, ref.id, 'equipe', obra.nome);
     return ref.id;
+  }
+
+  /// Publica o código numa coleção à parte, com o mínimo necessário para
+  /// alguém entrar na obra: id e nome.
+  ///
+  /// Existe porque o documento da obra guarda o orçamento. Se a busca por
+  /// código fosse feita direto nas obras, todo usuário logado precisaria
+  /// conseguir lê-las — e o cliente enxergaria o dinheiro pela porta dos
+  /// fundos. Aqui ele só alcança o que o convite carrega.
+  Future<void> _publicarConvite(
+      String codigo, String obraId, String tipo, String nomeObra) {
+    if (codigo.isEmpty) return Future.value();
+    return _convites.doc(codigo).set({
+      'obraId': obraId,
+      'tipo': tipo,
+      'nomeObra': nomeObra,
+    });
+  }
+
+  /// Obra apontada por um código, se o código for do tipo esperado.
+  Future<String?> _obraIdDoConvite(String codigo, String tipo) async {
+    final limpo = codigo.trim().toUpperCase();
+    if (limpo.isEmpty) return null;
+    final doc = await _convites.doc(limpo).get();
+    final dados = doc.data();
+    if (dados == null || dados['tipo'] != tipo) return null;
+    return dados['obraId'] as String?;
+  }
+
+  /// Republica os convites de uma obra criada antes desta coleção existir.
+  /// Idempotente — o dono chama ao abrir a obra e o acesso se conserta.
+  Future<void> garantirConvites(ObraModel obra) async {
+    await _publicarConvite(obra.codigoConvite, obra.id, 'equipe', obra.nome);
+    await _publicarConvite(obra.codigoCliente, obra.id, 'cliente', obra.nome);
   }
 
   Future<void> atualizarObra(ObraModel obra) =>
@@ -61,19 +111,48 @@ class FirestoreService {
 
   /// Mestre entra numa obra usando o código de convite do dono.
   /// Retorna a obra, ou null se o código não existir.
-  Future<ObraModel?> entrarNaObraPorCodigo(
-      String codigo, String uid) async {
-    final query = await _obras
-        .where('codigoConvite', isEqualTo: codigo.trim().toUpperCase())
-        .limit(1)
-        .get();
-    if (query.docs.isEmpty) return null;
-    final doc = query.docs.first;
-    await doc.reference.update({
-      'equipeIds': FieldValue.arrayUnion([uid]),
+  Future<ObraModel?> entrarNaObraPorCodigo(String codigo, String uid) =>
+      _entrarPorConvite(codigo, uid, tipo: 'equipe', campo: 'equipeIds');
+
+  /// Cliente entra na obra com o código que o dono passou para ele.
+  /// Retorna a obra, ou null se o código não existir.
+  Future<ObraModel?> entrarComoClientePorCodigo(String codigo, String uid) =>
+      _entrarPorConvite(codigo, uid, tipo: 'cliente', campo: 'clientesIds');
+
+  Future<ObraModel?> _entrarPorConvite(
+    String codigo,
+    String uid, {
+    required String tipo,
+    required String campo,
+  }) async {
+    final obraId = await _obraIdDoConvite(codigo, tipo);
+    if (obraId == null) return null;
+    // Entrar primeiro, ler depois: a leitura da obra exige ser membro.
+    await _obras.doc(obraId).update({
+      campo: FieldValue.arrayUnion([uid]),
     });
-    return ObraModel.fromMap(doc.id, doc.data());
+    final doc = await _obras.doc(obraId).get();
+    return doc.exists ? ObraModel.fromMap(doc.id, doc.data()!) : null;
   }
+
+  /// Código de convite do cliente, criando na hora se a obra ainda não tem
+  /// (as obras criadas antes deste recurso não têm).
+  Future<String> codigoDoClienteDaObra(ObraModel obra) async {
+    if (obra.codigoCliente.isNotEmpty) {
+      await _publicarConvite(obra.codigoCliente, obra.id, 'cliente', obra.nome);
+      return obra.codigoCliente;
+    }
+    final codigo = gerarCodigoConvite();
+    await _obras.doc(obra.id).update({'codigoCliente': codigo});
+    await _publicarConvite(codigo, obra.id, 'cliente', obra.nome);
+    return codigo;
+  }
+
+  /// Tira o acesso de um cliente à obra.
+  Future<void> removerCliente(String obraId, String uid) =>
+      _obras.doc(obraId).update({
+        'clientesIds': FieldValue.arrayRemove([uid]),
+      });
 
   // ----------------------------------------------------------- Lançamentos
 

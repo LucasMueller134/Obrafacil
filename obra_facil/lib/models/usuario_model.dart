@@ -1,11 +1,24 @@
 /// Perfil de acesso do usuário.
 enum PerfilUsuario {
   dono,
-  mestre;
+  mestre,
+
+  /// Quem contratou a obra: acompanha o andamento, sem ver dinheiro.
+  cliente;
 
   String get label => switch (this) {
         PerfilUsuario.dono => 'Dono / Gestor',
         PerfilUsuario.mestre => 'Mestre de obras',
+        PerfilUsuario.cliente => 'Cliente',
+      };
+
+  String get descricao => switch (this) {
+        PerfilUsuario.dono =>
+          'Cria as obras, aprova lançamentos e vê todos os custos',
+        PerfilUsuario.mestre =>
+          'Lança gastos do canteiro e registra o diário da obra',
+        PerfilUsuario.cliente =>
+          'Acompanha o andamento da obra que contratou',
       };
 
   static PerfilUsuario fromString(String? v) =>
@@ -31,6 +44,11 @@ class UsuarioModel {
   });
 
   bool get ehDono => perfil == PerfilUsuario.dono;
+
+  bool get ehCliente => perfil == PerfilUsuario.cliente;
+
+  /// Quem trabalha na obra — dono e mestre. O cliente é de fora.
+  bool get ehDaEquipe => !ehCliente;
 
   Map<String, dynamic> toMap() => {
         'nome': nome,

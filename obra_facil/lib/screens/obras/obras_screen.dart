@@ -69,51 +69,23 @@ class _ObrasScreenState extends State<ObrasScreen> {
           ),
         ],
       ),
-      body: StreamBuilder<List<ObraModel>>(
-        stream: db.obrasDoUsuario(usuario.id),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const CarregandoObra(mensagem: 'Buscando suas obras…');
-          }
-          if (snapshot.hasError) {
-            return EstadoVazio(
-              icone: Icons.error_outline,
-              titulo: 'Erro ao carregar obras',
-              mensagem: '${snapshot.error}',
-            );
-          }
-          final obras = snapshot.data ?? const [];
-          if (obras.isEmpty) {
-            return usuario.ehDono
-                ? EstadoVazio(
-                    icone: Icons.apartment,
-                    ilustracao: const IlustracaoTrabalhador(),
-                    titulo: 'Nenhuma obra ainda',
-                    mensagem:
-                        'Cadastre sua primeira obra para começar a controlar '
-                        'custos, equipe e progresso.',
-                    rotuloAcao: 'Criar obra',
-                    onAcao: () => context.push('/obras/nova'),
-                  )
-                : EstadoVazio(
-                    icone: Icons.qr_code,
-                    ilustracao: const IlustracaoTrabalhador(),
-                    titulo: 'Você ainda não está em nenhuma obra',
-                    mensagem:
-                        'Peça ao dono da obra o código de convite e entre '
-                        'para começar a registrar os lançamentos.',
-                    rotuloAcao: 'Entrar com código',
-                    onAcao: () => _entrarComCodigo(context),
-                  );
-          }
-          return ListView.separated(
-            padding: EdgeInsets.fromLTRB(
-                16, 16, 16, MediaQuery.of(context).padding.bottom + 96),
-            itemCount: obras.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 12),
-            itemBuilder: (_, i) => _CartaoObra(obra: obras[i]).aparecer(i),
-          );
-        },
+      body: Column(
+        children: [
+          // Dono e mestre não ficam presos por causa do e-mail — só são
+          // lembrados. Quem é barrado sem confirmar é o cliente, que é
+          // gente de fora e entra por cadastro aberto.
+          if (!auth.emailVerificado) const _AvisoEmailPendente(),
+          Expanded(
+            child: StreamBuilder<List<ObraModel>>(
+              stream: db.obrasDoUsuario(usuario.id),
+              // O conteúdo entra com fade em vez de substituir o
+              // "carregando" no mesmo quadro — é o pisca que parecia
+              // tela pulando.
+              builder: (context, snapshot) =>
+                  TrocaSuave(child: _conteudo(context, snapshot, usuario)),
+            ),
+          ),
+        ],
       ),
       floatingActionButton: usuario.ehDono
           ? FloatingActionButton.extended(
@@ -126,6 +98,50 @@ class _ObrasScreenState extends State<ObrasScreen> {
               icon: const Icon(Icons.qr_code),
               label: const Text('Entrar com código'),
             ),
+    );
+  }
+
+  Widget _conteudo(BuildContext context,
+      AsyncSnapshot<List<ObraModel>> snapshot, UsuarioModel usuario) {
+    if (snapshot.connectionState == ConnectionState.waiting) {
+      return const CarregandoObra(mensagem: 'Buscando suas obras…');
+    }
+    if (snapshot.hasError) {
+      return EstadoVazio(
+        icone: Icons.error_outline,
+        titulo: 'Erro ao carregar obras',
+        mensagem: '${snapshot.error}',
+      );
+    }
+    final obras = snapshot.data ?? const <ObraModel>[];
+    if (obras.isEmpty) {
+      return usuario.ehDono
+          ? EstadoVazio(
+              icone: Icons.apartment,
+              ilustracao: const IlustracaoTrabalhador(),
+              titulo: 'Nenhuma obra ainda',
+              mensagem:
+                  'Cadastre sua primeira obra para começar a controlar '
+                  'custos, equipe e progresso.',
+              rotuloAcao: 'Criar obra',
+              onAcao: () => context.push('/obras/nova'),
+            )
+          : EstadoVazio(
+              icone: Icons.qr_code,
+              ilustracao: const IlustracaoTrabalhador(),
+              titulo: 'Você ainda não está em nenhuma obra',
+              mensagem: 'Peça ao dono da obra o código de convite e entre '
+                  'para começar a registrar os lançamentos.',
+              rotuloAcao: 'Entrar com código',
+              onAcao: () => _entrarComCodigo(context),
+            );
+    }
+    return ListView.separated(
+      padding: EdgeInsets.fromLTRB(
+          16, 16, 16, MediaQuery.of(context).padding.bottom + 96),
+      itemCount: obras.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 12),
+      itemBuilder: (_, i) => _CartaoObra(obra: obras[i]).aparecer(i),
     );
   }
 
@@ -189,6 +205,64 @@ class _ObrasScreenState extends State<ObrasScreen> {
           ? 'Código não encontrado. Confira com o dono da obra.'
           : 'Você entrou na obra "${obra.nome}"!'),
     ));
+  }
+}
+
+/// Lembrete de confirmação de e-mail para quem já trabalha na obra.
+class _AvisoEmailPendente extends StatefulWidget {
+  const _AvisoEmailPendente();
+
+  @override
+  State<_AvisoEmailPendente> createState() => _AvisoEmailPendenteState();
+}
+
+class _AvisoEmailPendenteState extends State<_AvisoEmailPendente> {
+  bool _enviando = false;
+
+  Future<void> _reenviar() async {
+    setState(() => _enviando = true);
+    final auth = context.read<AuthProvider>();
+    final erro = await auth.reenviarVerificacao();
+    // Se o link já tiver sido clicado, a faixa some sozinha.
+    await auth.atualizarVerificacao();
+    if (!mounted) return;
+    setState(() => _enviando = false);
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(erro ?? 'E-mail de confirmação enviado. Olhe no spam '
+          'também.'),
+    ));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.amareloCapacete.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+        border:
+            Border.all(color: AppColors.amareloCapacete.withValues(alpha: 0.5)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.mark_email_unread,
+              size: 18, color: AppColors.amareloCapacete),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              'Confirme seu e-mail para garantir a recuperação da conta.',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ),
+          TextButton(
+            onPressed: _enviando ? null : _reenviar,
+            child: Text(_enviando ? 'Enviando…' : 'Reenviar'),
+          ),
+        ],
+      ),
+    );
   }
 }
 

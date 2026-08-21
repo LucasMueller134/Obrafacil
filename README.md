@@ -38,10 +38,11 @@ Estima-se que **mais de 30% do custo de uma obra** pode se perder com desperdíc
 
 ## 💡 A solução
 
-Um aplicativo **Android** com **dois perfis de acesso** e **fluxo de aprovação**:
+Um aplicativo **Android** com **três perfis de acesso** e **fluxo de aprovação**:
 
 - **👷 Mestre de obras** — registra gastos, uso de material e diário da obra. Tira foto da nota e o app preenche sozinho. Não compra: apenas informa o que foi usado.
 - **🧑‍💼 Dono / Gestor** — aprova ou rejeita cada lançamento, acompanha gráficos de custo e recebe relatório semanal gerado por IA.
+- **🏠 Cliente** — quem contratou a obra. Entra com um código de acompanhamento e vê progresso, fases, diário e fotos, além de poder perguntar à IA sobre o andamento. **Nenhum dado financeiro** chega até ele: as regras do Firestore recusam a leitura dos lançamentos para este perfil, então não é só a tela que esconde.
 
 ---
 
@@ -58,6 +59,9 @@ Um aplicativo **Android** com **dois perfis de acesso** e **fluxo de aprovação
 - ✅ Cronograma por fases com % de conclusão
 - ✅ Galeria de fotos com linha do tempo
 - ✅ Gestão de fornecedores (cadastro automático)
+- ✅ Área do cliente com acompanhamento da obra e assistente sem custos
+- ✅ **Confirmação de e-mail** no cadastro (obrigatória para o cliente)
+- ✅ **CEP conferido nos Correios** (ViaCEP), preenchendo o endereço da obra
 - ✅ Sincronização em tempo real + **modo offline**
 
 ---

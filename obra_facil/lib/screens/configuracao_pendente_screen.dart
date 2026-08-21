@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../constants/app_colors.dart';
 import '../constants/app_theme.dart';
+import '../router/transicoes.dart';
 import 'demo_ia_screen.dart';
 
 /// Mostrada quando o firebase_options.dart ainda tem placeholders —
@@ -62,10 +63,8 @@ class ConfiguracaoPendenteApp extends StatelessWidget {
                 const SizedBox(height: 24),
                 Builder(
                   builder: (ctx) => OutlinedButton.icon(
-                    onPressed: () => Navigator.of(ctx).push(
-                      MaterialPageRoute(
-                          builder: (_) => const DemoIaScreen()),
-                    ),
+                    onPressed: () =>
+                        Navigator.of(ctx).push(rotaSuave(const DemoIaScreen())),
                     icon: const Icon(Icons.auto_awesome),
                     label:
                         const Text('Testar as IAs sem conta (demonstração)'),

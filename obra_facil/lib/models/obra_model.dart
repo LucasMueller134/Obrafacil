@@ -29,8 +29,16 @@ class ObraModel {
   /// Usuários (mestres de obra) com acesso a esta obra.
   final List<String> equipeIds;
 
+  /// Usuários (clientes) que acompanham esta obra sem ver custos.
+  final List<String> clientesIds;
+
   /// Código curto que o dono compartilha para o mestre entrar na obra.
   final String codigoConvite;
+
+  /// Código de convite do cliente — separado do da equipe, porque quem
+  /// entra por ele não pode ver custo nenhum. Vazio nas obras criadas
+  /// antes deste recurso; é gerado quando o dono convida o cliente.
+  final String codigoCliente;
   final DateTime criadoEm;
 
   const ObraModel({
@@ -44,7 +52,9 @@ class ObraModel {
     this.status = StatusObra.emAndamento,
     required this.donoId,
     this.equipeIds = const [],
+    this.clientesIds = const [],
     required this.codigoConvite,
+    this.codigoCliente = '',
     required this.criadoEm,
   });
 
@@ -65,6 +75,8 @@ class ObraModel {
         'status': status.name,
         'donoId': donoId,
         'equipeIds': equipeIds,
+        'clientesIds': clientesIds,
+        'codigoCliente': codigoCliente,
         'codigoConvite': codigoConvite,
         'criadoEm': criadoEm.toIso8601String(),
       };
@@ -82,6 +94,8 @@ class ObraModel {
         status: StatusObra.fromString(map['status']),
         donoId: map['donoId'] ?? '',
         equipeIds: List<String>.from(map['equipeIds'] ?? const []),
+        clientesIds: List<String>.from(map['clientesIds'] ?? const []),
+        codigoCliente: map['codigoCliente'] ?? '',
         codigoConvite: map['codigoConvite'] ?? '',
         criadoEm: DateTime.tryParse(map['criadoEm'] ?? '') ?? DateTime.now(),
       );
@@ -95,6 +109,8 @@ class ObraModel {
     DateTime? previsaoTermino,
     StatusObra? status,
     List<String>? equipeIds,
+    List<String>? clientesIds,
+    String? codigoCliente,
   }) =>
       ObraModel(
         id: id,
@@ -107,7 +123,9 @@ class ObraModel {
         status: status ?? this.status,
         donoId: donoId,
         equipeIds: equipeIds ?? this.equipeIds,
+        clientesIds: clientesIds ?? this.clientesIds,
         codigoConvite: codigoConvite,
+        codigoCliente: codigoCliente ?? this.codigoCliente,
         criadoEm: criadoEm,
       );
 }

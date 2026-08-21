@@ -2,9 +2,11 @@ import 'dart:math' as math;
 
 import '../../models/models.dart';
 import '../../utils/formatters.dart';
+import 'itens_parser.dart';
 import 'numero_extenso.dart';
 import 'previsao_estoque_service.dart';
 import 'previsao_orcamento_service.dart';
+import 'texto_br.dart';
 
 /// Tudo que o assistente precisa saber sobre a obra para responder.
 class DadosObraChat {
@@ -57,13 +59,36 @@ abstract class PerguntasObraService {
     'Estamos atrasados?',
   ];
 
+  /// O que o cliente pode perguntar — nada de dinheiro.
+  static const sugestoesCliente = [
+    'Como está a obra?',
+    'Em que fase está?',
+    'Quando fica pronto?',
+    'O que foi feito essa semana?',
+  ];
+
+  /// Assuntos que o cliente não acompanha por aqui. A lista é de palavras
+  /// de dinheiro, não de "quanto": "quanto falta da obra" é andamento.
+  static const List<String> _termosFinanceiros = [
+    'gastei', 'gasto', 'gastos', 'gastamos', 'gastou', 'custo', 'custou',
+    'custa', 'custar', 'preco', 'precos', 'valor', 'valores', 'orcamento',
+    'dinheiro', 'reais', 'pagamento', 'paguei', 'pagar', 'pago', 'nota',
+    'nota fiscal', 'fatura', 'boleto', 'fornecedor', 'fornecedores',
+    'despesa', 'despesas', 'saldo', 'estourar', 'estouro', 'caro',
+    'barato', 'investi', 'investimento', 'lancamento', 'lancamentos',
+    'quanto ja foi', 'quanto sai', 'quanto vai sair', 'quanto ficou',
+  ];
+
   static final RegExp _saudacaoRegex = RegExp(
       r'^(bom dia|boa tarde|boa noite|oi|ola|eai|e ai|opa|salve|fala|hey)'
       r'(?=[\s,!.?]|$)[\s,!.?]*',
       caseSensitive: false);
 
+  /// [modoCliente] responde para quem contratou a obra: andamento sim,
+  /// dinheiro não. É a segunda barreira — a primeira é que os dados do
+  /// cliente chegam aqui sem lançamento nenhum para somar.
   static RespostaObra responder(String pergunta, DadosObraChat dados,
-      {DateTime? agora}) {
+      {DateTime? agora, bool modoCliente = false}) {
     final ref = agora ?? DateTime.now();
     final hoje = DateTime(ref.year, ref.month, ref.day);
 
@@ -79,7 +104,7 @@ abstract class PerguntasObraService {
         return RespostaObra(
           '${_saudacaoDeVolta(saudacao.group(1)!)} Tudo pronto por aqui. '
           'O que você quer saber sobre a ${dados.obra.nome}?',
-          sugestoes: sugestoesIniciais,
+          sugestoes: modoCliente ? sugestoesCliente : sugestoesIniciais,
         );
       }
       t = resto;
@@ -88,19 +113,51 @@ abstract class PerguntasObraService {
     final tokens = _tokens(t);
     bool tem(List<String> termos) => _casa(t, tokens, termos);
 
+    // Antes de qualquer intenção: pergunta de dinheiro não é assunto do
+    // cliente, e é melhor dizer isso na cara do que responder torto.
+    //
+    // Aqui o casamento é por palavra inteira, sem a tolerância a erro de
+    // digitação do resto do chat: "gostei do acabamento" está a uma letra
+    // de "gastei", e recusar essa pergunta seria pior do que respondê-la.
+    if (modoCliente &&
+        _termosFinanceiros.any((termo) => TextoBr.contemPalavra(t, termo))) {
+      return _assuntoDoResponsavel();
+    }
+
     if (tem(['obrigado', 'obrigada', 'valeu', 'brigado', 'show', 'perfeito', 'boa!'])) {
-      return const RespostaObra(
+      return RespostaObra(
           'Tamo junto! 👷 Qualquer coisa é só perguntar.',
-          sugestoes: sugestoesIniciais);
+          sugestoes: modoCliente ? sugestoesCliente : sugestoesIniciais);
     }
     if (tem(['o que voce sabe', 'o que voce faz', 'o que posso perguntar', 'me ajuda', 'ajuda', 'comandos'])) {
-      return _naoEntendi(inicio: 'Posso te contar tudo sobre a obra:');
+      return _naoEntendi(
+          inicio: 'Posso te contar tudo sobre a obra:',
+          modoCliente: modoCliente);
     }
 
     final material = _acharMaterial(t, tokens, dados);
     final fornecedor = _acharFornecedor(t, dados);
     final categoria = _acharCategoria(t, tokens);
     final periodo = _acharPeriodo(t, hoje);
+
+    // Cliente: material e estoque viram "o que está sendo usado na obra",
+    // contado pelo diário. Quantidade de estoque é controle da equipe.
+    if (modoCliente) {
+      if (material != null ||
+          tem(['acabando', 'faltando', 'repor', 'estoque', 'material',
+            'materiais', 'que material', 'esta usando', 'acabamento',
+            'estilo', 'padrao', 'como esta sendo feita', 'como esta sendo',
+            // "o que foi feito essa semana?" é uma das perguntas que o
+            // próprio app sugere ao cliente — precisa ter resposta.
+            'o que foi feito', 'o que fizeram', 'o que foi realizado',
+            'o que andaram fazendo', 'o que aconteceu', 'servico',
+            'trabalho', 'andaram fazendo', 'foi feito'])) {
+        return _materiaisCliente(dados, hoje);
+      }
+      if (tem(['pendente', 'pendencia', 'aprovar', 'aguardando'])) {
+        return _assuntoDoResponsavel();
+      }
+    }
 
     // Da intenção mais específica para a mais genérica.
     if (material != null &&
@@ -146,9 +203,121 @@ abstract class PerguntasObraService {
     }
     // "como está a obra?", "situação", "contexto", "resumo", "novidades"…
     if (tem(['como esta', 'como vai', 'como anda', 'como estao', 'situacao', 'contexto', 'resumo', 'panorama', 'status', 'andamento', 'novidade', 'visao geral', 'me atualiza', 'tudo bem'])) {
-      return _resumoGeral(dados, hoje);
+      return modoCliente
+          ? _resumoCliente(dados, hoje)
+          : _resumoGeral(dados, hoje);
     }
-    return _naoEntendi();
+    return _naoEntendi(modoCliente: modoCliente);
+  }
+
+  /// Resposta padrão do modo cliente para assunto de dinheiro.
+  static RespostaObra _assuntoDoResponsavel() => const RespostaObra(
+        'Valores, notas e pagamentos são tratados direto com o responsável '
+        'pela obra — esse assunto não passa por aqui. Posso te contar como '
+        'está o andamento, em que fase estamos, o que a equipe fez no '
+        'canteiro e a previsão de entrega.',
+        sugestoes: sugestoesCliente,
+      );
+
+  /// Panorama para quem contratou: prazo, avanço físico e último dia de
+  /// trabalho. Nenhum número de dinheiro entra aqui.
+  static RespostaObra _resumoCliente(DadosObraChat dados, DateTime hoje) {
+    final obra = dados.obra;
+    final pctPrazo = obra.duracaoDias <= 0
+        ? 0
+        : (obra.diasDecorridos / obra.duracaoDias * 100).round();
+
+    final b = StringBuffer('A ${obra.nome} está no ${obra.diasDecorridos}º '
+        'dia de ${obra.duracaoDias} ($pctPrazo% do prazo previsto). ');
+
+    if (dados.cronograma.isNotEmpty) {
+      final pctFisico = (dados.cronograma
+                  .fold<int>(0, (s, f) => s + f.percentualConcluido) /
+              dados.cronograma.length)
+          .round();
+      b.write('O avanço físico está em $pctFisico%');
+      final atual = dados.cronograma.where((f) => f.emAndamento).toList();
+      if (atual.isNotEmpty) {
+        b.write(', na fase de ${atual.map((f) => f.nome.toLowerCase()).join(' e ')}');
+      }
+      b.write(pctPrazo >= pctFisico + 15
+          ? ' — um pouco atrás do calendário.'
+          : ' — dentro do esperado para o calendário.');
+    } else {
+      b.write('O cronograma detalhado ainda não foi montado.');
+    }
+
+    b.write(' A entrega está prevista para '
+        '${Formatters.data(obra.previsaoTermino)}.');
+
+    final ultimo = _ultimoDiario(dados);
+    if (ultimo != null) {
+      b.write(' No canteiro, o registro mais recente é de '
+          '${Formatters.data(ultimo.data)}: ${_resumir(ultimo.descricao)}');
+    }
+
+    return RespostaObra(b.toString(), sugestoes: sugestoesCliente);
+  }
+
+  /// O que está sendo usado e feito na obra, lido do diário — é o que
+  /// responde "como está sendo feita" sem passar perto de preço.
+  static RespostaObra _materiaisCliente(DadosObraChat dados, DateTime hoje) {
+    final desde = hoje.subtract(const Duration(days: 30));
+    final recentes =
+        dados.diario.where((e) => !e.data.isBefore(desde)).toList()
+          ..sort((a, b) => b.data.compareTo(a.data));
+
+    final materiais = <String>{};
+    for (final entrada in recentes) {
+      for (final item in ItensParser.deTexto(entrada.descricao)) {
+        materiais.add(item.material);
+      }
+    }
+
+    final b = StringBuffer();
+    final emAndamento =
+        dados.cronograma.where((f) => f.emAndamento).map((f) => f.nome);
+    if (emAndamento.isNotEmpty) {
+      b.write('A obra está na fase de '
+          '${emAndamento.map((n) => n.toLowerCase()).join(' e ')}. ');
+    }
+    if (materiais.isNotEmpty) {
+      b.write('Nos registros do último mês apareceram: '
+          '${materiais.join(', ')}. ');
+    }
+    if (recentes.isNotEmpty) {
+      b.write('O serviço mais recente anotado pela equipe foi em '
+          '${Formatters.data(recentes.first.data)}: '
+          '${_resumir(recentes.first.descricao)}');
+    }
+    if (b.isEmpty) {
+      return const RespostaObra(
+        'Ainda não tenho registro de serviço no diário para te contar o '
+        'que está sendo usado na obra. Assim que a equipe registrar o dia, '
+        'aparece aqui.',
+        sugestoes: sugestoesCliente,
+      );
+    }
+    return RespostaObra(b.toString().trim(), sugestoes: sugestoesCliente);
+  }
+
+  static DiarioEntradaModel? _ultimoDiario(DadosObraChat dados) {
+    if (dados.diario.isEmpty) return null;
+    final ordenado = [...dados.diario]
+      ..sort((a, b) => b.data.compareTo(a.data));
+    return ordenado.first;
+  }
+
+  /// Primeira frase da anotação, para não despejar o relato inteiro.
+  static String _resumir(String texto) {
+    final limpo = texto.trim().replaceAll(RegExp(r'\s+'), ' ');
+    if (limpo.isEmpty) return '—';
+    final ponto = limpo.indexOf('. ');
+    final frase = ponto > 20 ? limpo.substring(0, ponto + 1) : limpo;
+    if (frase.length <= 160) {
+      return frase.endsWith('.') ? frase : '$frase.';
+    }
+    return '${frase.substring(0, 157)}…';
   }
 
   // ================================================== Respostas por intenção
@@ -617,14 +786,25 @@ abstract class PerguntasObraService {
     );
   }
 
-  static RespostaObra _naoEntendi({String? inicio}) => RespostaObra(
+  static RespostaObra _naoEntendi({String? inicio, bool modoCliente = false}) {
+    if (modoCliente) {
+      return RespostaObra(
         '${inicio ?? 'Não entendi essa — mas sei responder sobre'} '
-        'gastos ("quanto gastei com material este mês?"), orçamento '
-        '("vai estourar?"), estoque ("quando acaba o cimento?"), '
-        'fornecedores, cronograma, pendências, equipe e um resumo geral '
-        '("como está a obra?"). Tenta uma dessas 👇',
-        sugestoes: sugestoesIniciais,
+        'o andamento da obra ("como está a obra?"), a fase atual, o que a '
+        'equipe fez no canteiro, os materiais que estão sendo usados e a '
+        'previsão de entrega. Tenta uma dessas 👇',
+        sugestoes: sugestoesCliente,
       );
+    }
+    return RespostaObra(
+      '${inicio ?? 'Não entendi essa — mas sei responder sobre'} '
+      'gastos ("quanto gastei com material este mês?"), orçamento '
+      '("vai estourar?"), estoque ("quando acaba o cimento?"), '
+      'fornecedores, cronograma, pendências, equipe e um resumo geral '
+      '("como está a obra?"). Tenta uma dessas 👇',
+      sugestoes: sugestoesIniciais,
+    );
+  }
 
   static String _saudacaoDeVolta(String saudacao) {
     if (saudacao.startsWith('bom dia')) return 'Bom dia! ☀️';

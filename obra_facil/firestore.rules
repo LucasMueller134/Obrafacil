@@ -18,9 +18,24 @@ service cloud.firestore {
       return request.auth.uid in obra.data.equipeIds;
     }
 
+    function ehClienteDaObra(obra) {
+      return request.auth.uid in obra.data.get('clientesIds', []);
+    }
+
     function membroDaObra(obraId) {
       let obra = get(/databases/$(database)/documents/obras/$(obraId));
       return ehDonoDaObra(obra) || ehDaEquipe(obra);
+    }
+
+    function clienteDaObra(obraId) {
+      return ehClienteDaObra(get(/databases/$(database)/documents/obras/$(obraId)));
+    }
+
+    // O que o cliente pode acompanhar. Fora desta lista — lançamentos,
+    // estoque, movimentos — nem chega no aparelho dele: a regra barra
+    // antes, então nenhum erro de tela vira vazamento de custo.
+    function subcolecaoLiberadaAoCliente(subcolecao) {
+      return subcolecao in ['diario', 'fotos', 'cronograma'];
     }
 
     // Perfil do usuário: cada um lê/escreve apenas o próprio.
@@ -28,23 +43,47 @@ service cloud.firestore {
       allow read, write: if logado() && request.auth.uid == uid;
     }
 
+    // Convite: código → obra. Só quem sabe o código chega no documento
+    // (get, nunca list), e ele não carrega nada de dinheiro. É o que
+    // permite fechar a leitura da obra logo abaixo.
+    match /convites/{codigo} {
+      allow get: if logado();
+      allow list: if false;
+      allow write: if logado() &&
+        get(/databases/$(database)/documents/obras/$(request.resource.data.obraId))
+          .data.donoId == request.auth.uid;
+    }
+
     match /obras/{obraId} {
-      // Leitura por listagem (dono/equipe) e busca por código de convite.
-      allow read: if logado();
+      // Fechado a quem participa: o documento da obra guarda o orçamento,
+      // então cliente de outra obra — ou curioso logado — não lê.
+      allow read: if logado() && (
+        ehDonoDaObra(resource) || ehDaEquipe(resource) || ehClienteDaObra(resource)
+      );
       allow create: if logado() && request.resource.data.donoId == request.auth.uid;
-      // Dono edita tudo; mestre só pode se adicionar à equipe (código de convite).
+      // Dono edita tudo; mestre só pode se adicionar à equipe e cliente à
+      // lista de clientes, sempre pelo código de convite correspondente.
       allow update: if logado() && (
         ehDonoDaObra(resource) ||
         (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['equipeIds']) &&
-         request.auth.uid in request.resource.data.equipeIds)
+         request.auth.uid in request.resource.data.equipeIds) ||
+        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['clientesIds']) &&
+         request.auth.uid in request.resource.data.clientesIds)
       );
       allow delete: if logado() && ehDonoDaObra(resource);
 
       // Subcoleções: qualquer membro da obra lê e escreve.
       // A moderação (aprovar/rejeitar) é validada no app; para o protótipo
       // isso é suficiente — endurecer depois se for para produção.
+      //
+      // O cliente só lê, e só o que mostra andamento. Ele nunca escreve:
+      // a obra é registro da equipe, ele acompanha.
       match /{subcolecao}/{docId} {
-        allow read, write: if logado() && membroDaObra(obraId);
+        allow read: if logado() && (
+          membroDaObra(obraId) ||
+          (subcolecaoLiberadaAoCliente(subcolecao) && clienteDaObra(obraId))
+        );
+        allow write: if logado() && membroDaObra(obraId);
       }
     }
 

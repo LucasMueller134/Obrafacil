@@ -52,7 +52,10 @@ class _CadastroScreenState extends State<CadastroScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Criar conta'),
-        leading: BackButton(onPressed: () => context.go('/login')),
+        leading: BackButton(
+          onPressed: () =>
+              context.canPop() ? context.pop() : context.go('/login'),
+        ),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -66,6 +69,7 @@ class _CadastroScreenState extends State<CadastroScreen> {
                     style: Theme.of(context).textTheme.titleMedium),
                 const SizedBox(height: 12),
                 Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Expanded(
                       child: _CartaoPerfil(
@@ -88,8 +92,47 @@ class _CadastroScreenState extends State<CadastroScreen> {
                             setState(() => _perfil = PerfilUsuario.mestre),
                       ),
                     ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _CartaoPerfil(
+                        perfil: PerfilUsuario.cliente,
+                        icone: Icons.holiday_village,
+                        descricao: 'Acompanha o andamento da obra contratada',
+                        selecionado: _perfil == PerfilUsuario.cliente,
+                        onTap: () =>
+                            setState(() => _perfil = PerfilUsuario.cliente),
+                      ),
+                    ),
                   ],
                 ),
+                if (_perfil == PerfilUsuario.cliente) ...[
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.amareloCapacete.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                          color: AppColors.amareloCapacete
+                              .withValues(alpha: 0.5)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.mark_email_read,
+                            size: 18, color: AppColors.amareloCapacete),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Vamos enviar um link para confirmar seu e-mail. '
+                            'Depois, é só usar o código que o responsável '
+                            'pela obra te passar.',
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 24),
                 TextFormField(
                   controller: _nomeCtrl,
