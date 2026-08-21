@@ -22,10 +22,16 @@ import '../screens/relatorios/relatorio_screen.dart';
 import '../screens/splash_screen.dart';
 import 'transicoes.dart';
 
-/// Transição padrão entre telas — definida em router/transicoes.dart para
-/// que os `Navigator.push` fora do router usem exatamente a mesma.
+/// Duas transições, definidas em router/transicoes.dart:
+///
+/// [_pagina] para quem entra por cima (o caminho para dentro da obra) e
+/// [_raiz] para troca de área, onde uma tela substitui a outra em vez de
+/// cobri-la. Os `Navigator.push` fora do router usam as mesmas.
 CustomTransitionPage<void> _pagina(GoRouterState state, Widget child) =>
     paginaSuave(state, child);
+
+CustomTransitionPage<void> _raiz(GoRouterState state, Widget child) =>
+    paginaRaiz(state, child);
 
 /// Rotas do app. O redirect centraliza a regra de acesso: deslogado só vê
 /// login/cadastro; logado nunca volta para elas; e cliente vive na área
@@ -58,11 +64,11 @@ GoRouter criarRouter(AuthProvider auth) {
     routes: [
       GoRoute(
         path: '/splash',
-        pageBuilder: (_, state) => _pagina(state, const SplashScreen()),
+        pageBuilder: (_, state) => _raiz(state, const SplashScreen()),
       ),
       GoRoute(
         path: '/login',
-        pageBuilder: (_, state) => _pagina(state, const LoginScreen()),
+        pageBuilder: (_, state) => _raiz(state, const LoginScreen()),
       ),
       GoRoute(
         path: '/cadastro',
@@ -71,13 +77,13 @@ GoRouter criarRouter(AuthProvider auth) {
       GoRoute(
         path: '/verificar-email',
         pageBuilder: (_, state) =>
-            _pagina(state, const VerificarEmailScreen()),
+            _raiz(state, const VerificarEmailScreen()),
       ),
       // Área do cliente: acompanha a obra, sem nenhuma tela de dinheiro.
       GoRoute(
         path: '/cliente',
         pageBuilder: (_, state) =>
-            _pagina(state, const ClienteObrasScreen()),
+            _raiz(state, const ClienteObrasScreen()),
         routes: [
           GoRoute(
             path: ':obraId',
@@ -90,7 +96,7 @@ GoRouter criarRouter(AuthProvider auth) {
       ),
       GoRoute(
         path: '/obras',
-        pageBuilder: (_, state) => _pagina(state, const ObrasScreen()),
+        pageBuilder: (_, state) => _raiz(state, const ObrasScreen()),
         routes: [
           GoRoute(
             path: 'nova',

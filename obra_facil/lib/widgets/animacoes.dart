@@ -24,12 +24,13 @@ extension AnimacoesObraFacil on Widget {
           .scaleXY(begin: 0.98, end: 1, duration: 300.ms);
 }
 
-/// Troca suave entre os estados de uma tela — tipicamente o "carregando"
-/// dando lugar ao conteúdo.
+/// Troca entre os estados de uma tela — tipicamente o "carregando" dando
+/// lugar ao conteúdo.
 ///
-/// Sem isso o StreamBuilder troca um widget pelo outro no mesmo quadro e a
-/// tela pisca, que é a sensação de "pulou" mesmo quando a navegação em si
-/// está animada.
+/// O conteúdo novo aparece sozinho: o estado anterior sai do desenho no
+/// mesmo instante, sem ficar sobreposto. Cruzar os dois deixava o
+/// indicador de carregamento boiando por cima da lista, que é justamente
+/// a poluição que se quer evitar numa tela cheia.
 class TrocaSuave extends StatelessWidget {
   final Widget child;
 
@@ -38,15 +39,10 @@ class TrocaSuave extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 300),
+      duration: const Duration(milliseconds: 260),
       switchInCurve: Curves.easeOutCubic,
-      switchOutCurve: Curves.easeIn,
-      // A saída some antes da entrada aparecer: sobrepor as duas listas
-      // dá um borrão estranho em tela cheia.
-      layoutBuilder: (atual, anteriores) => Stack(
-        alignment: Alignment.topCenter,
-        children: [...anteriores, if (atual != null) atual],
-      ),
+      // Só o estado atual é pintado — nada de empilhar o que está saindo.
+      layoutBuilder: (atual, __) => atual ?? const SizedBox.shrink(),
       transitionBuilder: (filho, animacao) => FadeTransition(
         opacity: animacao,
         child: SlideTransition(

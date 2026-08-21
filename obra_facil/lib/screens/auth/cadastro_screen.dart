@@ -70,9 +70,12 @@ class _CadastroScreenState extends State<CadastroScreen> {
         leading: BackButton(onPressed: _voltar),
       ),
       body: SafeArea(
+        // Uma etapa por vez: a anterior sai do desenho na hora, sem ficar
+        // por baixo da que entra.
         child: AnimatedSwitcher(
-          duration: const Duration(milliseconds: 260),
+          duration: const Duration(milliseconds: 240),
           switchInCurve: Curves.easeOutCubic,
+          layoutBuilder: (atual, __) => atual ?? const SizedBox.shrink(),
           transitionBuilder: (filho, animacao) => FadeTransition(
             opacity: animacao,
             child: SlideTransition(
