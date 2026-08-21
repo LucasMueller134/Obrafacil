@@ -1,6 +1,9 @@
+import 'dart:io';
+
 import 'package:google_mlkit_image_labeling/google_mlkit_image_labeling.dart';
 
 import '../../constants/app_constants.dart';
+import 'cores_foto.dart';
 
 /// Rótulo devolvido pelo modelo de visão, já num formato testável.
 class RotuloFoto {
@@ -30,6 +33,13 @@ class AnaliseFotoDiario {
   /// Tudo que o modelo devolveu, para a tela mostrar "o que a IA viu".
   final List<RotuloFoto> rotulos;
 
+  /// Composição de cores da foto — a evidência que não vem do modelo.
+  final PaletaObra paleta;
+
+  /// Quanta evidência sustentou a fase sugerida (0 a 1). Abaixo de 0,5 a
+  /// tela avisa que é só um palpite.
+  final double confiancaFase;
+
   const AnaliseFotoDiario({
     this.materiais = const [],
     this.faseSugerida,
@@ -37,6 +47,8 @@ class AnaliseFotoDiario {
     this.temPessoas = false,
     this.descricaoSugerida = '',
     this.rotulos = const [],
+    this.paleta = const PaletaObra(),
+    this.confiancaFase = 0,
   });
 
   bool get encontrouAlgo =>
@@ -66,9 +78,18 @@ class DiarioFotoService {
   Future<AnaliseFotoDiario> analisar(String caminhoImagem) async {
     final labels =
         await _labeler.processImage(InputImage.fromFilePath(caminhoImagem));
-    return interpretar([
-      for (final l in labels) RotuloFoto(l.label, l.confidence),
-    ]);
+    // A análise de cor roda em paralelo ao modelo e não pode derrubar a
+    // leitura: sem ela sobra o classificador, como era antes.
+    PaletaObra paleta = const PaletaObra();
+    try {
+      paleta = await CoresFoto.analisarArquivo(
+          await File(caminhoImagem).readAsBytes());
+    } catch (_) {}
+
+    return interpretar(
+      [for (final l in labels) RotuloFoto(l.label, l.confidence)],
+      paleta: paleta,
+    );
   }
 
   void dispose() => _labeler.close();
@@ -196,8 +217,35 @@ class DiarioFotoService {
     'person', 'people', 'crowd', 'worker', 'helmet', 'hard hat',
   ];
 
+  /// Evidência de fase que vem da cor da foto, não do classificador.
+  ///
+  /// Os limiares são de proporção de pixel: mais de um terço da foto em
+  /// tom de terra é barranco de escavação, não um vaso de planta.
+  static Map<String, int> _fasesPelaCor(PaletaObra paleta) {
+    final pontos = <String, int>{};
+    void somar(String fase, int peso) =>
+        pontos[fase] = (pontos[fase] ?? 0) + peso;
+
+    if (paleta.terra >= 0.34) {
+      somar('Fundação', 3);
+    } else if (paleta.terra >= 0.20) {
+      somar('Fundação', 2);
+    }
+    if (paleta.tijolo >= 0.16) {
+      somar('Alvenaria', 3);
+    } else if (paleta.tijolo >= 0.08) {
+      somar('Alvenaria', 2);
+    }
+    // Cinza domina qualquer obra bruta: vale como indício, nunca sozinho.
+    if (paleta.concreto >= 0.40) somar('Estrutura', 2);
+    // Parede clara e lisa é obra que já passou do reboco.
+    if (paleta.claro >= 0.34 && paleta.terra < 0.12) somar('Pintura', 2);
+    return pontos;
+  }
+
   /// Parte pura da IA — recebe os rótulos e monta o rascunho do registro.
-  static AnaliseFotoDiario interpretar(List<RotuloFoto> rotulos) {
+  static AnaliseFotoDiario interpretar(List<RotuloFoto> rotulos,
+      {PaletaObra paleta = const PaletaObra()}) {
     final ordenados = [...rotulos]
       ..sort((a, b) => b.confianca.compareTo(a.confianca));
     final chaves = [
@@ -237,11 +285,32 @@ class DiarioFotoService {
       if (_pessoas.contains(chave)) temPessoas = true;
     }
 
+    // A cor entra como uma segunda opinião, com o mesmo peso das outras
+    // evidências fortes: ela não sabe o que é uma laje, mas sabe que dois
+    // terços da foto são barranco.
+    final porCor = _fasesPelaCor(paleta);
+    for (final entrada in porCor.entries) {
+      pontosPorFase[entrada.key] =
+          (pontosPorFase[entrada.key] ?? 0) + entrada.value;
+      if (entrada.value >= 3) fasesComEvidenciaForte.add(entrada.key);
+    }
+
     final faseSugerida = _escolherFase(
       pontosPorFase,
       fasesComEvidenciaForte,
-      terraVisivel: _terra.any(presentes.contains),
+      // Terra à mostra vale tanto pelo rótulo quanto pela cor: numa foto
+      // de baldrame o modelo costuma não dizer "soil", mas o barranco
+      // ocupa metade da imagem.
+      terraVisivel:
+          _terra.any(presentes.contains) || paleta.terra >= 0.20,
     );
+
+    // Clima: o céu medido na foto é mais confiável que o rótulo "Sky",
+    // que o modelo devolve para qualquer fundo claro. Chuva é exceção —
+    // ali o rótulo é específico e a cor não sabe distinguir.
+    if (clima != 'Chuvoso' && clima != 'Chuva forte') {
+      clima = paleta.climaPeloCeu ?? clima;
+    }
 
     return AnaliseFotoDiario(
       materiais: materiais,
@@ -251,8 +320,14 @@ class DiarioFotoService {
       descricaoSugerida:
           _montarDescricao(materiais, faseSugerida, temPessoas),
       rotulos: ordenados,
+      paleta: paleta,
+      confiancaFase: _confianca(pontosPorFase[faseSugerida] ?? 0),
     );
   }
+
+  /// Traduz os pontos acumulados numa confiança de 0 a 1. Seis pontos
+  /// (duas evidências fortes concordando) já é o teto.
+  static double _confianca(int pontos) => (pontos / 6).clamp(0.0, 1.0);
 
   static String? _escolherFase(
     Map<String, int> pontos,

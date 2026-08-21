@@ -10,6 +10,7 @@ import '../../utils/formatters.dart';
 import '../../widgets/animacoes.dart';
 import '../../widgets/carregando_obra.dart';
 import '../../widgets/chat_obra.dart';
+import '../../widgets/estado_vazio.dart';
 import '../../widgets/imagem_obra.dart';
 
 /// Acompanhamento da obra para quem a contratou.
@@ -30,10 +31,28 @@ class ClienteObraScreen extends StatelessWidget {
     return StreamBuilder<ObraModel?>(
       stream: db.obra(obraId),
       builder: (context, obraSnap) {
+        // Acesso recusado ou obra removida: sem isso a tela ficaria
+        // carregando para sempre, sem dizer o que houve.
+        if (obraSnap.hasError ||
+            (obraSnap.connectionState == ConnectionState.active &&
+                obraSnap.data == null)) {
+          return Scaffold(
+            appBar: AppBar(title: const Text('Obra')),
+            body: EstadoVazio(
+              icone: Icons.lock_outline,
+              titulo: 'Não consegui abrir esta obra',
+              mensagem: 'Seu acesso pode ter sido removido, ou a obra saiu '
+                  'do ar. Fale com o responsável pela obra.',
+              rotuloAcao: 'Voltar',
+              onAcao: () => Navigator.of(context).maybePop(),
+            ),
+          );
+        }
         final obra = obraSnap.data;
         if (obra == null) {
           return const Scaffold(
-            body: TrocaSuave(child: CarregandoObra(mensagem: 'Abrindo a obra…')),
+            body:
+                TrocaSuave(child: CarregandoObra(mensagem: 'Abrindo a obra…')),
           );
         }
         return StreamBuilder<List<CronogramaFaseModel>>(

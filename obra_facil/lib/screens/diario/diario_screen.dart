@@ -9,6 +9,7 @@ import '../../constants/app_constants.dart';
 import '../../models/models.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/firestore_service.dart';
+import '../../services/ia/cores_foto.dart';
 import '../../services/ia/diario_foto_service.dart';
 import '../../services/ia/voz_service.dart';
 import '../../services/imagem_service.dart';
@@ -227,6 +228,7 @@ class _FormDiarioState extends State<_FormDiario> {
   String? _avisoIa;
   List<String> _materiaisVistos = const [];
   List<RotuloFoto> _rotulosVistos = const [];
+  PaletaObra _paletaVista = const PaletaObra();
   bool _analisando = false;
   bool _salvando = false;
 
@@ -318,7 +320,12 @@ class _FormDiarioState extends State<_FormDiario> {
       setState(() {
         _materiaisVistos = analise.materiais;
         _rotulosVistos = analise.rotulos;
-        if (analise.faseSugerida != null && _fase == null) {
+        _paletaVista = analise.paleta;
+        // Fase só é preenchida quando a evidência sustenta. Palpite fraco
+        // vira aviso, não campo preenchido: corrigir o que a IA errou dá
+        // mais trabalho do que escolher do zero.
+        final faseConfiavel = analise.confiancaFase >= 0.5;
+        if (analise.faseSugerida != null && _fase == null && faseConfiavel) {
           _fase = analise.faseSugerida;
         }
         // O céu da foto é palpite; o que você falou ou marcou, não.
@@ -331,11 +338,7 @@ class _FormDiarioState extends State<_FormDiario> {
             analise.descricaoSugerida.isNotEmpty) {
           _descricaoCtrl.text = analise.descricaoSugerida;
         }
-        _avisoIa = analise.encontrouAlgo
-            ? 'A IA leu a foto e sugeriu os campos abaixo — ajuste o que '
-                'não bater com o dia.'
-            : 'Não reconheci a cena desta foto (ela ficou anexada mesmo '
-                'assim). Fotos do canteiro com boa luz funcionam melhor.';
+        _avisoIa = _avisoDaFoto(analise, faseConfiavel);
       });
     } catch (e) {
       if (!mounted) return;
@@ -343,6 +346,27 @@ class _FormDiarioState extends State<_FormDiario> {
     } finally {
       if (mounted) setState(() => _analisando = false);
     }
+  }
+
+  /// Diz o que a IA concluiu e o quanto ela está segura disso — um palpite
+  /// anunciado como palpite é útil; anunciado como certeza, atrapalha.
+  String _avisoDaFoto(AnaliseFotoDiario analise, bool faseConfiavel) {
+    if (!analise.encontrouAlgo) {
+      return 'Não reconheci a cena desta foto (ela ficou anexada mesmo '
+          'assim). Fotos abertas do canteiro, com boa luz, funcionam '
+          'melhor que fotos de detalhe.';
+    }
+    final fase = analise.faseSugerida;
+    if (fase != null && faseConfiavel) {
+      return 'Pela foto, a obra parece estar em $fase. Preenchi os campos '
+          'abaixo — ajuste o que não bater com o dia.';
+    }
+    if (fase != null) {
+      return 'A foto lembra $fase, mas com pouca certeza, então não '
+          'preenchi a fase. Escolha você mesmo abaixo.';
+    }
+    return 'Reconheci o que aparece na foto, mas não dá para dizer a etapa '
+        'da obra por ela. Preencha a fase abaixo.';
   }
 
   /// Mostra os rótulos crus do modelo. O classificador é de uso geral, não
@@ -366,15 +390,49 @@ class _FormDiarioState extends State<_FormDiario> {
                 style: Theme.of(ctx).textTheme.titleMedium),
             const SizedBox(height: 4),
             Text(
-              'Estes são os rótulos do modelo de visão, com a confiança de '
-              'cada um. A fase é deduzida deles — se ela saiu errada, a '
-              'lista abaixo explica o motivo.',
+              'A fase sai de duas leituras: os rótulos do modelo de visão '
+              'e a composição de cores da própria foto. Se ela saiu '
+              'errada, é aqui que dá para ver por quê.',
               style: Theme.of(ctx)
                   .textTheme
                   .bodySmall
                   ?.copyWith(color: AppColors.textoSecundario),
             ),
             const SizedBox(height: 12),
+            Text('Cores da foto',
+                style: Theme.of(ctx)
+                    .textTheme
+                    .titleSmall
+                    ?.copyWith(fontWeight: FontWeight.w700)),
+            const SizedBox(height: 6),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final (rotulo, fatia) in [
+                  ('Terra', _paletaVista.terra),
+                  ('Tijolo', _paletaVista.tijolo),
+                  ('Concreto', _paletaVista.concreto),
+                  ('Parede clara', _paletaVista.claro),
+                  ('Vegetação', _paletaVista.vegetacao),
+                ])
+                  if (fatia >= 0.03)
+                    Chip(
+                      visualDensity: VisualDensity.compact,
+                      label: Text(
+                        '$rotulo ${(fatia * 100).toStringAsFixed(0)}%',
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                    ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            Text('Rótulos do modelo',
+                style: Theme.of(ctx)
+                    .textTheme
+                    .titleSmall
+                    ?.copyWith(fontWeight: FontWeight.w700)),
+            const SizedBox(height: 6),
             ConstrainedBox(
               constraints: BoxConstraints(
                   maxHeight: MediaQuery.of(ctx).size.height * 0.45),

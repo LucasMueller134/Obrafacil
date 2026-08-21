@@ -59,8 +59,20 @@ class FirestoreService {
 
   Future<String> criarObra(ObraModel obra) async {
     final ref = await _obras.add(obra.toMap());
-    await _publicarConvite(obra.codigoConvite, ref.id, 'equipe', obra.nome);
+    await _tentarPublicarConvite(
+        obra.codigoConvite, ref.id, 'equipe', obra.nome);
     return ref.id;
+  }
+
+  /// O código também vive no documento da obra, então falhar aqui não pode
+  /// derrubar a operação que chamou: a obra recém-criada é o que importa.
+  /// Enquanto o convite não sobe, a entrada por código usa o caminho
+  /// antigo (busca direta na obra) — ver [_obraIdDoConvite].
+  Future<void> _tentarPublicarConvite(
+      String codigo, String obraId, String tipo, String nomeObra) async {
+    try {
+      await _publicarConvite(codigo, obraId, tipo, nomeObra);
+    } catch (_) {}
   }
 
   /// Publica o código numa coleção à parte, com o mínimo necessário para
@@ -81,20 +93,42 @@ class FirestoreService {
   }
 
   /// Obra apontada por um código, se o código for do tipo esperado.
+  ///
+  /// Tenta primeiro a coleção de convites e, se ela não responder, busca o
+  /// código direto na obra. Esse segundo caminho é o que existia antes e
+  /// continua valendo enquanto as regras novas não forem publicadas no
+  /// console — sem ele, publicar o app sem publicar as regras deixaria
+  /// mestre e cliente sem conseguir entrar em obra nenhuma.
   Future<String?> _obraIdDoConvite(String codigo, String tipo) async {
     final limpo = codigo.trim().toUpperCase();
     if (limpo.isEmpty) return null;
-    final doc = await _convites.doc(limpo).get();
-    final dados = doc.data();
-    if (dados == null || dados['tipo'] != tipo) return null;
-    return dados['obraId'] as String?;
+
+    try {
+      final doc = await _convites.doc(limpo).get();
+      final dados = doc.data();
+      if (dados != null && dados['tipo'] == tipo) {
+        return dados['obraId'] as String?;
+      }
+    } catch (_) {
+      // regras antigas ainda publicadas: cai no caminho de compatibilidade
+    }
+
+    try {
+      final campo = tipo == 'cliente' ? 'codigoCliente' : 'codigoConvite';
+      final query =
+          await _obras.where(campo, isEqualTo: limpo).limit(1).get();
+      if (query.docs.isNotEmpty) return query.docs.first.id;
+    } catch (_) {}
+    return null;
   }
 
   /// Republica os convites de uma obra criada antes desta coleção existir.
   /// Idempotente — o dono chama ao abrir a obra e o acesso se conserta.
   Future<void> garantirConvites(ObraModel obra) async {
-    await _publicarConvite(obra.codigoConvite, obra.id, 'equipe', obra.nome);
-    await _publicarConvite(obra.codigoCliente, obra.id, 'cliente', obra.nome);
+    await _tentarPublicarConvite(
+        obra.codigoConvite, obra.id, 'equipe', obra.nome);
+    await _tentarPublicarConvite(
+        obra.codigoCliente, obra.id, 'cliente', obra.nome);
   }
 
   Future<void> atualizarObra(ObraModel obra) =>
@@ -139,12 +173,13 @@ class FirestoreService {
   /// (as obras criadas antes deste recurso não têm).
   Future<String> codigoDoClienteDaObra(ObraModel obra) async {
     if (obra.codigoCliente.isNotEmpty) {
-      await _publicarConvite(obra.codigoCliente, obra.id, 'cliente', obra.nome);
+      await _tentarPublicarConvite(
+          obra.codigoCliente, obra.id, 'cliente', obra.nome);
       return obra.codigoCliente;
     }
     final codigo = gerarCodigoConvite();
     await _obras.doc(obra.id).update({'codigoCliente': codigo});
-    await _publicarConvite(codigo, obra.id, 'cliente', obra.nome);
+    await _tentarPublicarConvite(codigo, obra.id, 'cliente', obra.nome);
     return codigo;
   }
 
