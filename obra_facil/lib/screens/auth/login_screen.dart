@@ -6,7 +6,7 @@ import '../../constants/app_colors.dart';
 import '../../constants/app_constants.dart';
 import '../../providers/auth_provider.dart';
 import '../../utils/validators.dart';
-import '../../widgets/ilustracoes.dart';
+import '../../widgets/tres_d/cena_obra_3d.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -61,54 +61,50 @@ class _LoginScreenState extends State<LoginScreen> {
     return Scaffold(
       body: Stack(
         children: [
-          // canteiro ao fundo
-          const Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            height: 160,
-            child: IgnorePointer(
-              child: Opacity(opacity: 0.30, child: IlustracaoSkyline()),
+          // Brilho quente atrás da maquete.
+          IgnorePointer(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: RadialGradient(
+                  center: const Alignment(0, -0.75),
+                  radius: 0.9,
+                  colors: [
+                    AppColors.laranja.withValues(alpha: 0.14),
+                    AppColors.fundo,
+                  ],
+                  stops: const [0, 1],
+                ),
+              ),
+              child: const SizedBox.expand(),
             ),
           ),
           SafeArea(
             child: Center(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24),
+                padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
                 child: Form(
                   key: _formKey,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Center(
-                        child: Container(
-                          width: 84,
-                          height: 84,
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            color: AppColors.laranja,
-                            borderRadius: BorderRadius.circular(23),
-                            boxShadow: [
-                              BoxShadow(
-                                color:
-                                    AppColors.laranja.withValues(alpha: 0.45),
-                                blurRadius: 30,
-                                spreadRadius: 2,
-                              ),
-                            ],
-                          ),
-                          child: const Icon(Icons.apartment,
-                              size: 46, color: Colors.white),
-                        ),
+                      // Maquete parada: na tela de login ela é identidade,
+                      // não espetáculo — girando, roubaria a atenção de
+                      // quem só quer digitar a senha.
+                      const SizedBox(
+                        height: 170,
+                        child: CenaObraTresD(animando: false),
                       ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 4),
                       Text(
                         AppConstants.appName,
                         textAlign: TextAlign.center,
                         style: Theme.of(context)
                             .textTheme
                             .headlineMedium
-                            ?.copyWith(fontWeight: FontWeight.bold),
+                            ?.copyWith(
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: -0.5,
+                            ),
                       ),
                       const SizedBox(height: 6),
                       Text(
@@ -119,7 +115,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             .bodyMedium
                             ?.copyWith(color: AppColors.textoSecundario),
                       ),
-                      const SizedBox(height: 40),
+                      const SizedBox(height: 32),
                       TextFormField(
                         controller: _emailCtrl,
                         keyboardType: TextInputType.emailAddress,

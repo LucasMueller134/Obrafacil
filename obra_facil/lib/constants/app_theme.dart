@@ -23,17 +23,51 @@ abstract class AppTheme {
       ),
     );
 
-    final textTheme = GoogleFonts.poppinsTextTheme(base.textTheme).apply(
-      bodyColor: AppColors.textoPrimario,
-      displayColor: AppColors.textoPrimario,
-    );
+    // Título com entrelinha apertada e texto corrido com respiro: é o
+    // ajuste que separa "fonte bonita aplicada" de tipografia cuidada.
+    final textTheme = GoogleFonts.poppinsTextTheme(base.textTheme)
+        .apply(
+          bodyColor: AppColors.textoPrimario,
+          displayColor: AppColors.textoPrimario,
+        )
+        .copyWith(
+          displaySmall: GoogleFonts.poppins(
+              fontSize: 34,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -1,
+              color: AppColors.textoPrimario),
+          headlineMedium: GoogleFonts.poppins(
+              fontSize: 26,
+              fontWeight: FontWeight.w700,
+              letterSpacing: -0.6,
+              color: AppColors.textoPrimario),
+          titleLarge: GoogleFonts.poppins(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              letterSpacing: -0.3,
+              color: AppColors.textoPrimario),
+          titleMedium: GoogleFonts.poppins(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              letterSpacing: -0.2,
+              color: AppColors.textoPrimario),
+          bodyMedium: GoogleFonts.poppins(
+              fontSize: 14, height: 1.5, color: AppColors.textoPrimario),
+          bodySmall: GoogleFonts.poppins(
+              fontSize: 12.5, height: 1.45, color: AppColors.textoPrimario),
+        );
 
     return base.copyWith(
       textTheme: textTheme,
+      // Respingo mais suave que o padrão, sem o círculo duro do Material 2.
+      splashFactory: InkSparkle.splashFactory,
       appBarTheme: AppBarTheme(
         backgroundColor: AppColors.fundo,
         foregroundColor: AppColors.textoPrimario,
         elevation: 0,
+        // Sem isso a barra muda de cor ao rolar a lista — o detalhe que
+        // mais entrega app montado às pressas.
+        scrolledUnderElevation: 0,
         centerTitle: false,
         titleTextStyle: GoogleFonts.poppins(
           fontSize: 18,
@@ -137,6 +171,14 @@ abstract class AppTheme {
         backgroundColor: AppColors.laranja,
         foregroundColor: Colors.white,
         elevation: 6,
+        // A sombra puxa o laranja em vez do preto: o botão parece aceso
+        // sobre o fundo escuro, e não colado com um borrão cinza.
+        splashColor: Colors.white.withValues(alpha: 0.18),
+        extendedTextStyle: GoogleFonts.poppins(
+          fontSize: 14.5,
+          fontWeight: FontWeight.w600,
+          letterSpacing: -0.1,
+        ),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(18),
         ),
