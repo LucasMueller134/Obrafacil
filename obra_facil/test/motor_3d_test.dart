@@ -104,7 +104,7 @@ void main() {
       );
       final faces = camera.renderizar([cubo]);
       final luminancias = [
-        for (final f in faces) f.cor.computeLuminance(),
+        for (final f in faces) f.corClara.computeLuminance(),
       ];
       expect(luminancias.reduce(math.max),
           greaterThan(luminancias.reduce(math.min)),
@@ -114,13 +114,63 @@ void main() {
     test('a cor iluminada mantém a opacidade original', () {
       const camera = Camera3D(distancia: 9);
       for (final face in camera.renderizar([cubo])) {
-        expect(face.cor.a, 1.0);
+        expect(face.corClara.a, 1.0);
+        expect(face.corEscura.a, 1.0);
+      }
+    });
+
+    test('cada face tem gradiente entre extremo claro e escuro', () {
+      // Sem essa variação a face vira mancha chapada — o que dava
+      // aparência de desenho em vez de maquete.
+      const camera = Camera3D(giro: 0.6, inclinacao: 0.45, distancia: 9);
+      final faces = camera.renderizar([
+        Malha.caixa(
+          centro: Vetor3.zero,
+          tamanho: const Vetor3(2, 3, 2),
+          cor: _vermelho,
+        )
+      ]);
+      final verticais = faces.where((f) => f.inicioLuz != f.fimLuz);
+      expect(verticais, isNotEmpty);
+      for (final face in verticais) {
+        expect(face.corClara.computeLuminance(),
+            greaterThan(face.corEscura.computeLuminance()));
       }
     });
 
     test('cena vazia não quebra', () {
       const camera = Camera3D();
       expect(camera.renderizar(const <Malha>[]), isEmpty);
+      expect(camera.projetarSombra(const <Malha>[]).silhuetas, isEmpty);
+    });
+  });
+
+  group('Sombra projetada', () {
+    test('a silhueta acompanha a cena, e não um borrão fixo', () {
+      final caixa = Malha.caixa(
+        centro: const Vetor3(0, 0, 0),
+        tamanho: const Vetor3(2, 2, 2),
+        cor: _vermelho,
+      );
+      const camera = Camera3D(giro: 0.4, inclinacao: 0.45, distancia: 9);
+      final sombra = camera.projetarSombra([caixa]);
+      expect(sombra.silhuetas, isNotEmpty);
+      // Girar a cena muda a sombra: prova que ela é projetada, não colada.
+      const outra = Camera3D(giro: 1.8, inclinacao: 0.45, distancia: 9);
+      final sombra2 = outra.projetarSombra([caixa]);
+      expect(sombra2.silhuetas.first.first,
+          isNot(sombra.silhuetas.first.first));
+    });
+
+    test('o que está no chão não lança sombra sobre si mesmo', () {
+      // Terreno colado no chão: nada a projetar.
+      final terreno = Malha.caixa(
+        centro: const Vetor3(0, Camera3D.chao, 0),
+        tamanho: const Vetor3(6, 0.02, 6),
+        cor: _vermelho,
+      );
+      const camera = Camera3D();
+      expect(camera.projetarSombra([terreno]).silhuetas, isEmpty);
     });
   });
 

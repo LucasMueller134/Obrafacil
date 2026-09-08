@@ -53,13 +53,31 @@ class Vetor3 {
   String toString() => 'Vetor3($x, $y, $z)';
 }
 
+/// Acabamento da superfície — o que o pintor desenha por cima da cor.
+enum Textura {
+  lisa,
+
+  /// Fiadas de tijolo com junta de argamassa.
+  tijolo,
+
+  /// Poros e manchas de concreto.
+  concreto,
+
+  /// Veios de madeira.
+  madeira,
+
+  /// Ondas de telha cerâmica.
+  telha,
+}
+
 /// Uma face plana: índices dos vértices (sentido anti-horário visto de
-/// fora) e a cor base.
+/// fora), cor base e acabamento.
 class Face {
   final List<int> indices;
   final Color cor;
+  final Textura textura;
 
-  const Face(this.indices, this.cor);
+  const Face(this.indices, this.cor, {this.textura = Textura.lisa});
 }
 
 /// Conjunto de vértices e faces. Imutável: transformar devolve outra.
@@ -84,6 +102,8 @@ class Malha {
     required Vetor3 tamanho,
     required Color cor,
     Color? corTopo,
+    Textura textura = Textura.lisa,
+    Textura? texturaTopo,
   }) {
     final dx = tamanho.x / 2, dy = tamanho.y / 2, dz = tamanho.z / 2;
     final c = centro;
@@ -99,11 +119,12 @@ class Malha {
     ];
     final topo = corTopo ?? cor;
     return Malha(v, [
-      Face(const [0, 1, 2, 3], cor), // frente
-      Face(const [5, 4, 7, 6], cor), // trás
-      Face(const [4, 0, 3, 7], cor), // esquerda
-      Face(const [1, 5, 6, 2], cor), // direita
-      Face(const [3, 2, 6, 7], topo), // topo
+      Face(const [0, 1, 2, 3], cor, textura: textura), // frente
+      Face(const [5, 4, 7, 6], cor, textura: textura), // trás
+      Face(const [4, 0, 3, 7], cor, textura: textura), // esquerda
+      Face(const [1, 5, 6, 2], cor, textura: textura), // direita
+      Face(const [3, 2, 6, 7], topo,
+          textura: texturaTopo ?? textura), // topo
       Face(const [4, 5, 1, 0], cor), // fundo
     ]);
   }
@@ -116,6 +137,7 @@ class Malha {
     required double altura,
     required Color cor,
     Color? corEmpena,
+    Textura textura = Textura.lisa,
   }) {
     final dx = largura / 2, dz = profundidade / 2;
     final c = centroBase;
@@ -129,8 +151,8 @@ class Malha {
     ];
     final empena = corEmpena ?? cor;
     return Malha(v, [
-      Face(const [0, 1, 5, 4], cor), // água da frente
-      Face(const [2, 3, 4, 5], cor), // água de trás
+      Face(const [0, 1, 5, 4], cor, textura: textura), // água da frente
+      Face(const [2, 3, 4, 5], cor, textura: textura), // água de trás
       Face(const [3, 0, 4], empena), // empena esquerda
       Face(const [1, 2, 5], empena), // empena direita
       Face(const [3, 2, 1, 0], cor), // fundo (nunca visível)
@@ -168,12 +190,41 @@ class Malha {
 }
 
 /// Face já projetada, pronta para pintar.
+///
+/// Em vez de uma cor só, carrega o par claro/escuro e onde cada um cai na
+/// tela: preenchida com gradiente, a superfície ganha a variação contínua
+/// de luz que uma face chapada não tem — é o que separa maquete de
+/// desenho vetorial.
 class FaceProjetada {
   final List<Offset> pontos;
-  final Color cor;
+
+  /// Cor no ponto mais iluminado da face e no mais sombreado.
+  final Color corClara;
+  final Color corEscura;
+
+  /// Extremos do gradiente, em coordenadas de tela.
+  final Offset inicioLuz;
+  final Offset fimLuz;
+
+  final Textura textura;
   final double profundidade;
 
-  const FaceProjetada(this.pontos, this.cor, this.profundidade);
+  const FaceProjetada({
+    required this.pontos,
+    required this.corClara,
+    required this.corEscura,
+    required this.inicioLuz,
+    required this.fimLuz,
+    required this.textura,
+    required this.profundidade,
+  });
+}
+
+/// Contorno da cena achatado no chão — a sombra projetada.
+class SombraProjetada {
+  final List<List<Offset>> silhuetas;
+
+  const SombraProjetada(this.silhuetas);
 }
 
 /// Câmera + luz. Projeta uma lista de malhas em faces 2D já ordenadas,
@@ -212,6 +263,12 @@ class Camera3D {
     return Offset(p.x * k, -p.y * k);
   }
 
+  /// Altura do chão da cena — referência da oclusão e da sombra.
+  static const double chao = -1.2;
+
+  /// Altura de referência para o topo da cena.
+  static const double _tetoCena = 2.4;
+
   /// Faces visíveis, iluminadas e ordenadas do fundo para a frente.
   List<FaceProjetada> renderizar(Iterable<Malha> malhas) {
     final saida = <FaceProjetada>[];
@@ -230,15 +287,49 @@ class Camera3D {
         if (normal.dot(olho - a) <= 0) continue;
 
         final difusa = math.max(0.0, normal.dot(luzCam));
-        final cor = _iluminar(face.cor, 0.52 + 0.48 * difusa);
+        // Brilho especular estreito: o realce que faz a superfície
+        // parecer ter material, e não papel colorido.
+        final reflexo = (normal * (2 * normal.dot(luzCam))) - luzCam;
+        final especular =
+            math.pow(math.max(0.0, reflexo.normalizado.z), 18).toDouble();
+        final baseLuz = 0.46 + 0.54 * difusa + 0.22 * especular;
+
+        // Oclusão por altura: o que está perto do chão recebe menos luz
+        // do céu. É o que assenta a construção no terreno em vez de
+        // deixá-la boiando.
         var profundidade = 0.0;
         final pontos = <Offset>[];
+        var menorFator = double.infinity, maiorFator = -double.infinity;
+        var pontoEscuro = Offset.zero, pontoClaro = Offset.zero;
+
         for (final i in face.indices) {
+          final vMundo = malha.vertices[i];
+          final tela = projetar(vc[i]);
           profundidade += vc[i].z;
-          pontos.add(projetar(vc[i]));
+          pontos.add(tela);
+
+          final altura =
+              ((vMundo.y - chao) / (_tetoCena - chao)).clamp(0.0, 1.0);
+          final fator = baseLuz * (0.62 + 0.38 * altura);
+          if (fator < menorFator) {
+            menorFator = fator;
+            pontoEscuro = tela;
+          }
+          if (fator > maiorFator) {
+            maiorFator = fator;
+            pontoClaro = tela;
+          }
         }
+
         saida.add(FaceProjetada(
-            pontos, cor, profundidade / face.indices.length));
+          pontos: pontos,
+          corClara: _iluminar(face.cor, maiorFator),
+          corEscura: _iluminar(face.cor, menorFator),
+          inicioLuz: pontoEscuro,
+          fimLuz: pontoClaro,
+          textura: face.textura,
+          profundidade: profundidade / face.indices.length,
+        ));
       }
     }
     // Do mais fundo (z menor) para o mais perto.
@@ -246,8 +337,37 @@ class Camera3D {
     return saida;
   }
 
+  /// Silhueta da cena achatada no plano do chão, na direção da luz.
+  ///
+  /// Sombra de verdade — o contorno acompanha o que existe e gira junto
+  /// com a cena. Um borrão oval fixo denuncia na hora que é decoração.
+  SombraProjetada projetarSombra(Iterable<Malha> malhas) {
+    final luzMundo = luz.normalizado;
+    final silhuetas = <List<Offset>>[];
+
+    for (final malha in malhas) {
+      for (final face in malha.faces) {
+        // Só o que está acima do chão lança sombra.
+        final acima = face.indices
+            .every((i) => malha.vertices[i].y > chao + 0.02);
+        if (!acima) continue;
+
+        final pontos = <Offset>[];
+        for (final i in face.indices) {
+          final v = malha.vertices[i];
+          // Desce o vértice até o chão seguindo o raio de luz.
+          final t = (v.y - chao) / (luzMundo.y.abs() < 0.05 ? 0.05 : luzMundo.y);
+          final noChao = Vetor3(v.x - luzMundo.x * t, chao, v.z - luzMundo.z * t);
+          pontos.add(projetar(paraCamera(noChao)));
+        }
+        silhuetas.add(pontos);
+      }
+    }
+    return SombraProjetada(silhuetas);
+  }
+
   static Color _iluminar(Color cor, double fator) {
-    final f = fator.clamp(0.0, 1.15);
+    final f = fator.clamp(0.0, 1.25);
     int canal(double c) => (c * 255 * f).round().clamp(0, 255);
     return Color.fromARGB(
         (cor.a * 255).round(), canal(cor.r), canal(cor.g), canal(cor.b));
