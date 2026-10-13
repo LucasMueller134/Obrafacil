@@ -1,0 +1,357 @@
+[
+  {
+    "id": "material-cimento-saco-texto",
+    "origem": "sintetico",
+    "particao": "dev",
+    "nota": "Saco de cimento: o classificador só vê 'Bag'/'Paper'; o texto da embalagem resolve.",
+    "entrada": {
+      "rotulos": [
+        [
+          "Bag",
+          0.83
+        ],
+        [
+          "Paper",
+          0.62
+        ],
+        [
+          "Text",
+          0.57
+        ],
+        [
+          "Box",
+          0.41
+        ]
+      ],
+      "texto": "CIMENTO PORTLAND CP II-F-32\n50 kg\nVOTORAN"
+    },
+    "esperado": {
+      "material": "Cimento"
+    }
+  },
+  {
+    "id": "material-argamassa-texto-cita-cimento",
+    "origem": "sintetico",
+    "particao": "teste",
+    "nota": "Saco de argamassa colante cujo texto cita 'cimento' na composição: o produto é Argamassa, não Cimento.",
+    "entrada": {
+      "rotulos": [
+        [
+          "Bag",
+          0.79
+        ],
+        [
+          "Text",
+          0.6
+        ],
+        [
+          "Paper",
+          0.48
+        ]
+      ],
+      "texto": "ARGAMASSA COLANTE AC II\nQUARTZOLIT\n20kg\nCOMPOSICAO: CIMENTO PORTLAND, AGREGADOS MINERAIS E ADITIVOS"
+    },
+    "esperado": {
+      "material": "Argamassa"
+    }
+  },
+  {
+    "id": "material-cal-texto-cita-argamassa",
+    "origem": "sintetico",
+    "particao": "teste",
+    "nota": "Saco de cal hidratada com 'para argamassas' no texto: o produto é Cal, não Argamassa nem Cimento.",
+    "entrada": {
+      "rotulos": [
+        [
+          "Bag",
+          0.8
+        ],
+        [
+          "Paper",
+          0.57
+        ],
+        [
+          "Text",
+          0.52
+        ]
+      ],
+      "texto": "CAL HIDRATADA CH-III\nPARA ARGAMASSAS E PINTURA\n20 kg"
+    },
+    "esperado": {
+      "material": "Cal"
+    }
+  },
+  {
+    "id": "material-tinta-lata-rotulo-metal",
+    "origem": "sintetico",
+    "particao": "dev",
+    "nota": "Lata metálica de tinta de 18 L: o rótulo 'Metal' engana (não é vergalhão); o texto diz Tinta.",
+    "entrada": {
+      "rotulos": [
+        [
+          "Text",
+          0.71
+        ],
+        [
+          "Metal",
+          0.52
+        ],
+        [
+          "Box",
+          0.46
+        ]
+      ],
+      "texto": "TINTA ACRILICA FOSCA\nSUVINIL\n18L"
+    },
+    "esperado": {
+      "material": "Tinta"
+    }
+  },
+  {
+    "id": "material-tubo-pvc-texto",
+    "origem": "sintetico",
+    "particao": "dev",
+    "nota": "Tubo de esgoto com 'TUBO PVC' impresso: no app é Cano PVC (tubo = cano).",
+    "entrada": {
+      "rotulos": [
+        [
+          "Pipe",
+          0.71
+        ],
+        [
+          "Text",
+          0.44
+        ]
+      ],
+      "texto": "TUBO PVC 100mm\nTIGRE"
+    },
+    "esperado": {
+      "material": "Cano PVC"
+    }
+  },
+  {
+    "id": "material-vergalhao-etiqueta-ca50",
+    "origem": "sintetico",
+    "particao": "teste",
+    "nota": "Feixe de barras com etiqueta 'CA-50': Vergalhão de aço; o rótulo 'Wire' não é fio elétrico.",
+    "entrada": {
+      "rotulos": [
+        [
+          "Metal",
+          0.81
+        ],
+        [
+          "Steel",
+          0.67
+        ],
+        [
+          "Wire",
+          0.5
+        ]
+      ],
+      "texto": "GERDAU CA-50 10,0mm"
+    },
+    "esperado": {
+      "material": "Vergalhão de aço"
+    }
+  },
+  {
+    "id": "material-piso-ceramico-caixa-texto",
+    "origem": "sintetico",
+    "particao": "dev",
+    "nota": "Caixa de piso: o classificador vê só 'Box'/'Paper'; o texto diz Piso cerâmico.",
+    "entrada": {
+      "rotulos": [
+        [
+          "Box",
+          0.82
+        ],
+        [
+          "Text",
+          0.64
+        ],
+        [
+          "Paper",
+          0.43
+        ]
+      ],
+      "texto": "PISO CERAMICO\nPEI 4\n60x60\n2,16 m2/cx"
+    },
+    "esperado": {
+      "material": "Piso cerâmico"
+    }
+  },
+  {
+    "id": "material-cabo-flexivel-rolo-texto",
+    "origem": "sintetico",
+    "particao": "teste",
+    "nota": "Rolo de cabo flexível na caixa: no estoque é Fio elétrico ('cabo' = fio), mesmo com 'Box' entre os rótulos.",
+    "entrada": {
+      "rotulos": [
+        [
+          "Wire",
+          0.66
+        ],
+        [
+          "Box",
+          0.52
+        ],
+        [
+          "Text",
+          0.49
+        ]
+      ],
+      "texto": "CABO FLEXIVEL 2,5mm2\n750V\nROLO 100m"
+    },
+    "esperado": {
+      "material": "Fio elétrico"
+    }
+  },
+  {
+    "id": "material-tijolo-pallet-so-rotulo",
+    "origem": "sintetico",
+    "particao": "teste",
+    "nota": "Pallet de tijolos sem texto: Tijolo; o 'Wood' é o pallet, não o material.",
+    "entrada": {
+      "rotulos": [
+        [
+          "Brick",
+          0.9
+        ],
+        [
+          "Wood",
+          0.46
+        ],
+        [
+          "Wall",
+          0.44
+        ]
+      ]
+    },
+    "esperado": {
+      "material": "Tijolo"
+    }
+  },
+  {
+    "id": "material-madeira-pilha-so-rotulo",
+    "origem": "sintetico",
+    "particao": "teste",
+    "nota": "Pilha de tábuas sem texto: só pelos rótulos já é Madeira.",
+    "entrada": {
+      "rotulos": [
+        [
+          "Wood",
+          0.88
+        ],
+        [
+          "Lumber",
+          0.73
+        ],
+        [
+          "Plank",
+          0.61
+        ]
+      ]
+    },
+    "esperado": {
+      "material": "Madeira"
+    }
+  },
+  {
+    "id": "material-areia-monte-so-rotulo",
+    "origem": "sintetico",
+    "particao": "teste",
+    "nota": "Monte de areia sem texto: Areia; 'Soil' não deve virar outra coisa.",
+    "entrada": {
+      "rotulos": [
+        [
+          "Sand",
+          0.86
+        ],
+        [
+          "Soil",
+          0.57
+        ]
+      ]
+    },
+    "esperado": {
+      "material": "Areia"
+    }
+  },
+  {
+    "id": "material-telha-ceramica-pilha-so-rotulo",
+    "origem": "sintetico",
+    "particao": "teste",
+    "nota": "Pilha de telhas cerâmicas no chão: Telha; o rótulo 'Brick' engana.",
+    "entrada": {
+      "rotulos": [
+        [
+          "Shingle",
+          0.63
+        ],
+        [
+          "Brick",
+          0.58
+        ],
+        [
+          "Roof",
+          0.55
+        ]
+      ]
+    },
+    "esperado": {
+      "material": "Telha"
+    }
+  },
+  {
+    "id": "material-sem-material-pessoa-capacete",
+    "origem": "sintetico",
+    "particao": "teste",
+    "nota": "Foto de uma pessoa de capacete, sem material: null.",
+    "entrada": {
+      "rotulos": [
+        [
+          "Person",
+          0.88
+        ],
+        [
+          "Helmet",
+          0.79
+        ],
+        [
+          "Smile",
+          0.55
+        ]
+      ]
+    },
+    "esperado": {
+      "material": null
+    }
+  },
+  {
+    "id": "material-sem-material-caixa-furadeira",
+    "origem": "sintetico",
+    "particao": "teste",
+    "nota": "Caixa de furadeira com texto: é ferramenta, não material do estoque (null); 'Box'/'Text' e '127V' não indicam cimento nem fio.",
+    "entrada": {
+      "rotulos": [
+        [
+          "Box",
+          0.79
+        ],
+        [
+          "Text",
+          0.69
+        ],
+        [
+          "Paper",
+          0.42
+        ]
+      ],
+      "texto": "FURADEIRA DE IMPACTO\n650W 127V"
+    },
+    "esperado": {
+      "material": null
+    }
+  }
+]

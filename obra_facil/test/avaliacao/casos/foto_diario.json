@@ -1,0 +1,1074 @@
+[
+  {
+    "id": "foto-diario-baldrame-formas-sapatas-barranco",
+    "origem": "sintetico",
+    "particao": "dev",
+    "nota": "Caso relatado no canteiro (reconstruído): baldrame com formas de madeira, ferragem, sapatas já concretadas e o barranco da escavação. O app leu Cobertura com Telha; é Fundação, e não há telha nem tijolo ('Roof'/'Shingle' são engano do classificador, o vermelho é a terra).",
+    "entrada": {
+      "rotulos": [
+        [
+          "Wood",
+          0.79
+        ],
+        [
+          "Roof",
+          0.58
+        ],
+        [
+          "Soil",
+          0.52
+        ],
+        [
+          "Building",
+          0.47
+        ],
+        [
+          "Shingle",
+          0.46
+        ],
+        [
+          "Metal",
+          0.43
+        ]
+      ],
+      "paleta": {
+        "terra": 0.41,
+        "tijolo": 0.19,
+        "concreto": 0.15,
+        "claro": 0.03,
+        "vegetacao": 0.05,
+        "ceuAzul": 0.18,
+        "ceuCinza": 0.0
+      }
+    },
+    "esperado": {
+      "fase": "Fundação",
+      "materiais_contem": [
+        "Madeira"
+      ],
+      "materiais_nao_contem": [
+        "Telha",
+        "Tijolo"
+      ]
+    }
+  },
+  {
+    "id": "foto-diario-escavacao-terra-vermelha-ceu-azul",
+    "origem": "sintetico",
+    "particao": "teste",
+    "nota": "Escavação da fundação em terra vermelha, a céu aberto: Fundação. O vermelho é solo (não tijolo nem telha); céu azul limpo na faixa de cima = Ensolarado.",
+    "entrada": {
+      "rotulos": [
+        [
+          "Soil",
+          0.86
+        ],
+        [
+          "Sky",
+          0.61
+        ],
+        [
+          "Sand",
+          0.55
+        ],
+        [
+          "Rock",
+          0.47
+        ],
+        [
+          "Grass",
+          0.42
+        ]
+      ],
+      "paleta": {
+        "terra": 0.46,
+        "tijolo": 0.2,
+        "concreto": 0.04,
+        "claro": 0.02,
+        "vegetacao": 0.06,
+        "ceuAzul": 0.58,
+        "ceuCinza": 0.0
+      }
+    },
+    "esperado": {
+      "fase": "Fundação",
+      "clima": "Ensolarado",
+      "materiais_nao_contem": [
+        "Tijolo",
+        "Telha"
+      ]
+    }
+  },
+  {
+    "id": "foto-diario-armacao-sapata-na-cava",
+    "origem": "sintetico",
+    "particao": "teste",
+    "nota": "Armação da sapata dentro da cava, câmera apontada para baixo: Fundação. 'Wire'/'Metal' são a ferragem (vergalhão), não fio elétrico.",
+    "entrada": {
+      "rotulos": [
+        [
+          "Soil",
+          0.72
+        ],
+        [
+          "Metal",
+          0.6
+        ],
+        [
+          "Wire",
+          0.53
+        ],
+        [
+          "Rock",
+          0.41
+        ]
+      ],
+      "paleta": {
+        "terra": 0.57,
+        "tijolo": 0.07,
+        "concreto": 0.09,
+        "claro": 0.02,
+        "vegetacao": 0.03,
+        "ceuAzul": 0.0,
+        "ceuCinza": 0.0
+      }
+    },
+    "esperado": {
+      "fase": "Fundação",
+      "materiais_contem": [
+        "Vergalhão de aço"
+      ],
+      "materiais_nao_contem": [
+        "Fio elétrico"
+      ]
+    }
+  },
+  {
+    "id": "foto-diario-laje-forma-madeira-vista-de-cima",
+    "origem": "sintetico",
+    "particao": "dev",
+    "nota": "Forma de laje em compensado vista de cima, sem solo nem céu: Estrutura. 'Roof' é engano do classificador e a cor 'terra' vem da madeira; não há telha.",
+    "entrada": {
+      "rotulos": [
+        [
+          "Wood",
+          0.86
+        ],
+        [
+          "Roof",
+          0.63
+        ],
+        [
+          "Floor",
+          0.57
+        ],
+        [
+          "Plank",
+          0.48
+        ],
+        [
+          "Building",
+          0.44
+        ]
+      ],
+      "paleta": {
+        "terra": 0.6,
+        "tijolo": 0.13,
+        "concreto": 0.06,
+        "claro": 0.04,
+        "vegetacao": 0.0,
+        "ceuAzul": 0.0,
+        "ceuCinza": 0.0
+      }
+    },
+    "esperado": {
+      "fase": "Estrutura",
+      "materiais_contem": [
+        "Madeira"
+      ],
+      "materiais_nao_contem": [
+        "Telha"
+      ]
+    }
+  },
+  {
+    "id": "foto-diario-laje-armada-sobre-forma",
+    "origem": "sintetico",
+    "particao": "teste",
+    "nota": "Ferragem da laje (vergalhões) montada sobre a forma, pronta para concretar: Estrutura. 'Wire' é a armação e 'Roof' é a laje vista de cima.",
+    "entrada": {
+      "rotulos": [
+        [
+          "Wire",
+          0.68
+        ],
+        [
+          "Metal",
+          0.6
+        ],
+        [
+          "Wood",
+          0.54
+        ],
+        [
+          "Roof",
+          0.47
+        ],
+        [
+          "Floor",
+          0.43
+        ]
+      ],
+      "paleta": {
+        "terra": 0.35,
+        "tijolo": 0.09,
+        "concreto": 0.17,
+        "claro": 0.03,
+        "vegetacao": 0.0,
+        "ceuAzul": 0.1,
+        "ceuCinza": 0.0
+      }
+    },
+    "esperado": {
+      "fase": "Estrutura",
+      "materiais_contem": [
+        "Vergalhão de aço"
+      ],
+      "materiais_nao_contem": [
+        "Telha"
+      ]
+    }
+  },
+  {
+    "id": "foto-diario-pilares-vigas-escoras-ceu-azul",
+    "origem": "sintetico",
+    "particao": "dev",
+    "nota": "Esqueleto de concreto (pilares, vigas e laje) com escoras de madeira, ainda sem paredes, e céu azul: Estrutura e Ensolarado.",
+    "entrada": {
+      "rotulos": [
+        [
+          "Building",
+          0.81
+        ],
+        [
+          "Concrete",
+          0.7
+        ],
+        [
+          "Sky",
+          0.66
+        ],
+        [
+          "Wood",
+          0.5
+        ],
+        [
+          "Ceiling",
+          0.42
+        ]
+      ],
+      "paleta": {
+        "terra": 0.15,
+        "tijolo": 0.03,
+        "concreto": 0.42,
+        "claro": 0.06,
+        "vegetacao": 0.02,
+        "ceuAzul": 0.52,
+        "ceuCinza": 0.0
+      }
+    },
+    "esperado": {
+      "fase": "Estrutura",
+      "clima": "Ensolarado",
+      "materiais_contem": [
+        "Madeira"
+      ],
+      "materiais_nao_contem": [
+        "Tijolo"
+      ]
+    }
+  },
+  {
+    "id": "foto-diario-telhado-telha-ceramica-vermelha",
+    "origem": "sintetico",
+    "particao": "teste",
+    "nota": "Telhado com telha cerâmica vermelha sendo assentada, céu azul: Cobertura e Ensolarado. O vermelho ali é telha, não tijolo, mesmo com o rótulo 'Brick'.",
+    "entrada": {
+      "rotulos": [
+        [
+          "Roof",
+          0.92
+        ],
+        [
+          "Sky",
+          0.73
+        ],
+        [
+          "Shingle",
+          0.7
+        ],
+        [
+          "Building",
+          0.55
+        ],
+        [
+          "Brick",
+          0.49
+        ]
+      ],
+      "paleta": {
+        "terra": 0.1,
+        "tijolo": 0.52,
+        "concreto": 0.03,
+        "claro": 0.04,
+        "vegetacao": 0.02,
+        "ceuAzul": 0.62,
+        "ceuCinza": 0.0
+      }
+    },
+    "esperado": {
+      "fase": "Cobertura",
+      "clima": "Ensolarado",
+      "materiais_contem": [
+        "Telha"
+      ],
+      "materiais_nao_contem": [
+        "Tijolo"
+      ]
+    }
+  },
+  {
+    "id": "foto-diario-madeiramento-telhado-sem-telha",
+    "origem": "sintetico",
+    "particao": "teste",
+    "nota": "Tesouras, caibros e ripas do telhado contra o céu azul, ainda sem telha: Cobertura e Ensolarado. A madeira aqui não é forma de fundação, e telha ainda não aparece.",
+    "entrada": {
+      "rotulos": [
+        [
+          "Wood",
+          0.84
+        ],
+        [
+          "Roof",
+          0.72
+        ],
+        [
+          "Sky",
+          0.65
+        ],
+        [
+          "Lumber",
+          0.57
+        ],
+        [
+          "Building",
+          0.46
+        ]
+      ],
+      "paleta": {
+        "terra": 0.33,
+        "tijolo": 0.06,
+        "concreto": 0.05,
+        "claro": 0.03,
+        "vegetacao": 0.0,
+        "ceuAzul": 0.55,
+        "ceuCinza": 0.0
+      }
+    },
+    "esperado": {
+      "fase": "Cobertura",
+      "clima": "Ensolarado",
+      "materiais_contem": [
+        "Madeira"
+      ],
+      "materiais_nao_contem": [
+        "Telha"
+      ]
+    }
+  },
+  {
+    "id": "foto-diario-telha-fibrocimento-dia-nublado",
+    "origem": "sintetico",
+    "particao": "teste",
+    "nota": "Telhas de fibrocimento cinza sendo fixadas no madeiramento, sob céu todo encoberto e sem chuva: Cobertura e Nublado. O cinza é telha, não reboco.",
+    "entrada": {
+      "rotulos": [
+        [
+          "Roof",
+          0.87
+        ],
+        [
+          "Cloud",
+          0.64
+        ],
+        [
+          "Building",
+          0.6
+        ],
+        [
+          "Sky",
+          0.55
+        ],
+        [
+          "Metal",
+          0.42
+        ]
+      ],
+      "paleta": {
+        "terra": 0.06,
+        "tijolo": 0.04,
+        "concreto": 0.44,
+        "claro": 0.08,
+        "vegetacao": 0.03,
+        "ceuAzul": 0.0,
+        "ceuCinza": 0.58
+      }
+    },
+    "esperado": {
+      "fase": "Cobertura",
+      "clima": "Nublado",
+      "materiais_contem": [
+        "Telha"
+      ]
+    }
+  },
+  {
+    "id": "foto-diario-parede-tijolo-sendo-levantada",
+    "origem": "sintetico",
+    "particao": "teste",
+    "nota": "Pedreiro levantando parede de tijolo cerâmico: Alvenaria. Há tijolo e não há telha (o vermelho é da parede).",
+    "entrada": {
+      "rotulos": [
+        [
+          "Brick",
+          0.93
+        ],
+        [
+          "Wall",
+          0.8
+        ],
+        [
+          "Building",
+          0.61
+        ],
+        [
+          "Person",
+          0.54
+        ],
+        [
+          "Sky",
+          0.47
+        ]
+      ],
+      "paleta": {
+        "terra": 0.08,
+        "tijolo": 0.54,
+        "concreto": 0.12,
+        "claro": 0.03,
+        "vegetacao": 0.01,
+        "ceuAzul": 0.3,
+        "ceuCinza": 0.0
+      }
+    },
+    "esperado": {
+      "fase": "Alvenaria",
+      "materiais_contem": [
+        "Tijolo"
+      ],
+      "materiais_nao_contem": [
+        "Telha"
+      ]
+    }
+  },
+  {
+    "id": "foto-diario-parede-bloco-concreto",
+    "origem": "sintetico",
+    "particao": "dev",
+    "nota": "Parede de bloco de concreto sendo levantada: Alvenaria mesmo com a foto toda cinza. 'Brick' aqui é bloco de concreto, não tijolo.",
+    "entrada": {
+      "rotulos": [
+        [
+          "Wall",
+          0.85
+        ],
+        [
+          "Concrete",
+          0.71
+        ],
+        [
+          "Brick",
+          0.64
+        ],
+        [
+          "Building",
+          0.57
+        ]
+      ],
+      "paleta": {
+        "terra": 0.07,
+        "tijolo": 0.03,
+        "concreto": 0.6,
+        "claro": 0.06,
+        "vegetacao": 0.02,
+        "ceuAzul": 0.14,
+        "ceuCinza": 0.0
+      }
+    },
+    "esperado": {
+      "fase": "Alvenaria",
+      "materiais_contem": [
+        "Bloco de concreto"
+      ],
+      "materiais_nao_contem": [
+        "Tijolo"
+      ]
+    }
+  },
+  {
+    "id": "foto-diario-alvenaria-tijolo-com-chuva",
+    "origem": "sintetico",
+    "particao": "dev",
+    "nota": "Paredes de tijolo levantadas, foto tirada com chuva caindo e céu cinza: Alvenaria e Chuvoso.",
+    "entrada": {
+      "rotulos": [
+        [
+          "Rain",
+          0.68
+        ],
+        [
+          "Brick",
+          0.66
+        ],
+        [
+          "Wall",
+          0.6
+        ],
+        [
+          "Building",
+          0.52
+        ],
+        [
+          "Cloud",
+          0.5
+        ]
+      ],
+      "paleta": {
+        "terra": 0.12,
+        "tijolo": 0.38,
+        "concreto": 0.17,
+        "claro": 0.02,
+        "vegetacao": 0.03,
+        "ceuAzul": 0.0,
+        "ceuCinza": 0.6
+      }
+    },
+    "esperado": {
+      "fase": "Alvenaria",
+      "clima": "Chuvoso",
+      "materiais_contem": [
+        "Tijolo"
+      ]
+    }
+  },
+  {
+    "id": "foto-diario-parede-interna-rebocada-cinza",
+    "origem": "sintetico",
+    "particao": "dev",
+    "nota": "Parede interna rebocada, cinza, ainda sem pintura: Reboco e contrapiso. Foto interna não mostra o clima; não há tinta nem bloco aparente.",
+    "entrada": {
+      "rotulos": [
+        [
+          "Wall",
+          0.87
+        ],
+        [
+          "Concrete",
+          0.62
+        ],
+        [
+          "Room",
+          0.56
+        ],
+        [
+          "Ceiling",
+          0.46
+        ],
+        [
+          "Floor",
+          0.41
+        ]
+      ],
+      "paleta": {
+        "terra": 0.05,
+        "tijolo": 0.02,
+        "concreto": 0.66,
+        "claro": 0.09,
+        "vegetacao": 0.0,
+        "ceuAzul": 0.0,
+        "ceuCinza": 0.0
+      }
+    },
+    "esperado": {
+      "fase": "Reboco e contrapiso",
+      "clima": null,
+      "materiais_nao_contem": [
+        "Tinta",
+        "Bloco de concreto"
+      ]
+    }
+  },
+  {
+    "id": "foto-diario-contrapiso-sarrafeado",
+    "origem": "sintetico",
+    "particao": "dev",
+    "nota": "Contrapiso de argamassa recém-sarrafeado num cômodo: Reboco e contrapiso. 'Floor' é o contrapiso, não piso cerâmico; foto interna não mostra o clima.",
+    "entrada": {
+      "rotulos": [
+        [
+          "Floor",
+          0.88
+        ],
+        [
+          "Concrete",
+          0.73
+        ],
+        [
+          "Room",
+          0.57
+        ],
+        [
+          "Wall",
+          0.49
+        ]
+      ],
+      "paleta": {
+        "terra": 0.06,
+        "tijolo": 0.02,
+        "concreto": 0.64,
+        "claro": 0.1,
+        "vegetacao": 0.0,
+        "ceuAzul": 0.0,
+        "ceuCinza": 0.0
+      }
+    },
+    "esperado": {
+      "fase": "Reboco e contrapiso",
+      "clima": null,
+      "materiais_nao_contem": [
+        "Piso cerâmico"
+      ]
+    }
+  },
+  {
+    "id": "foto-diario-parede-pintada-clara-rolo",
+    "origem": "sintetico",
+    "particao": "teste",
+    "nota": "Parede interna pintada de branco, com rolo e bandeja à vista: Pintura, com tinta; foto interna não mostra o clima.",
+    "entrada": {
+      "rotulos": [
+        [
+          "Wall",
+          0.9
+        ],
+        [
+          "Paint",
+          0.71
+        ],
+        [
+          "Room",
+          0.6
+        ],
+        [
+          "Ceiling",
+          0.49
+        ],
+        [
+          "Floor",
+          0.42
+        ]
+      ],
+      "paleta": {
+        "terra": 0.03,
+        "tijolo": 0.01,
+        "concreto": 0.1,
+        "claro": 0.72,
+        "vegetacao": 0.0,
+        "ceuAzul": 0.0,
+        "ceuCinza": 0.0
+      }
+    },
+    "esperado": {
+      "fase": "Pintura",
+      "clima": null,
+      "materiais_contem": [
+        "Tinta"
+      ]
+    }
+  },
+  {
+    "id": "foto-diario-assentamento-piso-ceramico",
+    "origem": "sintetico",
+    "particao": "dev",
+    "nota": "Assentamento de piso cerâmico sobre o contrapiso, metade do cômodo já assentada: Revestimentos. O cinza do contrapiso não faz a fase voltar para Reboco e contrapiso.",
+    "entrada": {
+      "rotulos": [
+        [
+          "Tile",
+          0.89
+        ],
+        [
+          "Floor",
+          0.84
+        ],
+        [
+          "Room",
+          0.51
+        ],
+        [
+          "Person",
+          0.46
+        ],
+        [
+          "Wall",
+          0.43
+        ]
+      ],
+      "paleta": {
+        "terra": 0.08,
+        "tijolo": 0.04,
+        "concreto": 0.36,
+        "claro": 0.32,
+        "vegetacao": 0.0,
+        "ceuAzul": 0.0,
+        "ceuCinza": 0.0
+      }
+    },
+    "esperado": {
+      "fase": "Revestimentos",
+      "clima": null,
+      "materiais_contem": [
+        "Piso cerâmico"
+      ]
+    }
+  },
+  {
+    "id": "foto-diario-azulejo-parede-banheiro",
+    "origem": "sintetico",
+    "particao": "teste",
+    "nota": "Azulejo sendo assentado na parede do banheiro, com as pontas dos tubos de água saindo da parede: Revestimentos, não Instalações hidráulicas.",
+    "entrada": {
+      "rotulos": [
+        [
+          "Tile",
+          0.9
+        ],
+        [
+          "Wall",
+          0.79
+        ],
+        [
+          "Room",
+          0.54
+        ],
+        [
+          "Pipe",
+          0.42
+        ],
+        [
+          "Floor",
+          0.4
+        ]
+      ],
+      "paleta": {
+        "terra": 0.03,
+        "tijolo": 0.02,
+        "concreto": 0.25,
+        "claro": 0.55,
+        "vegetacao": 0.0,
+        "ceuAzul": 0.0,
+        "ceuCinza": 0.0
+      }
+    },
+    "esperado": {
+      "fase": "Revestimentos",
+      "clima": null
+    }
+  },
+  {
+    "id": "foto-diario-quadro-de-luz-aberto",
+    "origem": "sintetico",
+    "particao": "teste",
+    "nota": "Quadro de distribuição aberto com disjuntores e fiação colorida: Instalações elétricas. 'Wire' aqui é a fiação e 'Metal' é a caixa do quadro, não vergalhão.",
+    "entrada": {
+      "rotulos": [
+        [
+          "Wire",
+          0.8
+        ],
+        [
+          "Wall",
+          0.65
+        ],
+        [
+          "Metal",
+          0.53
+        ],
+        [
+          "Box",
+          0.46
+        ]
+      ],
+      "paleta": {
+        "terra": 0.02,
+        "tijolo": 0.06,
+        "concreto": 0.24,
+        "claro": 0.4,
+        "vegetacao": 0.03,
+        "ceuAzul": 0.0,
+        "ceuCinza": 0.0
+      }
+    },
+    "esperado": {
+      "fase": "Instalações elétricas",
+      "clima": null,
+      "materiais_contem": [
+        "Fio elétrico"
+      ],
+      "materiais_nao_contem": [
+        "Vergalhão de aço"
+      ]
+    }
+  },
+  {
+    "id": "foto-diario-tubulacao-pvc-no-chao",
+    "origem": "sintetico",
+    "particao": "teste",
+    "nota": "Tubos e conexões de PVC de esgoto assentados no chão, antes do contrapiso: Instalações hidráulicas, não Fundação, apesar de 'Soil'.",
+    "entrada": {
+      "rotulos": [
+        [
+          "Pipe",
+          0.86
+        ],
+        [
+          "Floor",
+          0.57
+        ],
+        [
+          "Soil",
+          0.47
+        ],
+        [
+          "Concrete",
+          0.44
+        ]
+      ],
+      "paleta": {
+        "terra": 0.28,
+        "tijolo": 0.05,
+        "concreto": 0.26,
+        "claro": 0.22,
+        "vegetacao": 0.01,
+        "ceuAzul": 0.0,
+        "ceuCinza": 0.0
+      }
+    },
+    "esperado": {
+      "fase": "Instalações hidráulicas",
+      "materiais_contem": [
+        "Cano PVC"
+      ]
+    }
+  },
+  {
+    "id": "foto-diario-monte-de-areia-sem-fase",
+    "origem": "sintetico",
+    "particao": "dev",
+    "nota": "Monte de areia descarregado no canteiro: mostra o material, não a etapa da obra (fase null). Terra e 'Soil' aqui não são escavação.",
+    "entrada": {
+      "rotulos": [
+        [
+          "Sand",
+          0.84
+        ],
+        [
+          "Soil",
+          0.63
+        ],
+        [
+          "Rock",
+          0.43
+        ]
+      ],
+      "paleta": {
+        "terra": 0.68,
+        "tijolo": 0.04,
+        "concreto": 0.05,
+        "claro": 0.04,
+        "vegetacao": 0.02,
+        "ceuAzul": 0.0,
+        "ceuCinza": 0.0
+      }
+    },
+    "esperado": {
+      "fase": null,
+      "materiais_contem": [
+        "Areia"
+      ]
+    }
+  },
+  {
+    "id": "foto-diario-ceu-e-arvore-sem-obra",
+    "origem": "sintetico",
+    "particao": "teste",
+    "nota": "Só céu azul e uma árvore, nenhuma obra na foto: fase null. O céu limpo permite marcar Ensolarado; árvore não é madeira de obra.",
+    "entrada": {
+      "rotulos": [
+        [
+          "Sky",
+          0.92
+        ],
+        [
+          "Tree",
+          0.87
+        ],
+        [
+          "Plant",
+          0.71
+        ],
+        [
+          "Grass",
+          0.47
+        ]
+      ],
+      "paleta": {
+        "terra": 0.04,
+        "tijolo": 0.0,
+        "concreto": 0.02,
+        "claro": 0.02,
+        "vegetacao": 0.5,
+        "ceuAzul": 0.78,
+        "ceuCinza": 0.0
+      }
+    },
+    "esperado": {
+      "fase": null,
+      "clima": "Ensolarado",
+      "materiais_nao_contem": [
+        "Madeira"
+      ]
+    }
+  },
+  {
+    "id": "foto-diario-foto-escura-tremida",
+    "origem": "sintetico",
+    "particao": "teste",
+    "nota": "Foto escura e tremida, classificador com pouca confiança: não dá para afirmar fase nem clima.",
+    "entrada": {
+      "rotulos": [
+        [
+          "Room",
+          0.43
+        ],
+        [
+          "Wall",
+          0.41
+        ]
+      ],
+      "paleta": {
+        "terra": 0.05,
+        "tijolo": 0.01,
+        "concreto": 0.06,
+        "claro": 0.01,
+        "vegetacao": 0.0,
+        "ceuAzul": 0.0,
+        "ceuCinza": 0.0
+      }
+    },
+    "esperado": {
+      "fase": null,
+      "clima": null
+    }
+  },
+  {
+    "id": "foto-diario-guarda-chuva-na-chuva-sem-obra-visivel",
+    "origem": "sintetico",
+    "particao": "teste",
+    "nota": "Pessoa de guarda-chuva na rua em frente ao canteiro, chuva caindo e céu cinza: Chuvoso, mas a foto não mostra a etapa da obra (fase null).",
+    "entrada": {
+      "rotulos": [
+        [
+          "Umbrella",
+          0.86
+        ],
+        [
+          "Rain",
+          0.73
+        ],
+        [
+          "Person",
+          0.68
+        ],
+        [
+          "Road",
+          0.49
+        ],
+        [
+          "Cloud",
+          0.44
+        ]
+      ],
+      "paleta": {
+        "terra": 0.09,
+        "tijolo": 0.03,
+        "concreto": 0.31,
+        "claro": 0.06,
+        "vegetacao": 0.04,
+        "ceuAzul": 0.0,
+        "ceuCinza": 0.46
+      }
+    },
+    "esperado": {
+      "fase": null,
+      "clima": "Chuvoso"
+    }
+  },
+  {
+    "id": "foto-diario-equipe-de-capacete-posando",
+    "origem": "sintetico",
+    "particao": "dev",
+    "nota": "Foto da equipe de capacete posando para a câmera: registra as pessoas, não a etapa da obra (fase null).",
+    "entrada": {
+      "rotulos": [
+        [
+          "Person",
+          0.91
+        ],
+        [
+          "Helmet",
+          0.83
+        ],
+        [
+          "Building",
+          0.47
+        ],
+        [
+          "Sky",
+          0.43
+        ]
+      ],
+      "paleta": {
+        "terra": 0.1,
+        "tijolo": 0.05,
+        "concreto": 0.16,
+        "claro": 0.18,
+        "vegetacao": 0.03,
+        "ceuAzul": 0.28,
+        "ceuCinza": 0.0
+      }
+    },
+    "esperado": {
+      "fase": null
+    }
+  }
+]

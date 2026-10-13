@@ -1,0 +1,1414 @@
+{
+  "voz_lancamento": {
+    "casos": 46,
+    "casos_perfeitos": 16,
+    "campos": {
+      "valor": {
+        "avaliados": 46,
+        "acertos": 26,
+        "errados": 4,
+        "omitidos": 16,
+        "inventados": 0,
+        "acuracia": 0.5652
+      },
+      "categoria": {
+        "avaliados": 46,
+        "acertos": 44,
+        "errados": 2,
+        "omitidos": 0,
+        "inventados": 0,
+        "acuracia": 0.9565
+      },
+      "fornecedor": {
+        "avaliados": 46,
+        "acertos": 40,
+        "errados": 1,
+        "omitidos": 4,
+        "inventados": 1,
+        "acuracia": 0.8696
+      },
+      "data": {
+        "avaliados": 46,
+        "acertos": 45,
+        "errados": 1,
+        "omitidos": 0,
+        "inventados": 0,
+        "acuracia": 0.9783
+      },
+      "itens": {
+        "avaliados": 37,
+        "acertos": 31,
+        "errados": 5,
+        "omitidos": 0,
+        "inventados": 1,
+        "acuracia": 0.8378
+      }
+    },
+    "por_particao": {
+      "dev": {
+        "casos": 24,
+        "casos_perfeitos": 9,
+        "campos": {
+          "valor": {
+            "avaliados": 24,
+            "acertos": 13,
+            "errados": 2,
+            "omitidos": 9,
+            "inventados": 0,
+            "acuracia": 0.5417
+          },
+          "categoria": {
+            "avaliados": 24,
+            "acertos": 23,
+            "errados": 1,
+            "omitidos": 0,
+            "inventados": 0,
+            "acuracia": 0.9583
+          },
+          "fornecedor": {
+            "avaliados": 24,
+            "acertos": 22,
+            "errados": 1,
+            "omitidos": 1,
+            "inventados": 0,
+            "acuracia": 0.9167
+          },
+          "data": {
+            "avaliados": 24,
+            "acertos": 24,
+            "errados": 0,
+            "omitidos": 0,
+            "inventados": 0,
+            "acuracia": 1.0
+          },
+          "itens": {
+            "avaliados": 18,
+            "acertos": 15,
+            "errados": 2,
+            "omitidos": 0,
+            "inventados": 1,
+            "acuracia": 0.8333
+          }
+        }
+      },
+      "teste": {
+        "casos": 22,
+        "casos_perfeitos": 7,
+        "campos": {
+          "valor": {
+            "avaliados": 22,
+            "acertos": 13,
+            "errados": 2,
+            "omitidos": 7,
+            "inventados": 0,
+            "acuracia": 0.5909
+          },
+          "categoria": {
+            "avaliados": 22,
+            "acertos": 21,
+            "errados": 1,
+            "omitidos": 0,
+            "inventados": 0,
+            "acuracia": 0.9545
+          },
+          "fornecedor": {
+            "avaliados": 22,
+            "acertos": 18,
+            "errados": 0,
+            "omitidos": 3,
+            "inventados": 1,
+            "acuracia": 0.8182
+          },
+          "data": {
+            "avaliados": 22,
+            "acertos": 21,
+            "errados": 1,
+            "omitidos": 0,
+            "inventados": 0,
+            "acuracia": 0.9545
+          },
+          "itens": {
+            "avaliados": 19,
+            "acertos": 16,
+            "errados": 3,
+            "omitidos": 0,
+            "inventados": 0,
+            "acuracia": 0.8421
+          }
+        }
+      }
+    },
+    "falhas": [
+      {
+        "id": "voz-valor-sem-reais-01",
+        "particao": "dev",
+        "campo": "valor",
+        "esperado": 200,
+        "obtido": null
+      },
+      {
+        "id": "voz-valor-sem-reais-02",
+        "particao": "teste",
+        "campo": "valor",
+        "esperado": 350,
+        "obtido": null
+      },
+      {
+        "id": "voz-valor-mil-01",
+        "particao": "dev",
+        "campo": "valor",
+        "esperado": 2000,
+        "obtido": 1000.0
+      },
+      {
+        "id": "voz-valor-moeda-milhar-01",
+        "particao": "dev",
+        "campo": "fornecedor",
+        "esperado": "Madeireira do Zé",
+        "obtido": "Madeireira do Zé Peguei A Madeira do Telhado"
+      },
+      {
+        "id": "voz-valor-mil-virgula-01",
+        "particao": "dev",
+        "campo": "valor",
+        "esperado": 1500,
+        "obtido": null
+      },
+      {
+        "id": "voz-valor-mil-misto-01",
+        "particao": "dev",
+        "campo": "valor",
+        "esperado": 2500,
+        "obtido": null
+      },
+      {
+        "id": "voz-unitario-01",
+        "particao": "teste",
+        "campo": "valor",
+        "esperado": 350,
+        "obtido": null
+      },
+      {
+        "id": "voz-unitario-ruido-01",
+        "particao": "teste",
+        "campo": "valor",
+        "esperado": 540,
+        "obtido": null
+      },
+      {
+        "id": "voz-unitario-diaria-01",
+        "particao": "teste",
+        "campo": "valor",
+        "esperado": 540,
+        "obtido": null
+      },
+      {
+        "id": "voz-total-anunciado-02",
+        "particao": "dev",
+        "campo": "valor",
+        "esperado": 1200,
+        "obtido": 2430.0
+      },
+      {
+        "id": "voz-soma-parcelas-01",
+        "particao": "teste",
+        "campo": "valor",
+        "esperado": 245,
+        "obtido": 120.0
+      },
+      {
+        "id": "voz-soma-parcelas-02",
+        "particao": "dev",
+        "campo": "valor",
+        "esperado": 600,
+        "obtido": null
+      },
+      {
+        "id": "voz-nao-dinheiro-bitola-01",
+        "particao": "teste",
+        "campo": "fornecedor",
+        "esperado": "Elétrica Real",
+        "obtido": null
+      },
+      {
+        "id": "voz-nao-dinheiro-endereco-01",
+        "particao": "dev",
+        "campo": "valor",
+        "esperado": 230,
+        "obtido": null
+      },
+      {
+        "id": "voz-equipamento-betoneira-01",
+        "particao": "teste",
+        "campo": "valor",
+        "esperado": 250,
+        "obtido": 265.0
+      },
+      {
+        "id": "voz-equipamento-betoneira-01",
+        "particao": "teste",
+        "campo": "fornecedor",
+        "esperado": "Locadora Central",
+        "obtido": null
+      },
+      {
+        "id": "voz-equipamento-andaime-01",
+        "particao": "dev",
+        "campo": "itens",
+        "esperado": [],
+        "obtido": [
+          {
+            "material": "Andaime tá",
+            "quantidade": 10.0,
+            "unidade": "un"
+          }
+        ]
+      },
+      {
+        "id": "voz-data-sexta-passada-01",
+        "particao": "teste",
+        "campo": "fornecedor",
+        "esperado": "Pedreira São Jorge",
+        "obtido": null
+      },
+      {
+        "id": "voz-data-sexta-passada-01",
+        "particao": "teste",
+        "campo": "itens",
+        "esperado": [
+          {
+            "material": "Brita",
+            "quantidade": 2,
+            "unidade": "m³"
+          }
+        ],
+        "obtido": [
+          {
+            "material": "Brita",
+            "quantidade": 2.0,
+            "unidade": "m"
+          }
+        ]
+      },
+      {
+        "id": "voz-data-dia-01",
+        "particao": "teste",
+        "campo": "valor",
+        "esperado": 250,
+        "obtido": null
+      },
+      {
+        "id": "voz-data-dia-semana-01",
+        "particao": "teste",
+        "campo": "data",
+        "esperado": "2026-06-30",
+        "obtido": "2026-06-29"
+      },
+      {
+        "id": "voz-data-mes-passado-01",
+        "particao": "teste",
+        "campo": "itens",
+        "esperado": [
+          {
+            "material": "Piso cerâmico",
+            "quantidade": 35,
+            "unidade": "m²"
+          }
+        ],
+        "obtido": [
+          {
+            "material": "Piso cerâmico",
+            "quantidade": 35.0,
+            "unidade": "m"
+          }
+        ]
+      },
+      {
+        "id": "voz-fornecedor-armadilha-terreno-01",
+        "particao": "dev",
+        "campo": "valor",
+        "esperado": 270,
+        "obtido": null
+      },
+      {
+        "id": "voz-fornecedor-armadilha-terreno-01",
+        "particao": "dev",
+        "campo": "itens",
+        "esperado": [
+          {
+            "material": "Areia",
+            "quantidade": 3,
+            "unidade": "m³"
+          }
+        ],
+        "obtido": [
+          {
+            "material": "Areia",
+            "quantidade": 3.0,
+            "unidade": "m"
+          }
+        ]
+      },
+      {
+        "id": "voz-fornecedor-armadilha-casa-01",
+        "particao": "teste",
+        "campo": "valor",
+        "esperado": 180,
+        "obtido": null
+      },
+      {
+        "id": "voz-fornecedor-armadilha-casa-01",
+        "particao": "teste",
+        "campo": "fornecedor",
+        "esperado": null,
+        "obtido": "Casa Agora Mas"
+      },
+      {
+        "id": "voz-itens-porta-janela-01",
+        "particao": "dev",
+        "campo": "fornecedor",
+        "esperado": "Silva Materiais de Construção",
+        "obtido": null
+      },
+      {
+        "id": "voz-ruido-semento-01",
+        "particao": "teste",
+        "campo": "itens",
+        "esperado": [
+          {
+            "material": "Cimento",
+            "quantidade": 8,
+            "unidade": "sc"
+          },
+          {
+            "material": "Cal",
+            "quantidade": 0.5,
+            "unidade": "sc"
+          }
+        ],
+        "obtido": [
+          {
+            "material": "Semento",
+            "quantidade": 8.0,
+            "unidade": "sc"
+          },
+          {
+            "material": "Cal",
+            "quantidade": 0.5,
+            "unidade": "sc"
+          }
+        ]
+      },
+      {
+        "id": "voz-ruido-engolida-01",
+        "particao": "dev",
+        "campo": "valor",
+        "esperado": 520,
+        "obtido": null
+      },
+      {
+        "id": "voz-ruido-repeticao-01",
+        "particao": "teste",
+        "campo": "categoria",
+        "esperado": "maoDeObra",
+        "obtido": "outros"
+      },
+      {
+        "id": "voz-alternativas-valor-engolido-01",
+        "particao": "teste",
+        "campo": "valor",
+        "esperado": 150,
+        "obtido": null
+      },
+      {
+        "id": "voz-alternativas-valor-cortado-01",
+        "particao": "dev",
+        "campo": "valor",
+        "esperado": 300,
+        "obtido": null
+      },
+      {
+        "id": "voz-alternativas-material-01",
+        "particao": "dev",
+        "campo": "categoria",
+        "esperado": "material",
+        "obtido": "outros"
+      },
+      {
+        "id": "voz-alternativas-material-01",
+        "particao": "dev",
+        "campo": "itens",
+        "esperado": [
+          {
+            "material": "Vergalhão de aço",
+            "quantidade": 7,
+            "unidade": "br"
+          }
+        ],
+        "obtido": [
+          {
+            "material": "Verga lhão",
+            "quantidade": 7.0,
+            "unidade": "br"
+          }
+        ]
+      },
+      {
+        "id": "voz-alternativas-valor-cortado-02",
+        "particao": "dev",
+        "campo": "valor",
+        "esperado": 280,
+        "obtido": null
+      }
+    ]
+  },
+  "voz_diario": {
+    "casos": 31,
+    "casos_perfeitos": 13,
+    "campos": {
+      "clima": {
+        "avaliados": 30,
+        "acertos": 25,
+        "errados": 5,
+        "omitidos": 0,
+        "inventados": 0,
+        "acuracia": 0.8333
+      },
+      "pessoas": {
+        "avaliados": 31,
+        "acertos": 20,
+        "errados": 4,
+        "omitidos": 7,
+        "inventados": 0,
+        "acuracia": 0.6452
+      },
+      "fase": {
+        "avaliados": 29,
+        "acertos": 19,
+        "errados": 8,
+        "omitidos": 1,
+        "inventados": 1,
+        "acuracia": 0.6552
+      },
+      "data": {
+        "avaliados": 20,
+        "acertos": 17,
+        "errados": 1,
+        "omitidos": 2,
+        "inventados": 0,
+        "acuracia": 0.85
+      }
+    },
+    "por_particao": {
+      "dev": {
+        "casos": 15,
+        "casos_perfeitos": 7,
+        "campos": {
+          "clima": {
+            "avaliados": 14,
+            "acertos": 12,
+            "errados": 2,
+            "omitidos": 0,
+            "inventados": 0,
+            "acuracia": 0.8571
+          },
+          "pessoas": {
+            "avaliados": 15,
+            "acertos": 8,
+            "errados": 2,
+            "omitidos": 5,
+            "inventados": 0,
+            "acuracia": 0.5333
+          },
+          "fase": {
+            "avaliados": 15,
+            "acertos": 12,
+            "errados": 2,
+            "omitidos": 1,
+            "inventados": 0,
+            "acuracia": 0.8
+          },
+          "data": {
+            "avaliados": 10,
+            "acertos": 9,
+            "errados": 0,
+            "omitidos": 1,
+            "inventados": 0,
+            "acuracia": 0.9
+          }
+        }
+      },
+      "teste": {
+        "casos": 16,
+        "casos_perfeitos": 6,
+        "campos": {
+          "clima": {
+            "avaliados": 16,
+            "acertos": 13,
+            "errados": 3,
+            "omitidos": 0,
+            "inventados": 0,
+            "acuracia": 0.8125
+          },
+          "pessoas": {
+            "avaliados": 16,
+            "acertos": 12,
+            "errados": 2,
+            "omitidos": 2,
+            "inventados": 0,
+            "acuracia": 0.75
+          },
+          "fase": {
+            "avaliados": 14,
+            "acertos": 7,
+            "errados": 6,
+            "omitidos": 0,
+            "inventados": 1,
+            "acuracia": 0.5
+          },
+          "data": {
+            "avaliados": 10,
+            "acertos": 8,
+            "errados": 1,
+            "omitidos": 1,
+            "inventados": 0,
+            "acuracia": 0.8
+          }
+        }
+      }
+    },
+    "falhas": [
+      {
+        "id": "voz-diario-rebocamos-muro-sol-apos-chuva-ontem",
+        "particao": "teste",
+        "campo": "clima",
+        "esperado": "Ensolarado",
+        "obtido": "Chuvoso"
+      },
+      {
+        "id": "voz-diario-rebocamos-muro-sol-apos-chuva-ontem",
+        "particao": "teste",
+        "campo": "fase",
+        "esperado": "Reboco e contrapiso",
+        "obtido": "Alvenaria"
+      },
+      {
+        "id": "voz-diario-rebocamos-muro-sol-apos-chuva-ontem",
+        "particao": "teste",
+        "campo": "data",
+        "esperado": "2026-07-06",
+        "obtido": "2026-07-05"
+      },
+      {
+        "id": "voz-diario-instalaram-portas-acabamento",
+        "particao": "dev",
+        "campo": "clima",
+        "esperado": "Nublado",
+        "obtido": "Chuvoso"
+      },
+      {
+        "id": "voz-diario-instalaram-portas-acabamento",
+        "particao": "dev",
+        "campo": "pessoas",
+        "esperado": 2,
+        "obtido": null
+      },
+      {
+        "id": "voz-diario-fiacao-chuveiro-nao-e-chuva",
+        "particao": "dev",
+        "campo": "pessoas",
+        "esperado": 2,
+        "obtido": null
+      },
+      {
+        "id": "voz-diario-ruido-chap-isco-eramos-6",
+        "particao": "teste",
+        "campo": "fase",
+        "esperado": "Reboco e contrapiso",
+        "obtido": "Alvenaria"
+      },
+      {
+        "id": "voz-diario-fizemos-chapisco-anteontem",
+        "particao": "dev",
+        "campo": "fase",
+        "esperado": "Reboco e contrapiso",
+        "obtido": "Alvenaria"
+      },
+      {
+        "id": "voz-diario-ruido-contra-piso-ontem-chuva-forte",
+        "particao": "dev",
+        "campo": "clima",
+        "esperado": "Chuva forte",
+        "obtido": "Chuvoso"
+      },
+      {
+        "id": "voz-diario-ruido-contra-piso-ontem-chuva-forte",
+        "particao": "dev",
+        "campo": "pessoas",
+        "esperado": 2,
+        "obtido": null
+      },
+      {
+        "id": "voz-diario-ruido-contra-piso-ontem-chuva-forte",
+        "particao": "dev",
+        "campo": "fase",
+        "esperado": "Reboco e contrapiso",
+        "obtido": null
+      },
+      {
+        "id": "voz-diario-ruido-balde-drame-forma-sabado",
+        "particao": "teste",
+        "campo": "fase",
+        "esperado": "Fundação",
+        "obtido": "Estrutura"
+      },
+      {
+        "id": "voz-diario-forma-geral-sem-fase",
+        "particao": "teste",
+        "campo": "fase",
+        "esperado": null,
+        "obtido": "Estrutura"
+      },
+      {
+        "id": "voz-diario-chuva-negada-eu-e-mais-tres",
+        "particao": "teste",
+        "campo": "clima",
+        "esperado": "Ensolarado",
+        "obtido": "Chuvoso"
+      },
+      {
+        "id": "voz-diario-chuva-negada-eu-e-mais-tres",
+        "particao": "teste",
+        "campo": "pessoas",
+        "esperado": 4,
+        "obtido": null
+      },
+      {
+        "id": "voz-diario-previsao-chuva-nublado-azulejo",
+        "particao": "teste",
+        "campo": "clima",
+        "esperado": "Nublado",
+        "obtido": "Chuvoso"
+      },
+      {
+        "id": "voz-diario-previsao-chuva-nublado-azulejo",
+        "particao": "teste",
+        "campo": "fase",
+        "esperado": "Revestimentos",
+        "obtido": "Alvenaria"
+      },
+      {
+        "id": "voz-diario-ruido-eletro-duto-chuva-fraca",
+        "particao": "teste",
+        "campo": "pessoas",
+        "esperado": 3,
+        "obtido": 2
+      },
+      {
+        "id": "voz-diario-ruido-cesta-feira-esgoto",
+        "particao": "dev",
+        "campo": "pessoas",
+        "esperado": 2,
+        "obtido": null
+      },
+      {
+        "id": "voz-diario-ruido-cesta-feira-esgoto",
+        "particao": "dev",
+        "campo": "data",
+        "esperado": "2026-07-03",
+        "obtido": null
+      },
+      {
+        "id": "voz-diario-acabamos-de-pintar-muro",
+        "particao": "teste",
+        "campo": "pessoas",
+        "esperado": 3,
+        "obtido": 2
+      },
+      {
+        "id": "voz-diario-acabamos-de-pintar-muro",
+        "particao": "teste",
+        "campo": "fase",
+        "esperado": "Pintura",
+        "obtido": "Alvenaria"
+      },
+      {
+        "id": "voz-diario-tinta-chegou-piso-ceramico",
+        "particao": "teste",
+        "campo": "pessoas",
+        "esperado": 2,
+        "obtido": null
+      },
+      {
+        "id": "voz-diario-tinta-chegou-piso-ceramico",
+        "particao": "teste",
+        "campo": "fase",
+        "esperado": "Revestimentos",
+        "obtido": "Pintura"
+      },
+      {
+        "id": "voz-diario-caixa-dagua-telhado-terca-passada",
+        "particao": "dev",
+        "campo": "pessoas",
+        "esperado": 3,
+        "obtido": 2
+      },
+      {
+        "id": "voz-diario-telhas-soltas-calha-chuva",
+        "particao": "dev",
+        "campo": "pessoas",
+        "esperado": 2,
+        "obtido": null
+      },
+      {
+        "id": "voz-diario-mistura-fases-principal-acabamento",
+        "particao": "dev",
+        "campo": "pessoas",
+        "esperado": 4,
+        "obtido": 3
+      },
+      {
+        "id": "voz-diario-mistura-fases-principal-acabamento",
+        "particao": "dev",
+        "campo": "fase",
+        "esperado": "Acabamento",
+        "obtido": "Instalações elétricas"
+      },
+      {
+        "id": "voz-diario-mistura-fases-sem-principal",
+        "particao": "teste",
+        "campo": "data",
+        "esperado": "2026-07-03",
+        "obtido": null
+      }
+    ]
+  },
+  "ocr_notas": {
+    "casos": 18,
+    "casos_perfeitos": 3,
+    "campos": {
+      "fornecedor": {
+        "avaliados": 17,
+        "acertos": 12,
+        "errados": 4,
+        "omitidos": 0,
+        "inventados": 1,
+        "acuracia": 0.7059
+      },
+      "cnpj": {
+        "avaliados": 18,
+        "acertos": 13,
+        "errados": 3,
+        "omitidos": 2,
+        "inventados": 0,
+        "acuracia": 0.7222
+      },
+      "total": {
+        "avaliados": 18,
+        "acertos": 7,
+        "errados": 11,
+        "omitidos": 0,
+        "inventados": 0,
+        "acuracia": 0.3889
+      },
+      "data": {
+        "avaliados": 18,
+        "acertos": 16,
+        "errados": 1,
+        "omitidos": 1,
+        "inventados": 0,
+        "acuracia": 0.8889
+      }
+    },
+    "por_particao": {
+      "dev": {
+        "casos": 6,
+        "casos_perfeitos": 0,
+        "campos": {
+          "fornecedor": {
+            "avaliados": 6,
+            "acertos": 4,
+            "errados": 1,
+            "omitidos": 0,
+            "inventados": 1,
+            "acuracia": 0.6667
+          },
+          "cnpj": {
+            "avaliados": 6,
+            "acertos": 5,
+            "errados": 1,
+            "omitidos": 0,
+            "inventados": 0,
+            "acuracia": 0.8333
+          },
+          "total": {
+            "avaliados": 6,
+            "acertos": 2,
+            "errados": 4,
+            "omitidos": 0,
+            "inventados": 0,
+            "acuracia": 0.3333
+          },
+          "data": {
+            "avaliados": 6,
+            "acertos": 5,
+            "errados": 0,
+            "omitidos": 1,
+            "inventados": 0,
+            "acuracia": 0.8333
+          }
+        }
+      },
+      "teste": {
+        "casos": 12,
+        "casos_perfeitos": 3,
+        "campos": {
+          "fornecedor": {
+            "avaliados": 11,
+            "acertos": 8,
+            "errados": 3,
+            "omitidos": 0,
+            "inventados": 0,
+            "acuracia": 0.7273
+          },
+          "cnpj": {
+            "avaliados": 12,
+            "acertos": 8,
+            "errados": 2,
+            "omitidos": 2,
+            "inventados": 0,
+            "acuracia": 0.6667
+          },
+          "total": {
+            "avaliados": 12,
+            "acertos": 5,
+            "errados": 7,
+            "omitidos": 0,
+            "inventados": 0,
+            "acuracia": 0.4167
+          },
+          "data": {
+            "avaliados": 12,
+            "acertos": 11,
+            "errados": 1,
+            "omitidos": 0,
+            "inventados": 0,
+            "acuracia": 0.9167
+          }
+        }
+      }
+    },
+    "falhas": [
+      {
+        "id": "ocr-nfce-blocos-desconto-troco-01",
+        "particao": "teste",
+        "campo": "total",
+        "esperado": 350,
+        "obtido": 1.0
+      },
+      {
+        "id": "ocr-nfce-contingencia-offline-01",
+        "particao": "dev",
+        "campo": "fornecedor",
+        "esperado": "Casa das Telhas Barbosa Ltda",
+        "obtido": "Recife - Pe"
+      },
+      {
+        "id": "ocr-nfce-contingencia-offline-01",
+        "particao": "dev",
+        "campo": "total",
+        "esperado": 1234.5,
+        "obtido": 5.0
+      },
+      {
+        "id": "ocr-nfce-contingencia-offline-01",
+        "particao": "dev",
+        "campo": "data",
+        "esperado": "2026-06-27",
+        "obtido": null
+      },
+      {
+        "id": "ocr-danfe-frete-datas-01",
+        "particao": "teste",
+        "campo": "total",
+        "esperado": 2480,
+        "obtido": 100.0
+      },
+      {
+        "id": "ocr-danfe-blocos-cnpj-ocr-errado-01",
+        "particao": "dev",
+        "campo": "cnpj",
+        "esperado": "27.654.193/0001-50",
+        "obtido": "32.746.195/0001-00"
+      },
+      {
+        "id": "ocr-nfce-cnpj-ocr-errado-01",
+        "particao": "teste",
+        "campo": "cnpj",
+        "esperado": "17.392.645/0001-10",
+        "obtido": "05.831.624/0001-74"
+      },
+      {
+        "id": "ocr-nfce-cnpj-ocr-errado-01",
+        "particao": "teste",
+        "campo": "total",
+        "esperado": 742.4,
+        "obtido": 229.9
+      },
+      {
+        "id": "ocr-cupom-deposito-sao-jose-01",
+        "particao": "teste",
+        "campo": "cnpj",
+        "esperado": "08.412.936/0001-31",
+        "obtido": null
+      },
+      {
+        "id": "ocr-cupom-deposito-sao-jose-01",
+        "particao": "teste",
+        "campo": "total",
+        "esperado": 186.5,
+        "obtido": 38.0
+      },
+      {
+        "id": "ocr-balcao-madeireira-frete-01",
+        "particao": "dev",
+        "campo": "total",
+        "esperado": 1140,
+        "obtido": 1040.0
+      },
+      {
+        "id": "ocr-recibo-pedreiro-cpf-01",
+        "particao": "teste",
+        "campo": "fornecedor",
+        "esperado": "José Roberto Alves",
+        "obtido": "Recebi de Maria Aparecida Souza"
+      },
+      {
+        "id": "ocr-recibo-pedreiro-cpf-01",
+        "particao": "teste",
+        "campo": "data",
+        "esperado": "2026-06-29",
+        "obtido": "2026-06-15"
+      },
+      {
+        "id": "ocr-nfce-blocos-tributos-01",
+        "particao": "teste",
+        "campo": "cnpj",
+        "esperado": "41.298.306/0001-53",
+        "obtido": null
+      },
+      {
+        "id": "ocr-nfce-blocos-tributos-01",
+        "particao": "teste",
+        "campo": "total",
+        "esperado": 517.8,
+        "obtido": 219.0
+      },
+      {
+        "id": "ocr-nfce-blocos-virgula-ponto-01",
+        "particao": "dev",
+        "campo": "total",
+        "esperado": 1250,
+        "obtido": 1169.7
+      },
+      {
+        "id": "ocr-danfe-blocos-desconto-01",
+        "particao": "dev",
+        "campo": "total",
+        "esperado": 3420,
+        "obtido": 125.0
+      },
+      {
+        "id": "ocr-manuscrita-ilegivel-01",
+        "particao": "dev",
+        "campo": "fornecedor",
+        "esperado": null,
+        "obtido": "Quant. Discriminacao"
+      },
+      {
+        "id": "ocr-cupom-deposito-santa-rita-blocos-01",
+        "particao": "teste",
+        "campo": "fornecedor",
+        "esperado": "Depósito Santa Rita",
+        "obtido": "Dep0sit0 Santa Rlta"
+      },
+      {
+        "id": "ocr-cupom-deposito-santa-rita-blocos-01",
+        "particao": "teste",
+        "campo": "total",
+        "esperado": 300,
+        "obtido": 312.0
+      },
+      {
+        "id": "ocr-danfe-varios-cnpj-parcelas-01",
+        "particao": "teste",
+        "campo": "cnpj",
+        "esperado": "18.649.327/0001-54",
+        "obtido": "32.746.195/0001-00"
+      },
+      {
+        "id": "ocr-danfe-varios-cnpj-parcelas-01",
+        "particao": "teste",
+        "campo": "total",
+        "esperado": 5152,
+        "obtido": 4952.0
+      },
+      {
+        "id": "ocr-nfce-blocos-sem-qr-01",
+        "particao": "teste",
+        "campo": "fornecedor",
+        "esperado": "Aço Forte Vergalhões Ltda",
+        "obtido": "Aco Forte Vergalh0es Ltda"
+      }
+    ]
+  },
+  "foto_diario": {
+    "casos": 24,
+    "casos_perfeitos": 11,
+    "campos": {
+      "fase": {
+        "avaliados": 24,
+        "acertos": 12,
+        "errados": 9,
+        "omitidos": 2,
+        "inventados": 1,
+        "acuracia": 0.5
+      },
+      "materiais": {
+        "avaliados": 20,
+        "acertos": 15,
+        "errados": 5,
+        "omitidos": 0,
+        "inventados": 0,
+        "acuracia": 0.75
+      },
+      "clima": {
+        "avaliados": 15,
+        "acertos": 15,
+        "errados": 0,
+        "omitidos": 0,
+        "inventados": 0,
+        "acuracia": 1.0
+      }
+    },
+    "por_particao": {
+      "dev": {
+        "casos": 10,
+        "casos_perfeitos": 4,
+        "campos": {
+          "fase": {
+            "avaliados": 10,
+            "acertos": 5,
+            "errados": 4,
+            "omitidos": 0,
+            "inventados": 1,
+            "acuracia": 0.5
+          },
+          "materiais": {
+            "avaliados": 9,
+            "acertos": 7,
+            "errados": 2,
+            "omitidos": 0,
+            "inventados": 0,
+            "acuracia": 0.7778
+          },
+          "clima": {
+            "avaliados": 5,
+            "acertos": 5,
+            "errados": 0,
+            "omitidos": 0,
+            "inventados": 0,
+            "acuracia": 1.0
+          }
+        }
+      },
+      "teste": {
+        "casos": 14,
+        "casos_perfeitos": 7,
+        "campos": {
+          "fase": {
+            "avaliados": 14,
+            "acertos": 7,
+            "errados": 5,
+            "omitidos": 2,
+            "inventados": 0,
+            "acuracia": 0.5
+          },
+          "clima": {
+            "avaliados": 10,
+            "acertos": 10,
+            "errados": 0,
+            "omitidos": 0,
+            "inventados": 0,
+            "acuracia": 1.0
+          },
+          "materiais": {
+            "avaliados": 11,
+            "acertos": 8,
+            "errados": 3,
+            "omitidos": 0,
+            "inventados": 0,
+            "acuracia": 0.7273
+          }
+        }
+      }
+    },
+    "falhas": [
+      {
+        "id": "foto-diario-baldrame-formas-sapatas-barranco",
+        "particao": "dev",
+        "campo": "materiais",
+        "esperado": {
+          "contem": [
+            "Madeira"
+          ],
+          "nao_contem": [
+            "Telha",
+            "Tijolo"
+          ]
+        },
+        "obtido": [
+          "Madeira",
+          "Telha",
+          "Vergalhão de aço"
+        ]
+      },
+      {
+        "id": "foto-diario-laje-forma-madeira-vista-de-cima",
+        "particao": "dev",
+        "campo": "fase",
+        "esperado": "Estrutura",
+        "obtido": "Fundação"
+      },
+      {
+        "id": "foto-diario-laje-armada-sobre-forma",
+        "particao": "teste",
+        "campo": "fase",
+        "esperado": "Estrutura",
+        "obtido": "Fundação"
+      },
+      {
+        "id": "foto-diario-telhado-telha-ceramica-vermelha",
+        "particao": "teste",
+        "campo": "fase",
+        "esperado": "Cobertura",
+        "obtido": "Alvenaria"
+      },
+      {
+        "id": "foto-diario-telhado-telha-ceramica-vermelha",
+        "particao": "teste",
+        "campo": "materiais",
+        "esperado": {
+          "contem": [
+            "Telha"
+          ],
+          "nao_contem": [
+            "Tijolo"
+          ]
+        },
+        "obtido": [
+          "Telha",
+          "Tijolo"
+        ]
+      },
+      {
+        "id": "foto-diario-madeiramento-telhado-sem-telha",
+        "particao": "teste",
+        "campo": "fase",
+        "esperado": "Cobertura",
+        "obtido": null
+      },
+      {
+        "id": "foto-diario-telha-fibrocimento-dia-nublado",
+        "particao": "teste",
+        "campo": "fase",
+        "esperado": "Cobertura",
+        "obtido": "Estrutura"
+      },
+      {
+        "id": "foto-diario-telha-fibrocimento-dia-nublado",
+        "particao": "teste",
+        "campo": "materiais",
+        "esperado": {
+          "contem": [
+            "Telha"
+          ],
+          "nao_contem": []
+        },
+        "obtido": [
+          "Vergalhão de aço"
+        ]
+      },
+      {
+        "id": "foto-diario-parede-bloco-concreto",
+        "particao": "dev",
+        "campo": "fase",
+        "esperado": "Alvenaria",
+        "obtido": "Estrutura"
+      },
+      {
+        "id": "foto-diario-parede-bloco-concreto",
+        "particao": "dev",
+        "campo": "materiais",
+        "esperado": {
+          "contem": [
+            "Bloco de concreto"
+          ],
+          "nao_contem": [
+            "Tijolo"
+          ]
+        },
+        "obtido": [
+          "Tijolo",
+          "Concreto"
+        ]
+      },
+      {
+        "id": "foto-diario-parede-interna-rebocada-cinza",
+        "particao": "dev",
+        "campo": "fase",
+        "esperado": "Reboco e contrapiso",
+        "obtido": "Estrutura"
+      },
+      {
+        "id": "foto-diario-contrapiso-sarrafeado",
+        "particao": "dev",
+        "campo": "fase",
+        "esperado": "Reboco e contrapiso",
+        "obtido": "Estrutura"
+      },
+      {
+        "id": "foto-diario-azulejo-parede-banheiro",
+        "particao": "teste",
+        "campo": "fase",
+        "esperado": "Revestimentos",
+        "obtido": "Instalações hidráulicas"
+      },
+      {
+        "id": "foto-diario-quadro-de-luz-aberto",
+        "particao": "teste",
+        "campo": "fase",
+        "esperado": "Instalações elétricas",
+        "obtido": null
+      },
+      {
+        "id": "foto-diario-quadro-de-luz-aberto",
+        "particao": "teste",
+        "campo": "materiais",
+        "esperado": {
+          "contem": [
+            "Fio elétrico"
+          ],
+          "nao_contem": [
+            "Vergalhão de aço"
+          ]
+        },
+        "obtido": [
+          "Vergalhão de aço"
+        ]
+      },
+      {
+        "id": "foto-diario-tubulacao-pvc-no-chao",
+        "particao": "teste",
+        "campo": "fase",
+        "esperado": "Instalações hidráulicas",
+        "obtido": "Fundação"
+      },
+      {
+        "id": "foto-diario-monte-de-areia-sem-fase",
+        "particao": "dev",
+        "campo": "fase",
+        "esperado": null,
+        "obtido": "Fundação"
+      }
+    ]
+  },
+  "material": {
+    "casos": 14,
+    "casos_perfeitos": 8,
+    "campos": {
+      "material": {
+        "avaliados": 14,
+        "acertos": 8,
+        "errados": 2,
+        "omitidos": 4,
+        "inventados": 0,
+        "acuracia": 0.5714
+      }
+    },
+    "por_particao": {
+      "dev": {
+        "casos": 4,
+        "casos_perfeitos": 1,
+        "campos": {
+          "material": {
+            "avaliados": 4,
+            "acertos": 1,
+            "errados": 1,
+            "omitidos": 2,
+            "inventados": 0,
+            "acuracia": 0.25
+          }
+        }
+      },
+      "teste": {
+        "casos": 10,
+        "casos_perfeitos": 7,
+        "campos": {
+          "material": {
+            "avaliados": 10,
+            "acertos": 7,
+            "errados": 1,
+            "omitidos": 2,
+            "inventados": 0,
+            "acuracia": 0.7
+          }
+        }
+      }
+    },
+    "falhas": [
+      {
+        "id": "material-cimento-saco-texto",
+        "particao": "dev",
+        "campo": "material",
+        "esperado": "Cimento",
+        "obtido": null
+      },
+      {
+        "id": "material-argamassa-texto-cita-cimento",
+        "particao": "teste",
+        "campo": "material",
+        "esperado": "Argamassa",
+        "obtido": null
+      },
+      {
+        "id": "material-cal-texto-cita-argamassa",
+        "particao": "teste",
+        "campo": "material",
+        "esperado": "Cal",
+        "obtido": null
+      },
+      {
+        "id": "material-tinta-lata-rotulo-metal",
+        "particao": "dev",
+        "campo": "material",
+        "esperado": "Tinta",
+        "obtido": "Vergalhão de aço"
+      },
+      {
+        "id": "material-piso-ceramico-caixa-texto",
+        "particao": "dev",
+        "campo": "material",
+        "esperado": "Piso cerâmico",
+        "obtido": null
+      },
+      {
+        "id": "material-telha-ceramica-pilha-so-rotulo",
+        "particao": "teste",
+        "campo": "material",
+        "esperado": "Telha",
+        "obtido": "Tijolo"
+      }
+    ]
+  }
+}

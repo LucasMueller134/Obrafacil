@@ -2,6 +2,7 @@
   {
     "id": "voz-diario-chuva-manha-reboco-fachada",
     "origem": "sintetico",
+    "particao": "dev",
     "nota": "Caso base: chuva só de manhã (Chuvoso), equipe por profissão em extenso (3+2), reboco da fachada.",
     "entrada": {
       "transcricao": "hoje choveu de manhã vieram três pedreiros e dois serventes terminamos o reboco da fachada"
@@ -16,6 +17,7 @@
   {
     "id": "voz-diario-ferragem-laje-amanha-nao-e-data",
     "origem": "sintetico",
+    "particao": "dev",
     "nota": "Armação da laje = Estrutura; 'amanhã' é plano da concretagem, não a data do relato; 'segundo pavimento' não é pessoa.",
     "entrada": {
       "transcricao": "hoje armamos a ferragem da laje do segundo pavimento amanhã cedo vem a bomba pra concretar a equipe foi 4 armadores e 2 serventes sol o dia todo"
@@ -30,6 +32,7 @@
   {
     "id": "voz-diario-pintaram-parede-e-pintura",
     "origem": "sintetico",
+    "particao": "dev",
     "nota": "Objeto 'parede' com atividade de pintura: Pintura, não Alvenaria; 'primeira demão' não conta como pessoa.",
     "entrada": {
       "transcricao": "os dois pintores pintaram as paredes da sala e dos quartos primeira demão o dia ficou nublado"
@@ -43,6 +46,7 @@
   {
     "id": "voz-diario-rebocamos-muro-sol-apos-chuva-ontem",
     "origem": "sintetico",
+    "particao": "teste",
     "nota": "'rebocamos o muro' = Reboco e contrapiso, não Alvenaria; chuva foi ontem, hoje fez sol; plural omitido da fala ('2 pedreiro').",
     "entrada": {
       "transcricao": "ontem choveu o dia todo mas hoje fez sol e rebocamos o muro do fundo inteiro 2 pedreiro e um servente"
@@ -57,6 +61,7 @@
   {
     "id": "voz-diario-instalaram-portas-acabamento",
     "origem": "sintetico",
+    "particao": "dev",
     "nota": "Instalar portas = Acabamento; 'o carpinteiro e o ajudante dele' = 2 sem número dito; 'tempo fechado mas não choveu' = Nublado.",
     "entrada": {
       "transcricao": "o carpinteiro e o ajudante dele instalaram as portas dos quartos e do banheiro tempo fechado mas não choveu"
@@ -70,6 +75,7 @@
   {
     "id": "voz-diario-levantaram-parede-fiadas-nao-sao-pessoas",
     "origem": "sintetico",
+    "particao": "teste",
     "nota": "'levantaram a parede' = Alvenaria; '12 fiadas' não é número de pessoas; sem menção ao tempo = clima null.",
     "entrada": {
       "transcricao": "os pedreiros levantaram a parede da cozinha subiram 12 fiadas de bloco hoje vieram 3 pedreiros e 2 serventes"
@@ -84,6 +90,7 @@
   {
     "id": "voz-diario-porcelanato-sol-forte",
     "origem": "sintetico",
+    "particao": "teste",
     "nota": "'assentamos o porcelanato' = Revestimentos; 'sol forte' é Ensolarado, não Chuva forte; '45 metros' não é pessoa.",
     "entrada": {
       "transcricao": "assentamos o porcelanato da sala e da cozinha deu uns 45 metros quadrados eram 2 pedreiros e um ajudante sol forte o dia inteiro"
@@ -97,6 +104,7 @@
   {
     "id": "voz-diario-fiacao-chuveiro-nao-e-chuva",
     "origem": "sintetico",
+    "particao": "dev",
     "nota": "'passamos a fiação' = Instalações elétricas mesmo com 'chuveiro/banheiro'; 'chuveiro' não é chuva (clima null); 'eu e o ajudante' = 2.",
     "entrada": {
       "transcricao": "eu e o ajudante passamos a fiação do chuveiro e das tomadas do banheiro"
@@ -110,12 +118,19 @@
   {
     "id": "voz-diario-ruido-chap-isco-eramos-6",
     "origem": "sintetico",
+    "particao": "teste",
     "nota": "Ruído do reconhecedor: 'chap isco' = chapisco (Reboco e contrapiso); equipe por grupo 'éramos 6'.",
     "entrada": {
       "transcricao": "hoje fizemos o chap isco das paredes de fora éramos 6 sol o dia inteiro",
       "alternativas": [
-        ["hoje fizemos o chapisco das paredes de fora éramos 6 sol o dia inteiro", 0.52],
-        ["hoje fizemos o chap isco das paredes de fora éramos seis só o dia inteiro", 0.31]
+        [
+          "hoje fizemos o chapisco das paredes de fora éramos 6 sol o dia inteiro",
+          0.52
+        ],
+        [
+          "hoje fizemos o chap isco das paredes de fora éramos seis só o dia inteiro",
+          0.31
+        ]
       ]
     },
     "esperado": {
@@ -126,8 +141,24 @@
     }
   },
   {
+    "id": "voz-diario-fizemos-chapisco-anteontem",
+    "origem": "sintetico",
+    "particao": "dev",
+    "nota": "'fizemos o chapisco' escrito certo (sem ruído) = Reboco e contrapiso, não Alvenaria apesar de 'paredes'; 'anteontem' = 2026-07-04; 2+1 = 3.",
+    "entrada": {
+      "transcricao": "anteontem fizemos o chapisco das paredes do banheiro vieram dois pedreiros e um servente o tempo ficou nublado"
+    },
+    "esperado": {
+      "clima": "Nublado",
+      "pessoas": 3,
+      "fase": "Reboco e contrapiso",
+      "data": "2026-07-04"
+    }
+  },
+  {
     "id": "voz-diario-ruido-contra-piso-ontem-chuva-forte",
     "origem": "sintetico",
+    "particao": "dev",
     "nota": "Ruído 'contra piso' = contrapiso; 'choveu forte' = Chuva forte; 'ontem' = 2026-07-05; 'eu e o servente' = 2.",
     "entrada": {
       "transcricao": "ontem choveu forte o dia todo eu e o servente fizemos o contra piso da área de serviço"
@@ -142,6 +173,7 @@
   {
     "id": "voz-diario-ruido-balde-drame-forma-sabado",
     "origem": "sintetico",
+    "particao": "teste",
     "nota": "Ruído 'balde drame' = baldrame; forma e ferragem do baldrame = Fundação, não Estrutura; 'sábado' = 2026-07-04; fala sem plural.",
     "entrada": {
       "transcricao": "sábado a gente fez a forma da viga balde drame e armou a ferragem vieram três pedreiro e três servente choveu um pouco de manhã"
@@ -156,6 +188,7 @@
   {
     "id": "voz-diario-forma-geral-sem-fase",
     "origem": "sintetico",
+    "particao": "teste",
     "nota": "Falso positivo: 'de forma geral' não é forma de concreto (Estrutura); relato sem atividade = fase null; pedreiro não define etapa.",
     "entrada": {
       "transcricao": "de forma geral foi tranquilo dia nublado vieram dois pedreiros e um servente"
@@ -169,6 +202,7 @@
   {
     "id": "voz-diario-solda-nao-e-sol-sozinho",
     "origem": "sintetico",
+    "particao": "teste",
     "nota": "Falso positivo: 'solda' contém 'sol' mas não diz nada do tempo (clima null); 'veio sozinho' = 1. Fase omitida: serralheria não tem etapa inequívoca.",
     "entrada": {
       "transcricao": "hoje o serralheiro veio sozinho e fez a solda das grades das janelas"
@@ -182,6 +216,7 @@
   {
     "id": "voz-diario-chuva-negada-eu-e-mais-tres",
     "origem": "sintetico",
+    "particao": "teste",
     "nota": "Clima negado: 'não choveu sol o dia todo' = Ensolarado; 'levantamos a parede' = Alvenaria; 'eu e mais três' = 4.",
     "entrada": {
       "transcricao": "não choveu sol o dia todo levantamos a parede dos fundos eu e mais três"
@@ -195,6 +230,7 @@
   {
     "id": "voz-diario-previsao-chuva-nublado-azulejo",
     "origem": "sintetico",
+    "particao": "teste",
     "nota": "'chuva' só na previsão, negada: Nublado; azulejo assentado na parede = Revestimentos, não Alvenaria.",
     "entrada": {
       "transcricao": "a previsão era de chuva mas não choveu ficou nublado o dia inteiro os 2 pedreiros assentaram o azulejo nas paredes da cozinha"
@@ -208,6 +244,7 @@
   {
     "id": "voz-diario-choveu-tarde-paramos-alvenaria",
     "origem": "sintetico",
+    "particao": "dev",
     "nota": "'choveu a tarde toda e paramos': clima omitido (fica entre Chuvoso e Chuva forte). Mede equipe ('4 peão') e fase (fiadas na parede) apesar da parada.",
     "entrada": {
       "transcricao": "hoje choveu a tarde toda e paramos o serviço de manhã deu pra subir mais umas fiadas na parede da edícula vieram 4 peão"
@@ -221,6 +258,7 @@
   {
     "id": "voz-diario-temporal-sapatas-antes-de-ontem",
     "origem": "sintetico",
+    "particao": "dev",
     "nota": "Temporal que alagou as valas = Chuva forte; escavação das sapatas = Fundação; 'antes de ontem' = 2026-07-04.",
     "entrada": {
       "transcricao": "antes de ontem de tarde caiu um temporal alagou as valas e tivemos que parar a escavação das sapatas tinha 3 serventes"
@@ -235,6 +273,7 @@
   {
     "id": "voz-diario-ruido-eletro-duto-chuva-fraca",
     "origem": "sintetico",
+    "particao": "teste",
     "nota": "Ruído 'eletro dutos' = eletrodutos (Instalações elétricas); chuva fraca = Chuvoso, não Chuva forte; 'o eletricista e 2 ajudantes' = 3.",
     "entrada": {
       "transcricao": "hoje choveu fraquinho o dia inteiro mas deu pra trabalhar o eletricista e 2 ajudantes passaram os eletro dutos da casa toda"
@@ -249,6 +288,7 @@
   {
     "id": "voz-diario-ruido-de-mao-sozinho-pintura",
     "origem": "sintetico",
+    "particao": "dev",
     "nota": "Ruído 'segunda de mão' = segunda demão (Pintura), 'segunda' não é dia nem pessoa; 'trabalhei sozinho' = 1.",
     "entrada": {
       "transcricao": "hoje trabalhei sozinho passei a segunda de mão de tinta no corredor fez um sol bonito"
@@ -263,6 +303,7 @@
   {
     "id": "voz-diario-pilares-sem-equipe",
     "origem": "sintetico",
+    "particao": "teste",
     "nota": "Concretagem de pilares = Estrutura; relato não diz quantas pessoas = pessoas null.",
     "entrada": {
       "transcricao": "concretamos os pilares do térreo dia de sol tudo certo"
@@ -276,6 +317,7 @@
   {
     "id": "voz-diario-dia-2-turma-telhado-sem-numero",
     "origem": "sintetico",
+    "particao": "teste",
     "nota": "'dia 2' é a data (2026-07-02), não o número de pessoas; 'a turma do telhado' sem quantidade = pessoas null; telhas = Cobertura.",
     "entrada": {
       "transcricao": "dia 2 a turma do telhado terminou de colocar as telhas da edícula tempo nublado"
@@ -290,11 +332,15 @@
   {
     "id": "voz-diario-ruido-cesta-feira-esgoto",
     "origem": "sintetico",
+    "particao": "dev",
     "nota": "Ruído 'cesta feira' = sexta-feira passada (2026-07-03); tubulação de esgoto = Instalações hidráulicas; 'chuva forte' literal.",
     "entrada": {
       "transcricao": "diário de cesta feira chuva forte o dia inteiro o encanador e o ajudante passaram a tubulação de esgoto dos banheiros",
       "alternativas": [
-        ["diário de sexta-feira chuva forte o dia inteiro o encanador e o ajudante passaram a tubulação de esgoto dos banheiros", 0.47]
+        [
+          "diário de sexta-feira chuva forte o dia inteiro o encanador e o ajudante passaram a tubulação de esgoto dos banheiros",
+          0.47
+        ]
       ]
     },
     "esperado": {
@@ -307,6 +353,7 @@
   {
     "id": "voz-diario-acabamos-de-pintar-muro",
     "origem": "sintetico",
+    "particao": "teste",
     "nota": "'acabamos' é verbo, não Acabamento; pintar o muro = Pintura, não Alvenaria; 'eu e mais dois pintores' = 3.",
     "entrada": {
       "transcricao": "acabamos de pintar o muro por fora eu e mais dois pintores"
@@ -320,6 +367,7 @@
   {
     "id": "voz-diario-pintou-problema-concretamos-laje",
     "origem": "sintetico",
+    "particao": "dev",
     "nota": "'pintou um problema' é gíria, não Pintura; 'concretamos a laje' = Estrutura; 3+4 = 7.",
     "entrada": {
       "transcricao": "hoje pintou um problema na betoneira de manhã mas depois concretamos a laje da garagem com 3 pedreiros e 4 serventes fez sol"
@@ -334,6 +382,7 @@
   {
     "id": "voz-diario-tinta-chegou-piso-ceramico",
     "origem": "sintetico",
+    "particao": "teste",
     "nota": "Entrega de tinta não é Pintura; serviço do dia foi piso cerâmico = Revestimentos; 'semana que vem' não é data; 'eu e mais um' = 2.",
     "entrada": {
       "transcricao": "chegou a tinta pra semana que vem hoje o serviço foi assentar o piso cerâmico dos quartos eu e mais um"
@@ -348,6 +397,7 @@
   {
     "id": "voz-diario-caixa-dagua-telhado-terca-passada",
     "origem": "sintetico",
+    "particao": "dev",
     "nota": "Caixa d'água e registro = Instalações hidráulicas mesmo com 'telhado'; 'terça passada' = 2026-06-30; chuva de leve = Chuvoso.",
     "entrada": {
       "transcricao": "terça passada o encanador e 2 serventes subiram a caixa d'água pro telhado e ligaram o registro geral choveu de leve a manhã toda"
@@ -362,6 +412,7 @@
   {
     "id": "voz-diario-concretamos-baldrame-fundacao",
     "origem": "sintetico",
+    "particao": "teste",
     "nota": "'concretamos' com baldrame = Fundação, não Estrutura; nublado o dia todo; 2+4 = 6.",
     "entrada": {
       "transcricao": "hoje concretamos o baldrame da casa dos fundos o dia todo nublado vieram 2 pedreiros e 4 serventes"
@@ -376,6 +427,7 @@
   {
     "id": "voz-diario-telhas-soltas-calha-chuva",
     "origem": "sintetico",
+    "particao": "dev",
     "nota": "Falsos positivos de clima: 'soltas' contém 'sol' e 'quando chove' é genérico, não o tempo do dia (clima null); telhas e calha = Cobertura.",
     "entrada": {
       "transcricao": "o telhadista e o ajudante dele arrumaram as telhas soltas e trocaram a calha que vazava quando chove"
@@ -389,6 +441,7 @@
   {
     "id": "voz-diario-mistura-fases-principal-acabamento",
     "origem": "sintetico",
+    "particao": "dev",
     "nota": "Duas fases, principal inequívoca: o dia todo em fechaduras e maçanetas (Acabamento), elétrica só no fim da tarde; 2+1+eletricista = 4.",
     "entrada": {
       "transcricao": "o dia todo foi colocar fechadura e maçaneta nas portas só no fim da tarde o eletricista veio ligar o quadro de luz eram 2 carpinteiros 1 ajudante e o eletricista"
@@ -402,6 +455,7 @@
   {
     "id": "voz-diario-mistura-fases-sem-principal",
     "origem": "sintetico",
+    "particao": "teste",
     "nota": "Contrapiso de manhã e porcelanato à tarde, sem fase principal: fase omitida. Mede 'sexta' = 2026-07-03, 'éramos 4' e sol.",
     "entrada": {
       "transcricao": "sexta de manhã terminamos o contrapiso da sala e de tarde começamos o porcelanato éramos 4 fez sol"

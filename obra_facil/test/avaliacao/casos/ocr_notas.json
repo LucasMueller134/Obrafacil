@@ -1,0 +1,2871 @@
+[
+  {
+    "id": "ocr-nfce-blocos-desconto-troco-01",
+    "origem": "sintetico",
+    "particao": "teste",
+    "nota": "NFC-e em duas colunas: rótulos e valores em blocos separados; total é o 'Valor a pagar' (350), não o valor total antes do desconto (380), o dinheiro entregue (400), o troco nem a qtd. de itens.",
+    "entrada": {
+      "blocos": [
+        {
+          "linhas": [
+            {
+              "t": "CONSTRUMAIS MATERIAIS LTDA",
+              "l": 340,
+              "tp": 137,
+              "r": 860,
+              "b": 173
+            },
+            {
+              "t": "CNPJ: 23.817.554/0001-81 IE: 492.118.307.114",
+              "l": 204,
+              "tp": 184,
+              "r": 996,
+              "b": 215
+            },
+            {
+              "t": "AV DOS AUTONOMISTAS, 4120 - VILA YARA",
+              "l": 267,
+              "tp": 233,
+              "r": 933,
+              "b": 264
+            },
+            {
+              "t": "OSASCO - SP - CEP 06090-015",
+              "l": 357,
+              "tp": 271,
+              "r": 843,
+              "b": 302
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "DOCUMENTO AUXILIAR DA NOTA FISCAL",
+              "l": 303,
+              "tp": 338,
+              "r": 897,
+              "b": 369
+            },
+            {
+              "t": "DE CONSUMIDOR ELETRONICA",
+              "l": 384,
+              "tp": 386,
+              "r": 816,
+              "b": 418
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "# DESCRICAO QTD UN VL UNIT",
+              "l": 170,
+              "tp": 453,
+              "r": 638,
+              "b": 486
+            },
+            {
+              "t": "1 CIMENTO CP II-E 50KG 5 SC X 39,90",
+              "l": 170,
+              "tp": 491,
+              "r": 800,
+              "b": 523
+            },
+            {
+              "t": "2 AREIA MEDIA LAVADA 20KG 6 SC X 9,50",
+              "l": 170,
+              "tp": 536,
+              "r": 836,
+              "b": 567
+            },
+            {
+              "t": "3 CAL HIDRATADA 20KG 3 SC X 21,90",
+              "l": 170,
+              "tp": 580,
+              "r": 764,
+              "b": 611
+            },
+            {
+              "t": "4 ARAME RECOZIDO 18 1KG 2 UN X 18,90",
+              "l": 170,
+              "tp": 629,
+              "r": 818,
+              "b": 660
+            },
+            {
+              "t": "5 PREGO 17X27 C/CAB 1KG 1 UN X 20,00",
+              "l": 170,
+              "tp": 673,
+              "r": 818,
+              "b": 704
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "VL TOTAL",
+              "l": 886,
+              "tp": 451,
+              "r": 1030,
+              "b": 484
+            },
+            {
+              "t": "199,50",
+              "l": 922,
+              "tp": 497,
+              "r": 1030,
+              "b": 528
+            },
+            {
+              "t": "57,00",
+              "l": 940,
+              "tp": 538,
+              "r": 1030,
+              "b": 569
+            },
+            {
+              "t": "65,70",
+              "l": 940,
+              "tp": 579,
+              "r": 1030,
+              "b": 611
+            },
+            {
+              "t": "37,80",
+              "l": 940,
+              "tp": 627,
+              "r": 1030,
+              "b": 659
+            },
+            {
+              "t": "20,00",
+              "l": 940,
+              "tp": 673,
+              "r": 1030,
+              "b": 705
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "Qtd. tota1 de itens",
+              "l": 170,
+              "tp": 762,
+              "r": 512,
+              "b": 794
+            },
+            {
+              "t": "Valor total R$",
+              "l": 170,
+              "tp": 802,
+              "r": 422,
+              "b": 835
+            },
+            {
+              "t": "Desconto R$",
+              "l": 170,
+              "tp": 846,
+              "r": 368,
+              "b": 878
+            },
+            {
+              "t": "Valor a pagar R$",
+              "l": 170,
+              "tp": 894,
+              "r": 458,
+              "b": 927
+            },
+            {
+              "t": "FORMA PAGAMENTO",
+              "l": 170,
+              "tp": 949,
+              "r": 440,
+              "b": 981
+            },
+            {
+              "t": "Dinheiro",
+              "l": 170,
+              "tp": 995,
+              "r": 314,
+              "b": 1027
+            },
+            {
+              "t": "Troco R$",
+              "l": 170,
+              "tp": 1040,
+              "r": 314,
+              "b": 1073
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "5",
+              "l": 1012,
+              "tp": 757,
+              "r": 1030,
+              "b": 790
+            },
+            {
+              "t": "380,00",
+              "l": 922,
+              "tp": 806,
+              "r": 1030,
+              "b": 839
+            },
+            {
+              "t": "30,00",
+              "l": 940,
+              "tp": 851,
+              "r": 1030,
+              "b": 883
+            },
+            {
+              "t": "350,00",
+              "l": 922,
+              "tp": 891,
+              "r": 1030,
+              "b": 923
+            },
+            {
+              "t": "VALOR PAGO R$",
+              "l": 796,
+              "tp": 950,
+              "r": 1030,
+              "b": 983
+            },
+            {
+              "t": "400,00",
+              "l": 922,
+              "tp": 991,
+              "r": 1030,
+              "b": 1023
+            },
+            {
+              "t": "50,00",
+              "l": 940,
+              "tp": 1036,
+              "r": 1030,
+              "b": 1069
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "Consulte pela Chave de Acesso em",
+              "l": 312,
+              "tp": 1113,
+              "r": 888,
+              "b": 1144
+            },
+            {
+              "t": "www.sefaz.sp.gov.br/nfce/consulta",
+              "l": 303,
+              "tp": 1157,
+              "r": 897,
+              "b": 1190
+            },
+            {
+              "t": "3526 0723 8175 5400 0181 6500 1000 0451 2314 8273 9158",
+              "l": 168,
+              "tp": 1200,
+              "r": 1032,
+              "b": 1229
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "CONSUMIDOR NAO IDENTIFICADO",
+              "l": 357,
+              "tp": 1262,
+              "r": 843,
+              "b": 1294
+            },
+            {
+              "t": "NFC-e nº 000045123 Serie 001 03/07/2026 14:22:05",
+              "l": 192,
+              "tp": 1304,
+              "r": 1008,
+              "b": 1336
+            },
+            {
+              "t": "Protocolo de autorizacao: 135260004567891",
+              "l": 231,
+              "tp": 1351,
+              "r": 969,
+              "b": 1383
+            },
+            {
+              "t": "Data de autorizacao: 03/07/2026 14:22:09",
+              "l": 240,
+              "tp": 1395,
+              "r": 960,
+              "b": 1428
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "Tributos Totais Incidentes (Lei Federal",
+              "l": 288,
+              "tp": 1692,
+              "r": 912,
+              "b": 1721
+            },
+            {
+              "t": "12.741/2012): R$ 71,42",
+              "l": 424,
+              "tp": 1728,
+              "r": 776,
+              "b": 1756
+            }
+          ]
+        }
+      ],
+      "codigos": [
+        {
+          "formato": "qr",
+          "valor": "https://www.sefaz.sp.gov.br/nfce/qrcode?p=35260723817554000181650010000451231482739158|2|1|1|4FF69C842630122D4825E23AEF5E0DCBEF5F2341"
+        }
+      ]
+    },
+    "esperado": {
+      "fornecedor": "Construmais Materiais Ltda",
+      "cnpj": "23.817.554/0001-81",
+      "total": 350,
+      "data": "2026-07-03"
+    }
+  },
+  {
+    "id": "ocr-nfce-contingencia-offline-01",
+    "origem": "sintetico",
+    "particao": "dev",
+    "nota": "NFC-e emitida em contingência (tpEmis 9, sem protocolo): OCR troca 0 por O no total e na data; o QR offline traz dia (27) e valor (1234.50).",
+    "entrada": {
+      "texto": "CASA DAS TELHAS BARBOSA LTDA\nCNPJ 30.287.156/0001-66 IE 0612345-78\nAV CAXANGA, 2210 - CORDEIRO\nRECIFE - PE\nDOCUMENTO AUXILIAR DA NOTA FISCAL DE\nCONSUMIDOR ELETRONICA\nEMITIDA EM CONTINGENCIA\nPendente de autorizacao\n# DESCRICAO QTD UN VL UNIT VL TOTAL\n1 TELHA CERAMICA PORTUGUESA 600 UN X 1,65 990,00\n2 CUMEEIRA CERAMICA 30 UN X 4,50 135,00\n3 MANTA SUBCOBERTURA ALUM 1 RL X 109,50 109,50\nQTD. TOTAL DE ITENS 3\nVALOR TOTAL R$ 1.234.5O\nVALOR A PAGAR R$ 1.234,5O\nFORMA DE PAGAMENTO VALOR PAGO\nPIX 1.234,50\nConsulte pela Chave de Acesso em\nwww.sefaz.pe.gov.br/nfce/consulta\n2626 0630 2871 5600 0166 6500 2000 0088 1296 0417 3281\nCONSUMIDOR CPF: 305.918.244-26\nNFC-e nº 000008812 Serie 002 27/O6/2026 16:40:11\nVia Consumidor\nTributos Totais Incidentes (Lei Federal 12.741/2012) R$ 214,80",
+      "codigos": [
+        {
+          "formato": "qr",
+          "valor": "https://www.sefaz.pe.gov.br/nfce/qrcode?p=26260630287156000166650020000088129604173281|2|1|27|1234.50|4F4B66793761467178572F52766C595270416C454951366D5A344D3D|1|8FAE80D29B4FF469D6527E8798BF3FDF446C531B"
+        }
+      ]
+    },
+    "esperado": {
+      "fornecedor": "Casa das Telhas Barbosa Ltda",
+      "cnpj": "30.287.156/0001-66",
+      "total": 1234.5,
+      "data": "2026-06-27"
+    }
+  },
+  {
+    "id": "ocr-danfe-frete-datas-01",
+    "origem": "sintetico",
+    "particao": "teste",
+    "nota": "DANFE: valores do cálculo do imposto em bloco separado dos rótulos; total da nota inclui frete (2480, não 2380); emissão 01/07 vs saída 02/07, vencimento 31/07; CNPJ do destinatário também aparece.",
+    "entrada": {
+      "texto": "RECEBEMOS DE FERRAGENS PONTUAL COMERCIO LTDA OS PRODUTOS CONSTANTES DA NOTA FISCAL INDICADA AO LADO\nDATA DE RECEBIMENTO\nIDENTIFICACAO E ASSINATURA DO RECEBEDOR\nNF-e\nNº 000.012.345\nSERIE 001\nFERRAGENS PONTUAL COMERCIO LTDA\nAV BRASIL, 15400 - GALPAO 3\nPENHA - RIO DE JANEIRO - RJ\nCEP 21012-350 FONE (21) 3345-8810\nDANFE\nDOCUMENTO AUXILIAR DA\nNOTA FISCAL ELETRONICA\n0 - ENTRADA\n1 - SAIDA\n1\nNº 000.012.345\nSERIE 001\nFOLHA 1/1\nCONTROLE DO FISCO\nCHAVE DE ACESSO\n3326 0719 4036 7100 0121 5500 1000 0123 4517 3019 2648\nConsulta de autenticidade no portal nacional da NF-e\nwww.nfe.fazenda.gov.br/portal ou no site da Sefaz Autorizadora\nNATUREZA DA OPERACAO\nVENDA DE MERCADORIA\nPROTOCOLO DE AUTORIZACAO DE USO\n133260012345678 01/07/2026 09:41:27\nINSCRICAO ESTADUAL\n86.123.456\nINSCRICAO ESTADUAL DO SUBST. TRIB.\nCNPJ\n19.403.671/0001-21\nDESTINATARIO/REMETENTE\nNOME/RAZAO SOCIAL\nCONSTRUTORA HORIZONTE LTDA\nCNPJ/CPF\n32.746.195/0001-00\nDATA DA EMISSAO\n01/07/2026\nENDERECO\nRUA CONDE DE BONFIM, 980\nBAIRRO/DISTRITO\nTIJUCA\nCEP\n20520-054\nDATA DA SAIDA/ENTRADA\n02/07/2026\nMUNICIPIO\nRIO DE JANEIRO\nUF\nRJ\nHORA DA SAIDA\n07:30:00\nFATURA/DUPLICATA\nNUM. 001 VENC. 31/07/2026 VALOR R$ 2.480,00\nCALCULO DO IMPOSTO\nBASE DE CALCULO DO ICMS\nVALOR DO ICMS\nBASE DE CALC. ICMS S.T.\nVALOR DO ICMS SUBST.\nVALOR TOTAL DOS PRODUTOS\n0,00\n0,00\n0,00\n0,00\n2.380,00\nVALOR DO FRETE\nVALOR DO SEGURO\nDESCONTO\nOUTRAS DESPESAS ACESSORIAS\nVALOR TOTAL DO IPI\nVALOR TOTAL DA NOTA\n100,00\n0,00\n0,00\n0,00\n0,00\n2.480,00\nTRANSPORTADOR/VOLUMES TRANSPORTADOS\nFRETE POR CONTA 0-EMITENTE\nDADOS DOS PRODUTOS/SERVICOS\nCOD DESCRICAO NCM CST CFOP UN QTD V.UNIT V.TOTAL\n1021 CARRINHO DE MAO 60L PNEU 87168000 0102 5102 UN 4 289,00 1.156,00\n1187 PA QUADRADA C/CABO 82011000 0102 5102 UN 10 45,40 454,00\n1192 ENXADA LARGA 2,5LB C/CABO 82012000 0102 5102 UN 10 39,00 390,00\n2210 NIVEL ALUMINIO 60CM 90158000 0102 5102 UN 5 76,00 380,00\nDADOS ADICIONAIS\nINFORMACOES COMPLEMENTARES\nDOCUMENTO EMITIDO POR ME OU EPP OPTANTE PELO SIMPLES NACIONAL",
+      "codigos": [
+        {
+          "formato": "code128",
+          "valor": "33260719403671000121550010000123451730192648"
+        }
+      ]
+    },
+    "esperado": {
+      "fornecedor": "Ferragens Pontual Comércio Ltda",
+      "cnpj": "19.403.671/0001-21",
+      "total": 2480,
+      "data": "2026-07-01"
+    }
+  },
+  {
+    "id": "ocr-danfe-blocos-cnpj-ocr-errado-01",
+    "origem": "sintetico",
+    "particao": "dev",
+    "nota": "DANFE em blocos: OCR lê o CNPJ do emitente com um dígito errado (DV não fecha) e a linha da chave não saiu no texto; o code128 traz a chave certa. O CNPJ válido do texto é o do destinatário — não serve.",
+    "entrada": {
+      "blocos": [
+        {
+          "linhas": [
+            {
+              "t": "RECEBEMOS DE CERAMICA E MATERIAIS SANTA CLARA LTDA OS PRODUTOS CONSTANTES DA NOTA FISCAL INDICADA AO LADO",
+              "l": 40,
+              "tp": 57,
+              "r": 775,
+              "b": 70
+            },
+            {
+              "t": "DATA DE RECEBIMENTO",
+              "l": 40,
+              "tp": 97,
+              "r": 173,
+              "b": 111
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "IDENTIFICACAO E ASSINATURA DO RECEBEDOR",
+              "l": 330,
+              "tp": 97,
+              "r": 603,
+              "b": 111
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "NF-e",
+              "l": 1060,
+              "tp": 59,
+              "r": 1096,
+              "b": 76
+            },
+            {
+              "t": "Nº 000.003.071",
+              "l": 1010,
+              "tp": 82,
+              "r": 1136,
+              "b": 101
+            },
+            {
+              "t": "SERIE 001",
+              "l": 1030,
+              "tp": 105,
+              "r": 1111,
+              "b": 122
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "CERAMICA E MATERIAIS SANTA CLARA LTDA",
+              "l": 50,
+              "tp": 193,
+              "r": 420,
+              "b": 215
+            },
+            {
+              "t": "ROD SC-401, 8800 - SANTO ANTONIO DE LISBOA",
+              "l": 50,
+              "tp": 226,
+              "r": 428,
+              "b": 243
+            },
+            {
+              "t": "FLORIANOPOLIS - SC CEP 88050-001",
+              "l": 50,
+              "tp": 254,
+              "r": 338,
+              "b": 272
+            },
+            {
+              "t": "FONE (48) 3266-1020",
+              "l": 50,
+              "tp": 279,
+              "r": 221,
+              "b": 298
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "DANFE",
+              "l": 500,
+              "tp": 179,
+              "r": 580,
+              "b": 207
+            },
+            {
+              "t": "DOCUMENTO AUXILIAR DA",
+              "l": 462,
+              "tp": 217,
+              "r": 609,
+              "b": 229
+            },
+            {
+              "t": "NOTA FISCAL ELETRONICA",
+              "l": 460,
+              "tp": 232,
+              "r": 614,
+              "b": 244
+            },
+            {
+              "t": "0 - ENTRADA",
+              "l": 462,
+              "tp": 261,
+              "r": 539,
+              "b": 274
+            },
+            {
+              "t": "1 - SAIDA",
+              "l": 462,
+              "tp": 278,
+              "r": 525,
+              "b": 290
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "1",
+              "l": 620,
+              "tp": 264,
+              "r": 632,
+              "b": 287
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "Nº 000.003.071",
+              "l": 462,
+              "tp": 304,
+              "r": 588,
+              "b": 322
+            },
+            {
+              "t": "SERIE 001",
+              "l": 462,
+              "tp": 328,
+              "r": 543,
+              "b": 346
+            },
+            {
+              "t": "FOLHA 1/1",
+              "l": 462,
+              "tp": 353,
+              "r": 543,
+              "b": 371
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "CONTROLE DO FISCO",
+              "l": 690,
+              "tp": 178,
+              "r": 809,
+              "b": 191
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "CHAVE DE ACESSO",
+              "l": 690,
+              "tp": 278,
+              "r": 795,
+              "b": 292
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "Consulta de autenticidade no portal nacional da NF-e",
+              "l": 690,
+              "tp": 325,
+              "r": 1054,
+              "b": 338
+            },
+            {
+              "t": "www.nfe.fazenda.gov.br/portal ou no site da Sefaz Autorizadora",
+              "l": 690,
+              "tp": 344,
+              "r": 1124,
+              "b": 356
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "NATUREZA DA OPERACAO",
+              "l": 40,
+              "tp": 383,
+              "r": 180,
+              "b": 397
+            },
+            {
+              "t": "VENDA DE MERCADORIA",
+              "l": 40,
+              "tp": 399,
+              "r": 211,
+              "b": 418
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "PROTOCOLO DE AUTORIZACAO DE USO",
+              "l": 690,
+              "tp": 382,
+              "r": 907,
+              "b": 394
+            },
+            {
+              "t": "142260008812345 18/06/2026 15:02:44",
+              "l": 690,
+              "tp": 399,
+              "r": 1005,
+              "b": 417
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "INSCRICAO ESTADUAL INSC. ESTADUAL DO SUBST. TRIB. CNPJ",
+              "l": 40,
+              "tp": 431,
+              "r": 877,
+              "b": 445
+            },
+            {
+              "t": "254.871.360 27.684.193/0001-50",
+              "l": 40,
+              "tp": 451,
+              "r": 1000,
+              "b": 470
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "DESTINATARIO/REMETENTE",
+              "l": 40,
+              "tp": 492,
+              "r": 194,
+              "b": 505
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "NOME/RAZAO SOCIAL",
+              "l": 40,
+              "tp": 517,
+              "r": 159,
+              "b": 531
+            },
+            {
+              "t": "CONSTRUTORA HORIZONTE LTDA",
+              "l": 40,
+              "tp": 535,
+              "r": 274,
+              "b": 553
+            },
+            {
+              "t": "ENDERECO",
+              "l": 40,
+              "tp": 562,
+              "r": 96,
+              "b": 575
+            },
+            {
+              "t": "RUA DAS PALMEIRAS, 455",
+              "l": 40,
+              "tp": 578,
+              "r": 238,
+              "b": 597
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "CNPJ/CPF",
+              "l": 700,
+              "tp": 514,
+              "r": 756,
+              "b": 527
+            },
+            {
+              "t": "32.746.195/0001-00",
+              "l": 700,
+              "tp": 530,
+              "r": 862,
+              "b": 548
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "DATA DA EMISSAO",
+              "l": 1000,
+              "tp": 515,
+              "r": 1105,
+              "b": 529
+            },
+            {
+              "t": "18/06/2026",
+              "l": 1000,
+              "tp": 534,
+              "r": 1090,
+              "b": 553
+            },
+            {
+              "t": "DATA DA SAIDA/ENTRADA",
+              "l": 1000,
+              "tp": 562,
+              "r": 1147,
+              "b": 575
+            },
+            {
+              "t": "19/06/2026",
+              "l": 1000,
+              "tp": 575,
+              "r": 1090,
+              "b": 594
+            },
+            {
+              "t": "HORA DA SAIDA",
+              "l": 1000,
+              "tp": 604,
+              "r": 1091,
+              "b": 617
+            },
+            {
+              "t": "08:00:00",
+              "l": 1000,
+              "tp": 621,
+              "r": 1072,
+              "b": 638
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "FATURA/DUPLICATA",
+              "l": 40,
+              "tp": 659,
+              "r": 152,
+              "b": 671
+            },
+            {
+              "t": "001 18/07/2026 R$ 2.430,00   002 17/08/2026 R$ 2.430,00",
+              "l": 40,
+              "tp": 682,
+              "r": 535,
+              "b": 699
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "CALCULO DO IMPOSTO",
+              "l": 40,
+              "tp": 717,
+              "r": 166,
+              "b": 730
+            },
+            {
+              "t": "BASE DE CALCULO DO ICMS VALOR DO ICMS BASE DE CALC. ICMS S.T. VALOR DO ICMS SUBST. VALOR TOTAL DOS PRODUTOS",
+              "l": 40,
+              "tp": 738,
+              "r": 1110,
+              "b": 750
+            },
+            {
+              "t": "0,00 0,00 0,00 0,00 4.860,00",
+              "l": 40,
+              "tp": 754,
+              "r": 1104,
+              "b": 772
+            },
+            {
+              "t": "VALOR DO FRETE VALOR DO SEGURO DESCONTO OUTRAS DESPESAS ACESSORIAS VALOR DO IPI VALOR TOTAL DA NOTA",
+              "l": 40,
+              "tp": 782,
+              "r": 1080,
+              "b": 795
+            },
+            {
+              "t": "0,00 0,00 0,00 0,00 0,00 4.860,00",
+              "l": 40,
+              "tp": 803,
+              "r": 1129,
+              "b": 821
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "DADOS DOS PRODUTOS/SERVICOS",
+              "l": 40,
+              "tp": 900,
+              "r": 229,
+              "b": 914
+            },
+            {
+              "t": "COD DESCRICAO NCM CFOP UN QTD V.UNIT V.TOTAL",
+              "l": 40,
+              "tp": 917,
+              "r": 348,
+              "b": 929
+            },
+            {
+              "t": "PC4545 PISO CERAMICO 45X45 PEI4 ACETINADO 69072300 5102 M2 120 38,50 4.620,00",
+              "l": 40,
+              "tp": 943,
+              "r": 733,
+              "b": 960
+            },
+            {
+              "t": "AC2-20 ARGAMASSA AC-II CINZA 20KG 32149000 5102 SC 30 8,00 240,00",
+              "l": 40,
+              "tp": 969,
+              "r": 625,
+              "b": 987
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "DADOS ADICIONAIS",
+              "l": 40,
+              "tp": 1500,
+              "r": 152,
+              "b": 1512
+            },
+            {
+              "t": "INFORMACOES COMPLEMENTARES",
+              "l": 40,
+              "tp": 1518,
+              "r": 222,
+              "b": 1530
+            },
+            {
+              "t": "Pedido 7741 - Entrega na obra Rua das Palmeiras, 455",
+              "l": 40,
+              "tp": 1541,
+              "r": 508,
+              "b": 1559
+            }
+          ]
+        }
+      ],
+      "codigos": [
+        {
+          "formato": "code128",
+          "valor": "42260627654193000150550010000030711518370268"
+        }
+      ]
+    },
+    "esperado": {
+      "fornecedor": "Cerâmica e Materiais Santa Clara Ltda",
+      "cnpj": "27.654.193/0001-50",
+      "total": 4860,
+      "data": "2026-06-18"
+    }
+  },
+  {
+    "id": "ocr-nfce-cnpj-ocr-errado-01",
+    "origem": "sintetico",
+    "particao": "teste",
+    "nota": "NFC-e: OCR lê o CNPJ do emitente com um dígito errado e um espaço no meio; a linha da chave não saiu; o QR traz a chave certa. O único CNPJ válido no texto é o da software house do rodapé — não serve.",
+    "entrada": {
+      "texto": "ELETRO CENTRO MATERIAIS ELETRICOS LTDA\nCNPJ: 17.892 .645/0001-10 IE: 062.418.773.0091\nR. DOS GUAJAJARAS, 1180 - CENTRO\nBELO HORIZONTE - MG\nDocumento Auxiliar da Nota Fiscal de Consumidor Eletronica\nCodigo Descricao Qtde Un Vl Unit Vl Total\n0451 FIO FLEXIVEL 2,5MM 100M AZUL 2 RL 229,90 459,80\n1210 DISJUNTOR BIPOLAR 40A 3 UN 45,50 136,50\n0877 ELETRODUTO CORRUGADO 25MM 50M 2 RL 54,90 109,80\n0312 CAIXA 4X2 PVC 30 UN 1,21 36,30\nQtde. total de itens\nValor total R$\nValor a pagar R$\nFORMA PAGAMENTO\nCartao de Credito\n4\n742,40\n742,40\nVALOR PAGO R$\n742,40\nConsulte pela Chave de Acesso em\nwww.sefaz.mg.gov.br/nfce/consulta\nCONSUMIDOR NAO IDENTIFICADO\nNFC-e nº 000020931 Serie 001 09/06/2026 10:05:47\nProtocolo de Autorizacao: 131260007788123\nData de Autorizacao: 09/06/2026 10:05:52\nTributos Totais Incidentes (Lei Federal 12.741/2012): R$ 140,31\nDesenvolvido por GESTCOM SOFTWARE LTDA CNPJ 05.831.624/0001-74",
+      "codigos": [
+        {
+          "formato": "qr",
+          "valor": "https://www.sefaz.mg.gov.br/nfce/qrcode?p=31260617392645000110650010000209311394617025|2|1|1|57A5928D96063FE6D1D8608E83FDB0C80F04A13B"
+        }
+      ]
+    },
+    "esperado": {
+      "fornecedor": "Eletro Centro Materiais Elétricos Ltda",
+      "cnpj": "17.392.645/0001-10",
+      "total": 742.4,
+      "data": "2026-06-09"
+    }
+  },
+  {
+    "id": "ocr-cupom-deposito-sao-jose-01",
+    "origem": "sintetico",
+    "particao": "teste",
+    "nota": "Cupom não fiscal de depósito: 'R$' lido como 'RS', valores dos totais longe dos rótulos, 'TOTAL DE ITENS: 5' e troco como pegadinhas; data com ano de 2 dígitos (04/07/26); CNPJ com espaços no lugar da pontuação.",
+    "entrada": {
+      "texto": "DEPOSITO SAO JOSE\nR. Joaquim Nabuco, 77 - Centro\nFone: (31) 3521-4408\nCNPJ: 08 412 936/0001-31\nCUPOM NAO FISCAL\nDATA: 04/07/26 HORA: 09:15\nVENDA: 002318\nIT DESCRICAO QTD UNIT TOTAL\n01 CIMENTO 50KG 2 38,00 76,00\n02 AREIA MEDIA SC 4 8,50 34,00\n03 BRITA 1 SC 3 9,00 27,00\n04 TIJOLO 6 FUROS 50 0,85 42,50\n05 ARAME RECOZIDO 1KG 1 7,00 7,00\nTOTAL DE ITENS: 5\nTOTAL RS\nDINHEIRO\nTROCO\n186,50\n200,00\n13,50\nOBRIGADO PELA PREFERENCIA\nVOLTE SEMPRE"
+    },
+    "esperado": {
+      "fornecedor": "Depósito São José",
+      "cnpj": "08.412.936/0001-31",
+      "total": 186.5,
+      "data": "2026-07-04"
+    }
+  },
+  {
+    "id": "ocr-balcao-madeireira-frete-01",
+    "origem": "sintetico",
+    "particao": "dev",
+    "nota": "Nota de balcão sem valor fiscal: total a pagar inclui frete (1140, não o subtotal 1040); emissão 30/06 vs entrega 03/07 e vencimento 30/07.",
+    "entrada": {
+      "texto": "MADEIREIRA BOA VISTA LTDA\nCNPJ 31.567.208/0001-10 IE 90812345-67\nRod. PR-445, Km 12 - Londrina/PR\nFone (43) 3328-1190\nNOTA DE BALCAO - SEM VALOR FISCAL\nPedido: 004512\nEmissao: 30/06/2026 15:47\nCliente: OBRA RUA DAS FLORES 120\nVendedor: MARCOS\nCod Descricao Qtd Unit Total\n118 TABUA PINUS 30CM 3M 10 42,00 420,00\n204 CAIBRO 5X6 3M 20 18,00 360,00\n231 RIPA 1,5X5 3M 40 6,50 260,00\nSUBTOTAL\nFRETE\nTOTAL A PAGAR\n1.040,00\n100,00\n1.140,00\nPrevisao de entrega: 03/07/2026\nPagto: BOLETO 30 DIAS - Venc. 30/07/2026\nAssinatura do cliente"
+    },
+    "esperado": {
+      "fornecedor": "Madeireira Boa Vista Ltda",
+      "cnpj": "31.567.208/0001-10",
+      "total": 1140,
+      "data": "2026-06-30"
+    }
+  },
+  {
+    "id": "ocr-recibo-pedreiro-cpf-01",
+    "origem": "sintetico",
+    "particao": "teste",
+    "nota": "Recibo de mão de obra de pessoa física: fornecedor é quem assina/recebe, não quem pagou ('Recebi de ...'); só CPF, então cnpj fica vazio; data por extenso, diferente das datas do período do serviço.",
+    "entrada": {
+      "texto": "RECIBO\nR$ 1.800,00\nRecebi de MARIA APARECIDA SOUZA, CPF 271.845.369-91,\na importancia de um mil e oitocentos reais\nreferente aos servicos de reboco interno e externo\nexecutados de 15/06/2026 a 26/06/2026 na obra da\nRua Ipe Amarelo, 88 - Jd. Primavera.\nPara clareza firmo o presente.\nCampinas, 29 de junho de 2026\nJOSE ROBERTO ALVES\nCPF 482.613.957-82\nPix (19) 99812-4470"
+    },
+    "esperado": {
+      "fornecedor": "José Roberto Alves",
+      "cnpj": null,
+      "total": 1800,
+      "data": "2026-06-29"
+    }
+  },
+  {
+    "id": "ocr-recibo-servico-pj-blocos-01",
+    "origem": "sintetico",
+    "particao": "teste",
+    "nota": "Recibo de serviço PJ em formulário: rótulos num bloco e valores em outro; dois CNPJ válidos (prestador e tomador) — o certo é o do prestador; data do recibo vs datas do período do serviço.",
+    "entrada": {
+      "blocos": [
+        {
+          "linhas": [
+            {
+              "t": "RECIBO DE PRESTACAO DE SERVICOS",
+              "l": 219,
+              "tp": 150,
+              "r": 901,
+              "b": 191
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "Nº 087",
+              "l": 990,
+              "tp": 151,
+              "r": 1110,
+              "b": 186
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "Prestador:",
+              "l": 100,
+              "tp": 302,
+              "r": 290,
+              "b": 333
+            },
+            {
+              "t": "CNPJ:",
+              "l": 100,
+              "tp": 352,
+              "r": 195,
+              "b": 383
+            },
+            {
+              "t": "Endereco:",
+              "l": 100,
+              "tp": 397,
+              "r": 271,
+              "b": 430
+            },
+            {
+              "t": "Tomador:",
+              "l": 100,
+              "tp": 479,
+              "r": 252,
+              "b": 510
+            },
+            {
+              "t": "CNPJ:",
+              "l": 100,
+              "tp": 533,
+              "r": 195,
+              "b": 566
+            },
+            {
+              "t": "Obra:",
+              "l": 100,
+              "tp": 579,
+              "r": 195,
+              "b": 611
+            },
+            {
+              "t": "Servico:",
+              "l": 100,
+              "tp": 658,
+              "r": 252,
+              "b": 689
+            },
+            {
+              "t": "Valor:",
+              "l": 100,
+              "tp": 762,
+              "r": 214,
+              "b": 793
+            },
+            {
+              "t": "Data:",
+              "l": 100,
+              "tp": 811,
+              "r": 195,
+              "b": 843
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "FONTANA SERVICOS HIDRAULICOS LTDA",
+              "l": 340,
+              "tp": 298,
+              "r": 967,
+              "b": 329
+            },
+            {
+              "t": "39.517.462/0001-16",
+              "l": 340,
+              "tp": 353,
+              "r": 682,
+              "b": 384
+            },
+            {
+              "t": "Rua Itapura, 230 - Tatuape - Sao Paulo/SP",
+              "l": 340,
+              "tp": 397,
+              "r": 1119,
+              "b": 428
+            },
+            {
+              "t": "CONSTRUTORA HORIZONTE LTDA",
+              "l": 340,
+              "tp": 477,
+              "r": 834,
+              "b": 510
+            },
+            {
+              "t": "32.746.195/0001-00",
+              "l": 340,
+              "tp": 528,
+              "r": 682,
+              "b": 560
+            },
+            {
+              "t": "Residencial Jardim das Acacias - Lote 14",
+              "l": 340,
+              "tp": 580,
+              "r": 1100,
+              "b": 611
+            },
+            {
+              "t": "Instalacao hidraulica do 2o pavimento",
+              "l": 340,
+              "tp": 661,
+              "r": 1043,
+              "b": 694
+            },
+            {
+              "t": "(agua fria, agua quente e esgoto)",
+              "l": 340,
+              "tp": 704,
+              "r": 967,
+              "b": 736
+            },
+            {
+              "t": "R$ 2.300,00 (dois mil e trezentos reais)",
+              "l": 340,
+              "tp": 757,
+              "r": 1100,
+              "b": 789
+            },
+            {
+              "t": "02/07/2026",
+              "l": 340,
+              "tp": 813,
+              "r": 530,
+              "b": 846
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "Declaro ter recebido a importancia acima pelos servicos",
+              "l": 100,
+              "tp": 901,
+              "r": 1090,
+              "b": 932
+            },
+            {
+              "t": "executados no periodo de 22/06/2026 a 30/06/2026.",
+              "l": 100,
+              "tp": 946,
+              "r": 982,
+              "b": 977
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "______________________________",
+              "l": 330,
+              "tp": 1153,
+              "r": 870,
+              "b": 1186
+            },
+            {
+              "t": "FONTANA SERVICOS HIDRAULICOS LTDA",
+              "l": 303,
+              "tp": 1195,
+              "r": 897,
+              "b": 1226
+            },
+            {
+              "t": "Paulo Fontana - Socio",
+              "l": 411,
+              "tp": 1236,
+              "r": 789,
+              "b": 1269
+            }
+          ]
+        }
+      ]
+    },
+    "esperado": {
+      "fornecedor": "Fontana Serviços Hidráulicos Ltda",
+      "cnpj": "39.517.462/0001-16",
+      "total": 2300,
+      "data": "2026-07-02"
+    }
+  },
+  {
+    "id": "ocr-nfce-blocos-tributos-01",
+    "origem": "sintetico",
+    "particao": "teste",
+    "nota": "NFC-e em duas colunas: o último valor da coluna é o dos tributos (98,45), não o total (517,80); o valor total sai como 'S17,80' (5 lido como S), mas 'a pagar' e 'pago' confirmam 517,80; CNPJ com espaços no lugar da pontuação.",
+    "entrada": {
+      "blocos": [
+        {
+          "linhas": [
+            {
+              "t": "HIDRAULICA E ELETRICA NOVA ERA LTDA",
+              "l": 268,
+              "tp": 129,
+              "r": 933,
+              "b": 163
+            },
+            {
+              "t": "CNPJ 41 298 306/0001-53  IE 001.274.993.0045",
+              "l": 204,
+              "tp": 176,
+              "r": 996,
+              "b": 209
+            },
+            {
+              "t": "AV AMAZONAS, 5120 - NOVA SUISSA",
+              "l": 321,
+              "tp": 223,
+              "r": 879,
+              "b": 254
+            },
+            {
+              "t": "BELO HORIZONTE - MG",
+              "l": 429,
+              "tp": 264,
+              "r": 771,
+              "b": 295
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "Documento Auxiliar da Nota Fiscal",
+              "l": 303,
+              "tp": 329,
+              "r": 897,
+              "b": 361
+            },
+            {
+              "t": "de Consumidor Eletronica",
+              "l": 384,
+              "tp": 372,
+              "r": 816,
+              "b": 404
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "Codigo Descricao Qtde Un Vl Unit",
+              "l": 160,
+              "tp": 439,
+              "r": 736,
+              "b": 470
+            },
+            {
+              "t": "2201 CANO PVC SOLD 25MM 6M 10 BR 21,90",
+              "l": 160,
+              "tp": 482,
+              "r": 844,
+              "b": 514
+            },
+            {
+              "t": "2218 JOELHO 90 SOLD 25MM 20 UN 1,79",
+              "l": 160,
+              "tp": 527,
+              "r": 790,
+              "b": 559
+            },
+            {
+              "t": "4105 FIO FLEX 2,5MM 100M 1 RL 239,00",
+              "l": 160,
+              "tp": 572,
+              "r": 808,
+              "b": 604
+            },
+            {
+              "t": "4390 FITA ISOLANTE 20M 2 UN 12,00",
+              "l": 160,
+              "tp": 614,
+              "r": 754,
+              "b": 646
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "Vl Total",
+              "l": 896,
+              "tp": 438,
+              "r": 1040,
+              "b": 469
+            },
+            {
+              "t": "219,00",
+              "l": 932,
+              "tp": 481,
+              "r": 1040,
+              "b": 512
+            },
+            {
+              "t": "35,80",
+              "l": 950,
+              "tp": 525,
+              "r": 1040,
+              "b": 557
+            },
+            {
+              "t": "239,00",
+              "l": 932,
+              "tp": 573,
+              "r": 1040,
+              "b": 604
+            },
+            {
+              "t": "24,00",
+              "l": 950,
+              "tp": 615,
+              "r": 1040,
+              "b": 647
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "QTD. TOTAL DE ITENS",
+              "l": 160,
+              "tp": 700,
+              "r": 502,
+              "b": 731
+            },
+            {
+              "t": "VALOR TOTAL R$",
+              "l": 160,
+              "tp": 741,
+              "r": 412,
+              "b": 772
+            },
+            {
+              "t": "VALOR A PAGAR R$",
+              "l": 160,
+              "tp": 788,
+              "r": 448,
+              "b": 820
+            },
+            {
+              "t": "FORMA DE PAGAMENTO",
+              "l": 160,
+              "tp": 844,
+              "r": 484,
+              "b": 876
+            },
+            {
+              "t": "Cartao de Debito",
+              "l": 160,
+              "tp": 890,
+              "r": 448,
+              "b": 922
+            },
+            {
+              "t": "Informacao dos Tributos Totais",
+              "l": 160,
+              "tp": 951,
+              "r": 700,
+              "b": 982
+            },
+            {
+              "t": "Incidentes (Lei Federal 12.741/2012)",
+              "l": 160,
+              "tp": 989,
+              "r": 808,
+              "b": 1022
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "4",
+              "l": 1022,
+              "tp": 700,
+              "r": 1040,
+              "b": 733
+            },
+            {
+              "t": "S17,80",
+              "l": 932,
+              "tp": 741,
+              "r": 1040,
+              "b": 774
+            },
+            {
+              "t": "517,80",
+              "l": 932,
+              "tp": 789,
+              "r": 1040,
+              "b": 821
+            },
+            {
+              "t": "VALOR PAGO R$",
+              "l": 806,
+              "tp": 844,
+              "r": 1040,
+              "b": 877
+            },
+            {
+              "t": "517,80",
+              "l": 932,
+              "tp": 890,
+              "r": 1040,
+              "b": 922
+            },
+            {
+              "t": "98,45",
+              "l": 950,
+              "tp": 989,
+              "r": 1040,
+              "b": 1021
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "Consulte pela Chave de Acesso em",
+              "l": 312,
+              "tp": 1071,
+              "r": 888,
+              "b": 1104
+            },
+            {
+              "t": "www.sefaz.mg.gov.br/nfce/consulta",
+              "l": 303,
+              "tp": 1113,
+              "r": 897,
+              "b": 1146
+            },
+            {
+              "t": "3126 0641 2983 0600 0153 6500 1000 0077 1018 2640 1570",
+              "l": 168,
+              "tp": 1155,
+              "r": 1032,
+              "b": 1185
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "CONSUMIDOR NAO IDENTIFICADO",
+              "l": 357,
+              "tp": 1222,
+              "r": 843,
+              "b": 1255
+            },
+            {
+              "t": "NFC-e n 000007710 Serie 001 22/06/2026 11:31:02",
+              "l": 201,
+              "tp": 1271,
+              "r": 1000,
+              "b": 1304
+            },
+            {
+              "t": "Protocolo de autorizacao: 131260004410982",
+              "l": 231,
+              "tp": 1310,
+              "r": 969,
+              "b": 1343
+            },
+            {
+              "t": "Data de autorizacao: 22/06/2026 11:31:05",
+              "l": 240,
+              "tp": 1355,
+              "r": 960,
+              "b": 1387
+            }
+          ]
+        }
+      ],
+      "codigos": [
+        {
+          "formato": "qr",
+          "valor": "https://www.sefaz.mg.gov.br/nfce/qrcode?p=31260641298306000153650010000077101826401570|2|1|1|C548E017A8FFC29CF080071766BE8E3FC8A06857"
+        }
+      ]
+    },
+    "esperado": {
+      "fornecedor": "Hidráulica e Elétrica Nova Era Ltda",
+      "cnpj": "41.298.306/0001-53",
+      "total": 517.8,
+      "data": "2026-06-22"
+    }
+  },
+  {
+    "id": "ocr-nfce-blocos-virgula-ponto-01",
+    "origem": "sintetico",
+    "particao": "dev",
+    "nota": "NFC-e em duas colunas com a vírgula decimal lida como ponto ('1.250.00' = 1250,00; '1169.70' = 1169,70); acentos perdidos; tributos 287.50 no rodapé.",
+    "entrada": {
+      "blocos": [
+        {
+          "linhas": [
+            {
+              "t": "PINTAMAIS TINTAS LTDA",
+              "l": 369,
+              "tp": 138,
+              "r": 831,
+              "b": 175
+            },
+            {
+              "t": "CNPJ: 26.395.081/0001-60 IE: 118.402.735",
+              "l": 240,
+              "tp": 188,
+              "r": 960,
+              "b": 220
+            },
+            {
+              "t": "AV ANTONIO CARLOS MAGALHAES, 3307 - PITUBA",
+              "l": 243,
+              "tp": 231,
+              "r": 957,
+              "b": 263
+            },
+            {
+              "t": "SALVADOR - BA",
+              "l": 483,
+              "tp": 275,
+              "r": 717,
+              "b": 307
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "DOCUMENTO AUXILIAR DA NOTA FISCAL DE",
+              "l": 276,
+              "tp": 347,
+              "r": 924,
+              "b": 380
+            },
+            {
+              "t": "CONSUMIDOR ELETRONICA",
+              "l": 411,
+              "tp": 385,
+              "r": 789,
+              "b": 417
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "1 TINTA ACRILICA FOSCA BRANCO 18L",
+              "l": 160,
+              "tp": 461,
+              "r": 754,
+              "b": 493
+            },
+            {
+              "t": "3 LT X 389.90",
+              "l": 220,
+              "tp": 502,
+              "r": 454,
+              "b": 534
+            },
+            {
+              "t": "2 ROLO LA 23CM C/ CABO",
+              "l": 160,
+              "tp": 545,
+              "r": 556,
+              "b": 576
+            },
+            {
+              "t": "2 UN X 25.15",
+              "l": 220,
+              "tp": 590,
+              "r": 436,
+              "b": 621
+            },
+            {
+              "t": "3 FITA CREPE 48MM X 50M",
+              "l": 160,
+              "tp": 637,
+              "r": 574,
+              "b": 669
+            },
+            {
+              "t": "3 UN X 10.00",
+              "l": 220,
+              "tp": 673,
+              "r": 436,
+              "b": 705
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "1169.70",
+              "l": 914,
+              "tp": 500,
+              "r": 1040,
+              "b": 533
+            },
+            {
+              "t": "50.30",
+              "l": 950,
+              "tp": 585,
+              "r": 1040,
+              "b": 617
+            },
+            {
+              "t": "30.00",
+              "l": 950,
+              "tp": 675,
+              "r": 1040,
+              "b": 708
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "QTD. TOTAL DE ITENS",
+              "l": 160,
+              "tp": 757,
+              "r": 502,
+              "b": 789
+            },
+            {
+              "t": "VALOR TOTAL R$",
+              "l": 160,
+              "tp": 804,
+              "r": 412,
+              "b": 837
+            },
+            {
+              "t": "DESCONTO R$",
+              "l": 160,
+              "tp": 851,
+              "r": 358,
+              "b": 884
+            },
+            {
+              "t": "VALOR A PAGAR R$",
+              "l": 160,
+              "tp": 891,
+              "r": 448,
+              "b": 923
+            },
+            {
+              "t": "FORMA PAGAMENTO",
+              "l": 160,
+              "tp": 951,
+              "r": 430,
+              "b": 983
+            },
+            {
+              "t": "Cartao de Credito",
+              "l": 160,
+              "tp": 993,
+              "r": 466,
+              "b": 1026
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "3",
+              "l": 1022,
+              "tp": 759,
+              "r": 1040,
+              "b": 790
+            },
+            {
+              "t": "1.250.00",
+              "l": 896,
+              "tp": 803,
+              "r": 1040,
+              "b": 835
+            },
+            {
+              "t": "0.00",
+              "l": 968,
+              "tp": 848,
+              "r": 1040,
+              "b": 879
+            },
+            {
+              "t": "1.250.00",
+              "l": 896,
+              "tp": 895,
+              "r": 1040,
+              "b": 927
+            },
+            {
+              "t": "VALOR PAGO R$",
+              "l": 806,
+              "tp": 949,
+              "r": 1040,
+              "b": 980
+            },
+            {
+              "t": "1.250.00",
+              "l": 896,
+              "tp": 991,
+              "r": 1040,
+              "b": 1022
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "Consulte pela Chave de Acesso em",
+              "l": 312,
+              "tp": 1070,
+              "r": 888,
+              "b": 1103
+            },
+            {
+              "t": "www.sefaz.ba.gov.br/nfce/consulta",
+              "l": 303,
+              "tp": 1116,
+              "r": 897,
+              "b": 1148
+            },
+            {
+              "t": "2926 0526 3950 8100 0160 6500 3000 0330 1811 7093 5829",
+              "l": 168,
+              "tp": 1158,
+              "r": 1032,
+              "b": 1187
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "CONSUMIDOR NAO IDENTIFICADO",
+              "l": 357,
+              "tp": 1225,
+              "r": 843,
+              "b": 1258
+            },
+            {
+              "t": "NFC-e nº 000033018 Serie 003 29/05/2026 17:03:44",
+              "l": 192,
+              "tp": 1266,
+              "r": 1008,
+              "b": 1297
+            },
+            {
+              "t": "Protocolo de autorizacao: 129260015530927",
+              "l": 231,
+              "tp": 1314,
+              "r": 969,
+              "b": 1347
+            },
+            {
+              "t": "Tributos Totais Incidentes (Lei Federal 12.741/2012): R$ 287.50",
+              "l": 128,
+              "tp": 1359,
+              "r": 1073,
+              "b": 1392
+            }
+          ]
+        }
+      ],
+      "codigos": [
+        {
+          "formato": "qr",
+          "valor": "https://www.sefaz.ba.gov.br/nfce/qrcode?p=29260526395081000160650030000330181170935829|2|1|1|9CA3E45B03B2998873945C44A783B5CF2765E0E1"
+        }
+      ]
+    },
+    "esperado": {
+      "fornecedor": "Pintamais Tintas Ltda",
+      "cnpj": "26.395.081/0001-60",
+      "total": 1250,
+      "data": "2026-05-29"
+    }
+  },
+  {
+    "id": "ocr-danfe-blocos-desconto-01",
+    "origem": "sintetico",
+    "particao": "dev",
+    "nota": "DANFE: rótulos do cálculo do imposto num bloco e valores noutro; total da nota com desconto (3420), não total dos produtos (3600); vencimento 12/07 vs emissão 12/06.",
+    "entrada": {
+      "blocos": [
+        {
+          "linhas": [
+            {
+              "t": "RECEBEMOS DE AREIAL E PEDREIRA RIO CLARO LTDA OS PRODUTOS CONSTANTES DA NOTA FISCAL INDICADA AO LADO",
+              "l": 40,
+              "tp": 62,
+              "r": 740,
+              "b": 74
+            },
+            {
+              "t": "DATA DE RECEBIMENTO",
+              "l": 40,
+              "tp": 94,
+              "r": 173,
+              "b": 106
+            },
+            {
+              "t": "IDENTIFICACAO E ASSINATURA DO RECEBEDOR",
+              "l": 330,
+              "tp": 97,
+              "r": 603,
+              "b": 109
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "NF-e",
+              "l": 1060,
+              "tp": 56,
+              "r": 1096,
+              "b": 73
+            },
+            {
+              "t": "Nº 000.002.264",
+              "l": 1010,
+              "tp": 84,
+              "r": 1136,
+              "b": 101
+            },
+            {
+              "t": "SERIE 001",
+              "l": 1030,
+              "tp": 104,
+              "r": 1111,
+              "b": 123
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "AREIAL E PEDREIRA RIO CLARO LTDA",
+              "l": 50,
+              "tp": 188,
+              "r": 370,
+              "b": 211
+            },
+            {
+              "t": "ROD GO-060, KM 18 - ZONA RURAL",
+              "l": 50,
+              "tp": 223,
+              "r": 320,
+              "b": 241
+            },
+            {
+              "t": "TRINDADE - GO CEP 75380-000",
+              "l": 50,
+              "tp": 252,
+              "r": 293,
+              "b": 271
+            },
+            {
+              "t": "FONE (62) 3505-7781",
+              "l": 50,
+              "tp": 278,
+              "r": 221,
+              "b": 295
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "DANFE",
+              "l": 500,
+              "tp": 178,
+              "r": 580,
+              "b": 207
+            },
+            {
+              "t": "DOCUMENTO AUXILIAR DA",
+              "l": 462,
+              "tp": 213,
+              "r": 609,
+              "b": 225
+            },
+            {
+              "t": "NOTA FISCAL ELETRONICA",
+              "l": 460,
+              "tp": 237,
+              "r": 614,
+              "b": 250
+            },
+            {
+              "t": "0 - ENTRADA  1 - SAIDA",
+              "l": 462,
+              "tp": 261,
+              "r": 616,
+              "b": 275
+            },
+            {
+              "t": "Nº 000.002.264",
+              "l": 462,
+              "tp": 305,
+              "r": 588,
+              "b": 324
+            },
+            {
+              "t": "SERIE 001  FOLHA 1/1",
+              "l": 462,
+              "tp": 324,
+              "r": 642,
+              "b": 342
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "CHAVE DE ACESSO",
+              "l": 690,
+              "tp": 276,
+              "r": 795,
+              "b": 288
+            },
+            {
+              "t": "5226 0609 7318 4200 0198 5500 1000 0022 6419 4027 5164",
+              "l": 690,
+              "tp": 296,
+              "r": 1122,
+              "b": 311
+            },
+            {
+              "t": "Consulta de autenticidade no portal nacional da NF-e",
+              "l": 690,
+              "tp": 325,
+              "r": 1054,
+              "b": 338
+            },
+            {
+              "t": "www.nfe.fazenda.gov.br/portal ou no site da Sefaz Autorizadora",
+              "l": 690,
+              "tp": 340,
+              "r": 1124,
+              "b": 354
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "NATUREZA DA OPERACAO",
+              "l": 40,
+              "tp": 386,
+              "r": 180,
+              "b": 398
+            },
+            {
+              "t": "VENDA DE PRODUCAO DO ESTABELECIMENTO",
+              "l": 40,
+              "tp": 405,
+              "r": 364,
+              "b": 423
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "PROTOCOLO DE AUTORIZACAO DE USO",
+              "l": 690,
+              "tp": 384,
+              "r": 907,
+              "b": 398
+            },
+            {
+              "t": "152260003318820 12/06/2026 07:15:09",
+              "l": 690,
+              "tp": 405,
+              "r": 1005,
+              "b": 422
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "INSCRICAO ESTADUAL",
+              "l": 40,
+              "tp": 432,
+              "r": 166,
+              "b": 445
+            },
+            {
+              "t": "10.773.218-4",
+              "l": 40,
+              "tp": 454,
+              "r": 148,
+              "b": 473
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "CNPJ",
+              "l": 820,
+              "tp": 436,
+              "r": 848,
+              "b": 448
+            },
+            {
+              "t": "09.731.842/0001-98",
+              "l": 820,
+              "tp": 449,
+              "r": 982,
+              "b": 468
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "DESTINATARIO/REMETENTE",
+              "l": 40,
+              "tp": 493,
+              "r": 194,
+              "b": 507
+            },
+            {
+              "t": "NOME/RAZAO SOCIAL",
+              "l": 40,
+              "tp": 516,
+              "r": 159,
+              "b": 530
+            },
+            {
+              "t": "CONSTRUTORA HORIZONTE LTDA",
+              "l": 40,
+              "tp": 530,
+              "r": 274,
+              "b": 549
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "CNPJ/CPF",
+              "l": 700,
+              "tp": 513,
+              "r": 756,
+              "b": 527
+            },
+            {
+              "t": "32.746.195/0001-00",
+              "l": 700,
+              "tp": 535,
+              "r": 862,
+              "b": 552
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "DATA DA EMISSAO",
+              "l": 1000,
+              "tp": 516,
+              "r": 1105,
+              "b": 529
+            },
+            {
+              "t": "12/06/2026",
+              "l": 1000,
+              "tp": 529,
+              "r": 1090,
+              "b": 546
+            },
+            {
+              "t": "DATA DA SAIDA/ENTRADA",
+              "l": 1000,
+              "tp": 560,
+              "r": 1147,
+              "b": 574
+            },
+            {
+              "t": "12/06/2026",
+              "l": 1000,
+              "tp": 580,
+              "r": 1090,
+              "b": 599
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "FATURA/DUPLICATA",
+              "l": 40,
+              "tp": 619,
+              "r": 152,
+              "b": 633
+            },
+            {
+              "t": "NUM. 001  VENC. 12/07/2026  VALOR 3.420,00",
+              "l": 40,
+              "tp": 641,
+              "r": 418,
+              "b": 659
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "CALCULO DO IMPOSTO",
+              "l": 40,
+              "tp": 681,
+              "r": 166,
+              "b": 694
+            },
+            {
+              "t": "BASE DE CALCULO DO ICMS",
+              "l": 40,
+              "tp": 697,
+              "r": 201,
+              "b": 711
+            },
+            {
+              "t": "VALOR DO ICMS",
+              "l": 250,
+              "tp": 702,
+              "r": 341,
+              "b": 715
+            },
+            {
+              "t": "VALOR TOTAL DOS PRODUTOS",
+              "l": 900,
+              "tp": 700,
+              "r": 1068,
+              "b": 714
+            },
+            {
+              "t": "VALOR DO FRETE",
+              "l": 40,
+              "tp": 742,
+              "r": 138,
+              "b": 754
+            },
+            {
+              "t": "DESCONTO",
+              "l": 250,
+              "tp": 744,
+              "r": 306,
+              "b": 756
+            },
+            {
+              "t": "OUTRAS DESPESAS ACESSORIAS",
+              "l": 450,
+              "tp": 747,
+              "r": 632,
+              "b": 759
+            },
+            {
+              "t": "VALOR TOTAL DA NOTA",
+              "l": 900,
+              "tp": 744,
+              "r": 1033,
+              "b": 757
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "0,00",
+              "l": 164,
+              "tp": 720,
+              "r": 200,
+              "b": 738
+            },
+            {
+              "t": "0,00",
+              "l": 374,
+              "tp": 717,
+              "r": 410,
+              "b": 735
+            },
+            {
+              "t": "3.600,00",
+              "l": 1078,
+              "tp": 716,
+              "r": 1150,
+              "b": 735
+            },
+            {
+              "t": "0,00",
+              "l": 164,
+              "tp": 762,
+              "r": 200,
+              "b": 779
+            },
+            {
+              "t": "180,00",
+              "l": 356,
+              "tp": 765,
+              "r": 410,
+              "b": 783
+            },
+            {
+              "t": "0,00",
+              "l": 604,
+              "tp": 764,
+              "r": 640,
+              "b": 783
+            },
+            {
+              "t": "3.420,00",
+              "l": 1078,
+              "tp": 763,
+              "r": 1150,
+              "b": 781
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "DADOS DOS PRODUTOS/SERVICOS",
+              "l": 40,
+              "tp": 857,
+              "r": 229,
+              "b": 870
+            },
+            {
+              "t": "COD DESCRICAO NCM CFOP UN QTD V.UNIT V.TOTAL",
+              "l": 40,
+              "tp": 877,
+              "r": 348,
+              "b": 891
+            },
+            {
+              "t": "010 AREIA MEDIA LAVADA 25051000 5101 M3 20 125,00 2.500,00",
+              "l": 40,
+              "tp": 904,
+              "r": 562,
+              "b": 923
+            },
+            {
+              "t": "021 BRITA 1 25171000 5101 M3 8 137,50 1.100,00",
+              "l": 40,
+              "tp": 931,
+              "r": 454,
+              "b": 948
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "DADOS ADICIONAIS",
+              "l": 40,
+              "tp": 1501,
+              "r": 152,
+              "b": 1515
+            },
+            {
+              "t": "Desconto comercial de 5% conforme pedido 3391.",
+              "l": 40,
+              "tp": 1520,
+              "r": 454,
+              "b": 1537
+            }
+          ]
+        }
+      ],
+      "codigos": [
+        {
+          "formato": "code128",
+          "valor": "52260609731842000198550010000022641940275164"
+        }
+      ]
+    },
+    "esperado": {
+      "fornecedor": "Areial e Pedreira Rio Claro Ltda",
+      "cnpj": "09.731.842/0001-98",
+      "total": 3420,
+      "data": "2026-06-12"
+    }
+  },
+  {
+    "id": "ocr-nfce-reimpressao-datas-01",
+    "origem": "sintetico",
+    "particao": "teste",
+    "nota": "NFC-e reimpressa (2a via): data de emissão 15/06/26 (ano com 2 dígitos) vs data de reimpressão 01/07 e prazo de troca 15/07; nome com 'Construção'/'Irmãos' sem acento.",
+    "entrada": {
+      "texto": "MATERIAIS DE CONSTRUCAO IRMAOS PEREIRA LTDA\nCNPJ: 11.673.458/0001-28\nR. Barao de Jaguara, 1290 - Centro - Campinas/SP\nDANFE NFC-e - Documento Auxiliar\nda Nota Fiscal de Consumidor Eletronica\nREIMPRESSAO - 2a VIA\nCodigo Descricao Qtde Un Vl Unit Vl Total\n00412 REJUNTE FLEX CINZA 1KG 3 UN 9,90 29,70\n00987 ESPACADOR PISO 2MM PCT100 2 PC 7,50 15,00\n01133 DESEMPENADEIRA ACO DENTADA 1 UN 45,00 45,00\nQtde. total de itens 3\nValor total R$ 89,70\nFORMA PAGAMENTO\nValor pago R$\nCartao de Debito\n89,70\nConsulte pela Chave de Acesso em\nwww.sefaz.sp.gov.br/nfce/consulta\n3526 0611 6734 5800 0128 6500 1000 0155 0211 8204 7699\nCONSUMIDOR NAO IDENTIFICADO\nNFC-e nº 000015502 Serie 001 15/06/26 08:12:30\nProtocolo de autorizacao: 135260002233445\nData de autorizacao: 15/06/2026 08:12:34\nTrocas somente com este cupom ate 15/07/2026\nReimpresso em 01/07/2026 10:12:51",
+      "codigos": [
+        {
+          "formato": "qr",
+          "valor": "https://www.sefaz.sp.gov.br/nfce/qrcode?p=35260611673458000128650010000155021182047699|2|1|1|59AB851246F43FA9E40D1DEA4D4B61442EA664A0"
+        }
+      ]
+    },
+    "esperado": {
+      "fornecedor": "Materiais de Construção Irmãos Pereira Ltda",
+      "cnpj": "11.673.458/0001-28",
+      "total": 89.7,
+      "data": "2026-06-15"
+    }
+  },
+  {
+    "id": "ocr-manuscrita-ilegivel-01",
+    "origem": "sintetico",
+    "particao": "dev",
+    "nota": "Talão de pedido preenchido à mão, ilegível: só sai o impresso (com o nº do talão 0347) e rabiscos; sem código. Nada pode ser preenchido — o nº do talão não é total.",
+    "entrada": {
+      "texto": "PEDIDO\nNº 0347\nSr.(a)\nData / /\nQUANT. DISCRIMINACAO\nTOTAL R$\nCi m\nrn"
+    },
+    "esperado": {
+      "fornecedor": null,
+      "cnpj": null,
+      "total": null,
+      "data": null
+    }
+  },
+  {
+    "id": "ocr-cupom-deposito-santa-rita-blocos-01",
+    "origem": "sintetico",
+    "particao": "teste",
+    "nota": "Cupom de depósito em duas colunas: rótulos e valores em blocos separados; 'TOTAL DE ITENS: 5' logo acima do subtotal; desconto (312 - 12 = 300); nome lido 'DEP0SIT0 SANTA RlTA'.",
+    "entrada": {
+      "blocos": [
+        {
+          "linhas": [
+            {
+              "t": "DEP0SIT0 SANTA RlTA",
+              "l": 391,
+              "tp": 123,
+              "r": 809,
+              "b": 160
+            },
+            {
+              "t": "Rua Sete de Setembro, 1503",
+              "l": 366,
+              "tp": 169,
+              "r": 834,
+              "b": 202
+            },
+            {
+              "t": "Fone (19) 3451-2207",
+              "l": 429,
+              "tp": 214,
+              "r": 771,
+              "b": 247
+            },
+            {
+              "t": "CNPJ 14.562.739/0001-00",
+              "l": 393,
+              "tp": 260,
+              "r": 807,
+              "b": 291
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "CUPOM NAO FISCAL",
+              "l": 456,
+              "tp": 321,
+              "r": 744,
+              "b": 352
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "05/07/2026 08:47:12",
+              "l": 220,
+              "tp": 381,
+              "r": 562,
+              "b": 413
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "VENDA 000981",
+              "l": 764,
+              "tp": 381,
+              "r": 980,
+              "b": 412
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "AREIA MEDIA M3 1 X 140,00",
+              "l": 220,
+              "tp": 447,
+              "r": 670,
+              "b": 480
+            },
+            {
+              "t": "BRITA 1 M3 0,5 X 130,00",
+              "l": 220,
+              "tp": 493,
+              "r": 634,
+              "b": 524
+            },
+            {
+              "t": "CIMENTO CP II 50KG 2 X 37,50",
+              "l": 220,
+              "tp": 535,
+              "r": 724,
+              "b": 568
+            },
+            {
+              "t": "CAL HIDRATADA 20KG 1 X 19,00",
+              "l": 220,
+              "tp": 581,
+              "r": 724,
+              "b": 613
+            },
+            {
+              "t": "ARAME RECOZIDO 1KG 1 X 13,00",
+              "l": 220,
+              "tp": 624,
+              "r": 724,
+              "b": 655
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "140,00",
+              "l": 872,
+              "tp": 451,
+              "r": 980,
+              "b": 483
+            },
+            {
+              "t": "65,00",
+              "l": 890,
+              "tp": 496,
+              "r": 980,
+              "b": 527
+            },
+            {
+              "t": "75,00",
+              "l": 890,
+              "tp": 540,
+              "r": 980,
+              "b": 571
+            },
+            {
+              "t": "19,00",
+              "l": 890,
+              "tp": 581,
+              "r": 980,
+              "b": 614
+            },
+            {
+              "t": "13,00",
+              "l": 890,
+              "tp": 625,
+              "r": 980,
+              "b": 656
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "TOTAL DE ITENS:",
+              "l": 220,
+              "tp": 701,
+              "r": 490,
+              "b": 733
+            },
+            {
+              "t": "SUBTOTAL",
+              "l": 220,
+              "tp": 741,
+              "r": 364,
+              "b": 773
+            },
+            {
+              "t": "DESCONTO",
+              "l": 220,
+              "tp": 788,
+              "r": 364,
+              "b": 819
+            },
+            {
+              "t": "TOTAL R$",
+              "l": 220,
+              "tp": 834,
+              "r": 396,
+              "b": 871
+            },
+            {
+              "t": "PIX",
+              "l": 220,
+              "tp": 893,
+              "r": 274,
+              "b": 925
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "5",
+              "l": 962,
+              "tp": 697,
+              "r": 980,
+              "b": 730
+            },
+            {
+              "t": "312,00",
+              "l": 872,
+              "tp": 746,
+              "r": 980,
+              "b": 779
+            },
+            {
+              "t": "12,00",
+              "l": 890,
+              "tp": 791,
+              "r": 980,
+              "b": 823
+            },
+            {
+              "t": "300,00",
+              "l": 848,
+              "tp": 835,
+              "r": 980,
+              "b": 874
+            },
+            {
+              "t": "300,00",
+              "l": 872,
+              "tp": 892,
+              "r": 980,
+              "b": 923
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "NAO E DOCUMENTO FISCAL",
+              "l": 402,
+              "tp": 972,
+              "r": 798,
+              "b": 1005
+            },
+            {
+              "t": "OBRIGADO E VOLTE SEMPRE",
+              "l": 393,
+              "tp": 1012,
+              "r": 807,
+              "b": 1043
+            }
+          ]
+        }
+      ]
+    },
+    "esperado": {
+      "fornecedor": "Depósito Santa Rita",
+      "cnpj": "14.562.739/0001-00",
+      "total": 300,
+      "data": "2026-07-05"
+    }
+  },
+  {
+    "id": "ocr-danfe-varios-cnpj-parcelas-01",
+    "origem": "sintetico",
+    "particao": "teste",
+    "nota": "DANFE com quatro CNPJ válidos (emitente com espaço no meio, destinatário, contabilidade, software house); total da nota 5152 inclui outras despesas, não os produtos (4952) nem uma parcela (2576).",
+    "entrada": {
+      "texto": "RECEBEMOS DE BETONMIX CONCRETO USINADO LTDA OS PRODUTOS E/OU SERVICOS CONSTANTES DA NOTA FISCAL ELETRONICA INDICADA ABAIXO\nDATA DE RECEBIMENTO IDENTIFICACAO E ASSINATURA DO RECEBEDOR\nNF-e Nº 000.000.918 SERIE 001\nBETONMIX CONCRETO USINADO LTDA\nROD DO SOL, KM 5,5 - PRAIA DE ITAPARICA\nVILA VELHA - ES CEP 29102-020\nDANFE\nDocumento Auxiliar da Nota Fiscal Eletronica\n1 - SAIDA\nNº 000.000.918 SERIE 001 FOLHA 1/1\nCHAVE DE ACESSO\n3226 0518 6493 2700 0154 5500 1000 0009 1817 0315 9488\nNATUREZA DA OPERACAO\nVENDA DE PRODUCAO DO ESTABELECIMENTO\nPROTOCOLO DE AUTORIZACAO DE USO\n132260000918456 20/05/2026 06:48:31\nINSCRICAO ESTADUAL CNPJ\n082.554.19-0 18.649 .327/0001-54\nDESTINATARIO/REMETENTE\nNOME/RAZAO SOCIAL CNPJ/CPF DATA DA EMISSAO\nCONSTRUTORA HORIZONTE LTDA 32.746.195/0001-00 20/05/2026\nENDERECO BAIRRO/DISTRITO CEP DATA DA SAIDA/ENTRADA\nRUA DAS GAIVOTAS, 300 PRAIA DA COSTA 29101-120 20/05/2026\nFATURA/DUPLICATA\n001 19/06/2026 2.576,00\n002 19/07/2026 2.576,00\nCALCULO DO IMPOSTO\nBASE DE CALCULO DO ICMS VALOR DO ICMS VALOR TOTAL DOS PRODUTOS\n4.952,00 594,24 4.952,00\nVALOR DO FRETE DESCONTO OUTRAS DESPESAS ACESSORIAS VALOR TOTAL DA NOTA\n0,00 0,00 200,00 5.152,00\nDADOS DOS PRODUTOS/SERVICOS\nCONC25 CONCRETO USINADO FCK 25MPA SLUMP 10 38245000 5101 M3 8 619,00 4.952,00\nDADOS ADICIONAIS\nINFORMACOES COMPLEMENTARES\nOutras despesas: taxa de bombeamento R$ 200,00. Entrega na obra Rua das Gaivotas, 300.\nEscritorio contabil: EXATA ASSESSORIA CONTABIL LTDA CNPJ 12.958.736/0001-56\nEmitido por GESTCOM SOFTWARE LTDA CNPJ 05.831.624/0001-74",
+      "codigos": [
+        {
+          "formato": "code128",
+          "valor": "32260518649327000154550010000009181703159488"
+        }
+      ]
+    },
+    "esperado": {
+      "fornecedor": "Betonmix Concreto Usinado Ltda",
+      "cnpj": "18.649.327/0001-54",
+      "total": 5152,
+      "data": "2026-05-20"
+    }
+  },
+  {
+    "id": "ocr-nfce-blocos-sem-qr-01",
+    "origem": "sintetico",
+    "particao": "teste",
+    "nota": "NFC-e em duas colunas sem QR lido (só a chave impressa no texto); nome com 0 no lugar de O e sem cedilha ('ACO FORTE VERGALH0ES'); emissão é hoje; CNPJ da software house no rodapé.",
+    "entrada": {
+      "blocos": [
+        {
+          "linhas": [
+            {
+              "t": "ACO FORTE VERGALH0ES LTDA",
+              "l": 350,
+              "tp": 127,
+              "r": 850,
+              "b": 164
+            },
+            {
+              "t": "CNPJ: 22.486.039/0001-01 IE: 90551287-04",
+              "l": 240,
+              "tp": 173,
+              "r": 960,
+              "b": 205
+            },
+            {
+              "t": "R. Eng. Rebouças, 2890 - Rebouças",
+              "l": 303,
+              "tp": 218,
+              "r": 897,
+              "b": 249
+            },
+            {
+              "t": "CURITIBA - PR",
+              "l": 483,
+              "tp": 262,
+              "r": 717,
+              "b": 295
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "Documento Auxiliar da Nota Fiscal",
+              "l": 303,
+              "tp": 327,
+              "r": 897,
+              "b": 360
+            },
+            {
+              "t": "de Consumidor Eletronica",
+              "l": 384,
+              "tp": 374,
+              "r": 816,
+              "b": 406
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "1 VERGALHAO CA-50 10MM 12M 20 BR X 38,00",
+              "l": 150,
+              "tp": 442,
+              "r": 870,
+              "b": 474
+            },
+            {
+              "t": "2 VERGALHAO CA-60 5MM 12M 20 BR X 10,00",
+              "l": 150,
+              "tp": 489,
+              "r": 852,
+              "b": 521
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "760,00",
+              "l": 942,
+              "tp": 444,
+              "r": 1050,
+              "b": 477
+            },
+            {
+              "t": "200,00",
+              "l": 942,
+              "tp": 489,
+              "r": 1050,
+              "b": 521
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "QTD. TOTAL DE ITENS",
+              "l": 150,
+              "tp": 573,
+              "r": 492,
+              "b": 604
+            },
+            {
+              "t": "VALOR TOTAL R$",
+              "l": 150,
+              "tp": 611,
+              "r": 402,
+              "b": 642
+            },
+            {
+              "t": "DESCONTO R$",
+              "l": 150,
+              "tp": 659,
+              "r": 348,
+              "b": 691
+            },
+            {
+              "t": "VALOR A PAGAR R$",
+              "l": 150,
+              "tp": 705,
+              "r": 438,
+              "b": 738
+            },
+            {
+              "t": "FORMA DE PAGAMENTO",
+              "l": 150,
+              "tp": 761,
+              "r": 474,
+              "b": 794
+            },
+            {
+              "t": "PIX",
+              "l": 150,
+              "tp": 801,
+              "r": 204,
+              "b": 833
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "2",
+              "l": 1032,
+              "tp": 571,
+              "r": 1050,
+              "b": 603
+            },
+            {
+              "t": "960,00",
+              "l": 942,
+              "tp": 613,
+              "r": 1050,
+              "b": 645
+            },
+            {
+              "t": "0,00",
+              "l": 978,
+              "tp": 660,
+              "r": 1050,
+              "b": 693
+            },
+            {
+              "t": "960,00",
+              "l": 942,
+              "tp": 699,
+              "r": 1050,
+              "b": 732
+            },
+            {
+              "t": "VALOR PAGO R$",
+              "l": 816,
+              "tp": 759,
+              "r": 1050,
+              "b": 792
+            },
+            {
+              "t": "960,00",
+              "l": 942,
+              "tp": 805,
+              "r": 1050,
+              "b": 838
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "Consulte pela Chave de Acesso em",
+              "l": 312,
+              "tp": 882,
+              "r": 888,
+              "b": 913
+            },
+            {
+              "t": "www.sefaz.pr.gov.br/nfce/consulta",
+              "l": 303,
+              "tp": 924,
+              "r": 897,
+              "b": 956
+            },
+            {
+              "t": "4126 0722 4860 3900 0101 6500 1000 0044 1016 5290 3812",
+              "l": 168,
+              "tp": 971,
+              "r": 1032,
+              "b": 1002
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "CONSUMIDOR NAO IDENTIFICADO",
+              "l": 357,
+              "tp": 1037,
+              "r": 843,
+              "b": 1070
+            },
+            {
+              "t": "NFC-e nº 000004410 Serie 001 06/07/2026 09:58:13",
+              "l": 192,
+              "tp": 1080,
+              "r": 1008,
+              "b": 1113
+            },
+            {
+              "t": "Protocolo de Autorizacao: 141260001239876",
+              "l": 231,
+              "tp": 1125,
+              "r": 969,
+              "b": 1158
+            },
+            {
+              "t": "Data de Autorizacao: 06/07/2026 09:58:20",
+              "l": 240,
+              "tp": 1166,
+              "r": 960,
+              "b": 1199
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "Software: GESTCOM SOFTWARE LTDA CNPJ 05.831.624/0001-74",
+              "l": 188,
+              "tp": 1699,
+              "r": 1013,
+              "b": 1726
+            }
+          ]
+        }
+      ]
+    },
+    "esperado": {
+      "fornecedor": "Aço Forte Vergalhões Ltda",
+      "cnpj": "22.486.039/0001-01",
+      "total": 960,
+      "data": "2026-07-06"
+    }
+  },
+  {
+    "id": "ocr-balcao-fantasia-a-prazo-01",
+    "origem": "sintetico",
+    "particao": "teste",
+    "nota": "Nota de balcão com nome fantasia e razão social (fornecedor não avaliado: cadastro pode usar qualquer um); venda a prazo — data é a da venda, não o vencimento; total longe do rótulo.",
+    "entrada": {
+      "texto": "PONTO FORTE\nMATERIAIS\nPF COMERCIO DE MATERIAIS PARA CONSTRUCAO LTDA\nCNPJ 35.820.417/0001-85\nAv. Assis Brasil, 7020 - Porto Alegre/RS\nVENDA BALCAO Nº 18833\nDOCUMENTO SEM VALOR FISCAL\nData: 30/06/2026\nCliente: CONSTRUTORA HORIZONTE\nQtd Produto Unit Total\n2 TUBO PVC ESGOTO 100MM 6M 64,90 129,80\n4 JOELHO 90 ESGOTO 100MM 11,90 47,60\n2 ADESIVO PVC 175G 15,50 31,00\n5 LUVA SIMPLES ESGOTO 100MM 12,00 60,00\nTotal itens: 4\nTOTAL GERAL\n268,40\nCondicao: A PRAZO - Vencimento 30/07/2026\nRecebi a mercadoria acima ____________"
+    },
+    "esperado": {
+      "cnpj": "35.820.417/0001-85",
+      "total": 268.4,
+      "data": "2026-06-30"
+    }
+  }
+]
