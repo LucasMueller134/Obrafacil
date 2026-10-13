@@ -1,0 +1,827 @@
+[
+  {
+    "id": "voz-valor-moeda-01",
+    "origem": "sintetico",
+    "nota": "Valor formatado como moeda (R$ 380); '10 sacos' é quantidade, não valor; fornecedor com tipo (depósito).",
+    "entrada": {
+      "transcricao": "comprei 10 sacos de cimento no depósito são josé deu R$ 380"
+    },
+    "esperado": {
+      "valor": 380,
+      "categoria": "material",
+      "fornecedor": "Depósito São José",
+      "data": null,
+      "itens": [
+        {
+          "material": "Cimento",
+          "quantidade": 10,
+          "unidade": "sc"
+        }
+      ]
+    }
+  },
+  {
+    "id": "voz-valor-sem-reais-01",
+    "origem": "sintetico",
+    "nota": "Valor sem a palavra reais; 'pro pedreiro' é o serviço, não fornecedor; 'hoje' = data do caso.",
+    "entrada": {
+      "transcricao": "paguei 200 pro pedreiro hoje"
+    },
+    "esperado": {
+      "valor": 200,
+      "categoria": "maoDeObra",
+      "fornecedor": null,
+      "data": "2026-07-06",
+      "itens": []
+    }
+  },
+  {
+    "id": "voz-valor-sem-reais-02",
+    "origem": "sintetico",
+    "nota": "Valor sem 'reais' ('gastei 350 no cimento'); fornecedor de rede com 'lá na'; cimento sem quantidade, itens não avaliados.",
+    "entrada": {
+      "transcricao": "gastei 350 no cimento lá na casa do construtor"
+    },
+    "esperado": {
+      "valor": 350,
+      "categoria": "material",
+      "fornecedor": "Casa do Construtor",
+      "data": null
+    }
+  },
+  {
+    "id": "voz-valor-extenso-01",
+    "origem": "sintetico",
+    "nota": "Valor por extenso; 'ontem' = 2026-07-05; 'na areia' é o material, não fornecedor.",
+    "entrada": {
+      "transcricao": "ontem paguei trezentos e cinquenta reais na areia"
+    },
+    "esperado": {
+      "valor": 350,
+      "categoria": "material",
+      "fornecedor": null,
+      "data": "2026-07-05"
+    }
+  },
+  {
+    "id": "voz-valor-mil-01",
+    "origem": "sintetico",
+    "nota": "'2 mil reais' = 2000; empreita é mão de obra, sem fornecedor nomeado.",
+    "entrada": {
+      "transcricao": "aí paguei 2 mil reais da empreita do reboco"
+    },
+    "esperado": {
+      "valor": 2000,
+      "categoria": "maoDeObra",
+      "fornecedor": null,
+      "data": null,
+      "itens": []
+    }
+  },
+  {
+    "id": "voz-valor-moeda-milhar-01",
+    "origem": "sintetico",
+    "nota": "Moeda com separador de milhar (R$ 1.200 = 1200); fornecedor com tipo ('lá na madeireira do zé'); madeira sem quantidade.",
+    "entrada": {
+      "transcricao": "lá na madeireira do zé peguei a madeira do telhado deu R$ 1.200"
+    },
+    "esperado": {
+      "valor": 1200,
+      "categoria": "material",
+      "fornecedor": "Madeireira do Zé",
+      "data": null
+    }
+  },
+  {
+    "id": "voz-valor-centavos-01",
+    "origem": "sintetico",
+    "nota": "Centavos com vírgula (R$ 89,90); só 'leroy' vira 'Leroy'; 'uma lata' = 1 lt de Tinta.",
+    "entrada": {
+      "transcricao": "uma lata de tinta na leroy R$ 89,90"
+    },
+    "esperado": {
+      "valor": 89.9,
+      "categoria": "material",
+      "fornecedor": "Leroy",
+      "data": null,
+      "itens": [
+        {
+          "material": "Tinta",
+          "quantidade": 1,
+          "unidade": "lt"
+        }
+      ]
+    }
+  },
+  {
+    "id": "voz-valor-giria-pila-01",
+    "origem": "sintetico",
+    "nota": "Gíria 'pila' = reais; 'meia diária' não é número de valor; mão de obra.",
+    "entrada": {
+      "transcricao": "paguei 80 pila pra meia diária do ajudante"
+    },
+    "esperado": {
+      "valor": 80,
+      "categoria": "maoDeObra",
+      "fornecedor": null,
+      "data": null,
+      "itens": []
+    }
+  },
+  {
+    "id": "voz-valor-mil-virgula-01",
+    "origem": "sintetico",
+    "nota": "'1,5 mil' = 1500; eletricista = mão de obra; 'fiação' é o serviço, não compra de fio.",
+    "entrada": {
+      "transcricao": "o eletricista cobrou 1,5 mil pela fiação toda"
+    },
+    "esperado": {
+      "valor": 1500,
+      "categoria": "maoDeObra",
+      "fornecedor": null,
+      "data": null,
+      "itens": []
+    }
+  },
+  {
+    "id": "voz-valor-mil-extenso-01",
+    "origem": "sintetico",
+    "nota": "'mil e quinhentos' por extenso e sem 'reais'; rede Telhanorte (não confundir com o material telha).",
+    "entrada": {
+      "transcricao": "comprei as telhas na telhanorte deu mil e quinhentos"
+    },
+    "esperado": {
+      "valor": 1500,
+      "categoria": "material",
+      "fornecedor": "Telhanorte",
+      "data": null
+    }
+  },
+  {
+    "id": "voz-valor-mil-misto-01",
+    "origem": "sintetico",
+    "nota": "'2 mil e 500' = 2500; 'semana passada' sem dia: data não avaliada.",
+    "entrada": {
+      "transcricao": "semana passada paguei 2 mil e 500 de material no depósito são josé"
+    },
+    "esperado": {
+      "valor": 2500,
+      "categoria": "material",
+      "fornecedor": "Depósito São José"
+    }
+  },
+  {
+    "id": "voz-unitario-01",
+    "origem": "sintetico",
+    "nota": "Preço unitário: 10 sacos a 35 cada = 350 (nem 10 nem 35).",
+    "entrada": {
+      "transcricao": "peguei 10 sacos de cimento a 35 cada na casa do construtor"
+    },
+    "esperado": {
+      "valor": 350,
+      "categoria": "material",
+      "fornecedor": "Casa do Construtor",
+      "data": null,
+      "itens": [
+        {
+          "material": "Cimento",
+          "quantidade": 10,
+          "unidade": "sc"
+        }
+      ]
+    }
+  },
+  {
+    "id": "voz-unitario-02",
+    "origem": "sintetico",
+    "nota": "Preço unitário: 5 barras a 40 reais cada = 200; ferro → Vergalhão de aço, barra → br.",
+    "entrada": {
+      "transcricao": "comprei 5 barras de ferro por 40 reais cada"
+    },
+    "esperado": {
+      "valor": 200,
+      "categoria": "material",
+      "fornecedor": null,
+      "data": null,
+      "itens": [
+        {
+          "material": "Vergalhão de aço",
+          "quantidade": 5,
+          "unidade": "br"
+        }
+      ]
+    }
+  },
+  {
+    "id": "voz-unitario-ruido-01",
+    "origem": "sintetico",
+    "nota": "Unitário 12 × 45 = 540; bitola 'três oitavos' não é valor nem quantidade; ruído 'balde drame' (baldrame) não é fornecedor.",
+    "entrada": {
+      "transcricao": "comprei 12 barras de ferro de três oitavos a 45 cada pro balde drame"
+    },
+    "esperado": {
+      "valor": 540,
+      "categoria": "material",
+      "fornecedor": null,
+      "data": null,
+      "itens": [
+        {
+          "material": "Vergalhão de aço",
+          "quantidade": 12,
+          "unidade": "br"
+        }
+      ]
+    }
+  },
+  {
+    "id": "voz-unitario-diaria-01",
+    "origem": "sintetico",
+    "nota": "Unitário de mão de obra: 3 diárias de 180 = 540.",
+    "entrada": {
+      "transcricao": "paguei 3 diárias de 180 pro servente"
+    },
+    "esperado": {
+      "valor": 540,
+      "categoria": "maoDeObra",
+      "fornecedor": null,
+      "data": null,
+      "itens": []
+    }
+  },
+  {
+    "id": "voz-unitario-centavos-01",
+    "origem": "sintetico",
+    "nota": "Unitário com centavos: 20 × R$ 38,50 = 770; 'anteontem' = 2026-07-04.",
+    "entrada": {
+      "transcricao": "comprei 20 sacos de cimento a R$ 38,50 cada no depósito bom preço anteontem"
+    },
+    "esperado": {
+      "valor": 770,
+      "categoria": "material",
+      "fornecedor": "Depósito Bom Preço",
+      "data": "2026-07-04",
+      "itens": [
+        {
+          "material": "Cimento",
+          "quantidade": 20,
+          "unidade": "sc"
+        }
+      ]
+    }
+  },
+  {
+    "id": "voz-total-anunciado-01",
+    "origem": "sintetico",
+    "nota": "Total anunciado: o valor é 450 (não 300, não 150 e não a soma de tudo = 900).",
+    "entrada": {
+      "transcricao": "300 de cimento e 150 de areia aí deu 450 no total"
+    },
+    "esperado": {
+      "valor": 450,
+      "categoria": "material",
+      "fornecedor": null,
+      "data": null
+    }
+  },
+  {
+    "id": "voz-total-anunciado-02",
+    "origem": "sintetico",
+    "nota": "Desconto: o valor pago é o final (1.200), não o primeiro total anunciado (1.230).",
+    "entrada": {
+      "transcricao": "comprei areia brita e cimento no depósito são josé deu R$ 1.230 mas ele deixou por 1.200"
+    },
+    "esperado": {
+      "valor": 1200,
+      "categoria": "material",
+      "fornecedor": "Depósito São José",
+      "data": null
+    }
+  },
+  {
+    "id": "voz-soma-parcelas-01",
+    "origem": "sintetico",
+    "nota": "Três parcelas sem total: 120 + 80 + 45 = 245; materiais sem quantidade.",
+    "entrada": {
+      "transcricao": "no depósito santa rita foi 120 do cimento 80 da cal e 45 de prego"
+    },
+    "esperado": {
+      "valor": 245,
+      "categoria": "material",
+      "fornecedor": "Depósito Santa Rita",
+      "data": null
+    }
+  },
+  {
+    "id": "voz-soma-parcelas-02",
+    "origem": "sintetico",
+    "nota": "'e' no lugar de vírgula separando três pagamentos de mão de obra: soma 250 + 150 + 200 = 600.",
+    "entrada": {
+      "transcricao": "paguei o pedreiro 250 e o ajudante 150 e o eletricista 200"
+    },
+    "esperado": {
+      "valor": 600,
+      "categoria": "maoDeObra",
+      "fornecedor": null,
+      "data": null,
+      "itens": []
+    }
+  },
+  {
+    "id": "voz-nao-dinheiro-diarias-01",
+    "origem": "sintetico",
+    "nota": "'2 diárias' é quantidade e o total já foi dito: valor 400 (não multiplicar).",
+    "entrada": {
+      "transcricao": "2 diárias do eletricista deu 400 reais tá"
+    },
+    "esperado": {
+      "valor": 400,
+      "categoria": "maoDeObra",
+      "fornecedor": null,
+      "data": null,
+      "itens": []
+    }
+  },
+  {
+    "id": "voz-nao-dinheiro-bitola-01",
+    "origem": "sintetico",
+    "nota": "Bitola '2,5' e '50 metros' não são valor; 'real' no nome da loja não é moeda; fio → Fio elétrico em m.",
+    "entrada": {
+      "transcricao": "comprei 50 metros de fio 2,5 na elétrica real deu R$ 189"
+    },
+    "esperado": {
+      "valor": 189,
+      "categoria": "material",
+      "fornecedor": "Elétrica Real",
+      "data": null,
+      "itens": [
+        {
+          "material": "Fio elétrico",
+          "quantidade": 50,
+          "unidade": "m"
+        }
+      ]
+    }
+  },
+  {
+    "id": "voz-nao-dinheiro-peso-01",
+    "origem": "sintetico",
+    "nota": "'50 quilo' é o peso do saco: o item é 15 sc (não 50 kg) e o valor é 570.",
+    "entrada": {
+      "transcricao": "15 sacos de cimento de 50 quilo né saiu 570"
+    },
+    "esperado": {
+      "valor": 570,
+      "categoria": "material",
+      "fornecedor": null,
+      "data": null,
+      "itens": [
+        {
+          "material": "Cimento",
+          "quantidade": 15,
+          "unidade": "sc"
+        }
+      ]
+    }
+  },
+  {
+    "id": "voz-nao-dinheiro-endereco-01",
+    "origem": "sintetico",
+    "nota": "Número do endereço ('rua 15') não é valor; 'na obra' não é fornecedor.",
+    "entrada": {
+      "transcricao": "lá na obra da rua 15 paguei 230 pro encanador"
+    },
+    "esperado": {
+      "valor": 230,
+      "categoria": "maoDeObra",
+      "fornecedor": null,
+      "data": null,
+      "itens": []
+    }
+  },
+  {
+    "id": "voz-nao-dinheiro-kg-01",
+    "origem": "sintetico",
+    "nota": "Ferro vendido por quilo: item 50 kg de Vergalhão de aço; '8 mm' é bitola; valor 380.",
+    "entrada": {
+      "transcricao": "comprei 50 quilos de ferro de 8 mm deu 380 reais"
+    },
+    "esperado": {
+      "valor": 380,
+      "categoria": "material",
+      "fornecedor": null,
+      "data": null,
+      "itens": [
+        {
+          "material": "Vergalhão de aço",
+          "quantidade": 50,
+          "unidade": "kg"
+        }
+      ]
+    }
+  },
+  {
+    "id": "voz-equipamento-betoneira-01",
+    "origem": "sintetico",
+    "nota": "Aluguel de betoneira = equipamento; '15 dias' é prazo, não valor; fornecedor locadora.",
+    "entrada": {
+      "transcricao": "aluguei a betoneira na locadora central por 15 dias deu 250"
+    },
+    "esperado": {
+      "valor": 250,
+      "categoria": "equipamento",
+      "fornecedor": "Locadora Central",
+      "data": null,
+      "itens": []
+    }
+  },
+  {
+    "id": "voz-equipamento-andaime-01",
+    "origem": "sintetico",
+    "nota": "Andaime alugado = equipamento; '10 peças' não é valor nem item de estoque.",
+    "entrada": {
+      "transcricao": "aluguel de 10 peças de andaime tá 320 reais pro mês"
+    },
+    "esperado": {
+      "valor": 320,
+      "categoria": "equipamento",
+      "fornecedor": null,
+      "data": null,
+      "itens": []
+    }
+  },
+  {
+    "id": "voz-equipamento-ruido-01",
+    "origem": "sintetico",
+    "nota": "Ruído 'beto neira' = betoneira (equipamento); '2 dias' não é valor; gíria 'conto'.",
+    "entrada": {
+      "transcricao": "aluguei a beto neira 2 dias deu 120 conto"
+    },
+    "esperado": {
+      "valor": 120,
+      "categoria": "equipamento",
+      "fornecedor": null,
+      "data": null,
+      "itens": []
+    }
+  },
+  {
+    "id": "voz-outros-alvara-01",
+    "origem": "sintetico",
+    "nota": "Taxa do alvará (prefeitura) = outros, sem fornecedor; 'tipo assim' é muleta.",
+    "entrada": {
+      "transcricao": "tipo assim paguei a taxa do alvará 180 reais"
+    },
+    "esperado": {
+      "valor": 180,
+      "categoria": "outros",
+      "fornecedor": null,
+      "data": null,
+      "itens": []
+    }
+  },
+  {
+    "id": "voz-outros-luz-01",
+    "origem": "sintetico",
+    "nota": "Conta de luz do canteiro = outros; 'da obra' não é fornecedor; centavos (R$ 136,40).",
+    "entrada": {
+      "transcricao": "paguei a conta de luz da obra R$ 136,40"
+    },
+    "esperado": {
+      "valor": 136.4,
+      "categoria": "outros",
+      "fornecedor": null,
+      "data": null,
+      "itens": []
+    }
+  },
+  {
+    "id": "voz-outros-habite-se-01",
+    "origem": "sintetico",
+    "nota": "Taxa do habite-se = outros; centavos falados; 'dia primeiro' = 2026-07-01.",
+    "entrada": {
+      "transcricao": "dia primeiro paguei a taxa do habite-se 412 reais e 30 centavos"
+    },
+    "esperado": {
+      "valor": 412.3,
+      "categoria": "outros",
+      "fornecedor": null,
+      "data": "2026-07-01",
+      "itens": []
+    }
+  },
+  {
+    "id": "voz-data-sexta-passada-01",
+    "origem": "sintetico",
+    "nota": "'sexta passada' a partir de segunda 06/07 = 2026-07-03; brita em m³; fornecedor pedreira.",
+    "entrada": {
+      "transcricao": "sexta passada comprei 2 metros cúbicos de brita na pedreira são jorge R$ 340"
+    },
+    "esperado": {
+      "valor": 340,
+      "categoria": "material",
+      "fornecedor": "Pedreira São Jorge",
+      "data": "2026-07-03",
+      "itens": [
+        {
+          "material": "Brita",
+          "quantidade": 2,
+          "unidade": "m³"
+        }
+      ]
+    }
+  },
+  {
+    "id": "voz-data-dia-01",
+    "origem": "sintetico",
+    "nota": "'dia 3' é data (2026-07-03), não valor; valor 250.",
+    "entrada": {
+      "transcricao": "no dia 3 paguei 250 pro encanador né"
+    },
+    "esperado": {
+      "valor": 250,
+      "categoria": "maoDeObra",
+      "fornecedor": null,
+      "data": "2026-07-03",
+      "itens": []
+    }
+  },
+  {
+    "id": "voz-data-dia-semana-01",
+    "origem": "sintetico",
+    "nota": "'terça da semana passada' = 2026-06-30; 'R$ 2.000' = 2000; empreita = mão de obra.",
+    "entrada": {
+      "transcricao": "terça da semana passada paguei R$ 2.000 da empreita do muro"
+    },
+    "esperado": {
+      "valor": 2000,
+      "categoria": "maoDeObra",
+      "fornecedor": null,
+      "data": "2026-06-30",
+      "itens": []
+    }
+  },
+  {
+    "id": "voz-data-mes-passado-01",
+    "origem": "sintetico",
+    "nota": "'dia 29 do mês passado' = 2026-06-29; 'leroy merlin' completo; metro quadrado → m².",
+    "entrada": {
+      "transcricao": "dia 29 do mês passado comprei 35 metros quadrados de piso cerâmico na leroy merlin R$ 1.575"
+    },
+    "esperado": {
+      "valor": 1575,
+      "categoria": "material",
+      "fornecedor": "Leroy Merlin",
+      "data": "2026-06-29",
+      "itens": [
+        {
+          "material": "Piso cerâmico",
+          "quantidade": 35,
+          "unidade": "m²"
+        }
+      ]
+    }
+  },
+  {
+    "id": "voz-fornecedor-armadilha-terreno-01",
+    "origem": "sintetico",
+    "nota": "'no terreno' é o local de entrega, não fornecedor; metro cúbico → m³.",
+    "entrada": {
+      "transcricao": "descarregaram 3 metros cúbicos de areia lá no terreno aí paguei 270"
+    },
+    "esperado": {
+      "valor": 270,
+      "categoria": "material",
+      "fornecedor": null,
+      "data": null,
+      "itens": [
+        {
+          "material": "Areia",
+          "quantidade": 3,
+          "unidade": "m³"
+        }
+      ]
+    }
+  },
+  {
+    "id": "voz-fornecedor-armadilha-casa-01",
+    "origem": "sintetico",
+    "nota": "'em casa' não é fornecedor; 'hoje cedo' = 2026-07-06; areia sem quantidade.",
+    "entrada": {
+      "transcricao": "tô em casa agora mas hoje cedo paguei 180 de areia"
+    },
+    "esperado": {
+      "valor": 180,
+      "categoria": "material",
+      "fornecedor": null,
+      "data": "2026-07-06"
+    }
+  },
+  {
+    "id": "voz-itens-porta-janela-01",
+    "origem": "sintetico",
+    "nota": "Dois itens contados em un ('uma porta' = 1, '2 janelas'); valor 1380 em dígitos sem separador.",
+    "entrada": {
+      "transcricao": "comprei uma porta e 2 janelas na silva materiais de construção deu 1380"
+    },
+    "esperado": {
+      "valor": 1380,
+      "categoria": "material",
+      "fornecedor": "Silva Materiais de Construção",
+      "data": null,
+      "itens": [
+        {
+          "material": "Porta",
+          "quantidade": 1,
+          "unidade": "un"
+        },
+        {
+          "material": "Janela",
+          "quantidade": 2,
+          "unidade": "un"
+        }
+      ]
+    }
+  },
+  {
+    "id": "voz-ruido-semento-01",
+    "origem": "sintetico",
+    "nota": "Ruído 'semento' = cimento; 'meio saco' = 0.5 sc; dois itens.",
+    "entrada": {
+      "transcricao": "comprei 8 sacos de semento e meio saco de cal no depósito bom preço deu R$ 330"
+    },
+    "esperado": {
+      "valor": 330,
+      "categoria": "material",
+      "fornecedor": "Depósito Bom Preço",
+      "data": null,
+      "itens": [
+        {
+          "material": "Cimento",
+          "quantidade": 8,
+          "unidade": "sc"
+        },
+        {
+          "material": "Cal",
+          "quantidade": 0.5,
+          "unidade": "sc"
+        }
+      ]
+    }
+  },
+  {
+    "id": "voz-ruido-engolida-01",
+    "origem": "sintetico",
+    "nota": "Preposições engolidas pelo barulho ('latas tinta', 'casa do construtor' sem 'na'); valor solto no fim.",
+    "entrada": {
+      "transcricao": "comprei 4 latas tinta casa do construtor 520"
+    },
+    "esperado": {
+      "valor": 520,
+      "categoria": "material",
+      "fornecedor": "Casa do Construtor",
+      "data": null,
+      "itens": [
+        {
+          "material": "Tinta",
+          "quantidade": 4,
+          "unidade": "lt"
+        }
+      ]
+    }
+  },
+  {
+    "id": "voz-ruido-repeticao-01",
+    "origem": "sintetico",
+    "nota": "Repetição e 'em canador' (encanador) partido; o valor repetido é um só: 300, não 600.",
+    "entrada": {
+      "transcricao": "paguei paguei o em canador 300 né 300 reais"
+    },
+    "esperado": {
+      "valor": 300,
+      "categoria": "maoDeObra",
+      "fornecedor": null,
+      "data": null,
+      "itens": []
+    }
+  },
+  {
+    "id": "voz-alternativas-valor-engolido-01",
+    "origem": "sintetico",
+    "nota": "1ª hipótese perdeu o valor no barulho (sobra só o diâmetro 'de 50'); a alternativa traz R$ 150.",
+    "entrada": {
+      "transcricao": "peguei 6 barras de cano de 50 no depósito santa rita deu",
+      "alternativas": [
+        [
+          "peguei 6 barras de cano de 50 no depósito santa rita deu",
+          0.78
+        ],
+        [
+          "peguei 6 barras de cano de 50 no depósito santa rita deu R$ 150",
+          0.61
+        ],
+        [
+          "peguei 6 barras de cano de 50 no depósito santa rita de 150",
+          0.37
+        ]
+      ]
+    },
+    "esperado": {
+      "valor": 150,
+      "categoria": "material",
+      "fornecedor": "Depósito Santa Rita",
+      "data": null,
+      "itens": [
+        {
+          "material": "Cano PVC",
+          "quantidade": 6,
+          "unidade": "br"
+        }
+      ]
+    }
+  },
+  {
+    "id": "voz-alternativas-valor-cortado-01",
+    "origem": "sintetico",
+    "nota": "1ª hipótese cortou 'trezentos' em '3' (diária de R$ 3 é absurda); a alternativa com 300 está certa.",
+    "entrada": {
+      "transcricao": "paguei a diária do pedreiro e do ajudante 3",
+      "alternativas": [
+        [
+          "paguei a diária do pedreiro e do ajudante 3",
+          0.66
+        ],
+        [
+          "paguei a diária do pedreiro e do ajudante 300",
+          0.58
+        ]
+      ]
+    },
+    "esperado": {
+      "valor": 300,
+      "categoria": "maoDeObra",
+      "fornecedor": null,
+      "data": null,
+      "itens": []
+    }
+  },
+  {
+    "id": "voz-alternativas-material-01",
+    "origem": "sintetico",
+    "nota": "1ª hipótese partiu 'verga lhão'; a alternativa (confiança maior) traz vergalhão → Vergalhão de aço 7 br.",
+    "entrada": {
+      "transcricao": "comprei 7 barras de verga lhão na casa do construtor por 315",
+      "alternativas": [
+        [
+          "comprei 7 barras de verga lhão na casa do construtor por 315",
+          0.52
+        ],
+        [
+          "comprei 7 barras de vergalhão na casa do construtor por 315",
+          0.69
+        ]
+      ]
+    },
+    "esperado": {
+      "valor": 315,
+      "categoria": "material",
+      "fornecedor": "Casa do Construtor",
+      "data": null,
+      "itens": [
+        {
+          "material": "Vergalhão de aço",
+          "quantidade": 7,
+          "unidade": "br"
+        }
+      ]
+    }
+  },
+  {
+    "id": "voz-alternativas-valor-cortado-02",
+    "origem": "sintetico",
+    "nota": "1ª hipótese cortou o fim do valor ('duzentos e'); as alternativas dizem 280; caçamba alugada = equipamento.",
+    "entrada": {
+      "transcricao": "paguei o aluguel da caçamba duzentos e",
+      "alternativas": [
+        [
+          "paguei o aluguel da caçamba duzentos e",
+          0.71
+        ],
+        [
+          "paguei o aluguel da caçamba duzentos e oitenta",
+          0.64
+        ],
+        [
+          "paguei o aluguel da caçamba R$ 280",
+          0.55
+        ]
+      ]
+    },
+    "esperado": {
+      "valor": 280,
+      "categoria": "equipamento",
+      "fornecedor": null,
+      "data": null,
+      "itens": []
+    }
+  }
+]
