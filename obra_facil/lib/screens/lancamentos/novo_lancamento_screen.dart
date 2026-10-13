@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:firebase_core/firebase_core.dart' show FirebaseException;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
@@ -22,6 +23,29 @@ class NovoLancamentoScreen extends StatefulWidget {
   final String obraId;
 
   const NovoLancamentoScreen({super.key, required this.obraId});
+
+  /// O erro cru do Firebase ("[cloud_firestore/permission-denied] ...")
+  /// não diz a quem está lançando o que fazer.
+  @visibleForTesting
+  static String mensagemAoSalvar(Object erro) {
+    if (erro is FirebaseException) {
+      switch (erro.code) {
+        case 'permission-denied':
+          return 'Você não tem permissão para lançar nesta obra. '
+              'Fale com o dono da obra.';
+        case 'unavailable':
+        case 'deadline-exceeded':
+          return 'Sem conexão com o servidor agora. Confira a internet e '
+              'tente de novo.';
+      }
+    }
+    if (erro is FileSystemException) {
+      return 'Não consegui anexar a foto da nota. Remova a foto ou tire '
+          'outra e salve de novo.';
+    }
+    return 'Não foi possível salvar o lançamento. Tente de novo em '
+        'instantes.';
+  }
 
   @override
   State<NovoLancamentoScreen> createState() => _NovoLancamentoScreenState();
@@ -96,6 +120,10 @@ class _NovoLancamentoScreenState extends State<NovoLancamentoScreen> {
     try {
       final nota = await _ocr.lerNota(xfile.path);
       if (!mounted) return;
+      // O texto remontado pela posição na foto põe o nome do produto e o
+      // preço da outra coluna na mesma linha, como estão no papel — é
+      // dele que os itens e a conferência na tela saem melhor.
+      final textoLido = nota.textoReconstruido ?? nota.textoCompleto;
       setState(() {
         _fotoNota = File(xfile.path);
         _origem = OrigemLancamento.ocr;
@@ -112,22 +140,15 @@ class _NovoLancamentoScreenState extends State<NovoLancamentoScreen> {
           }
         }
         _cnpjExtraido = nota.cnpj;
-        _textoOcr = nota.textoCompleto.trim().isEmpty
-            ? null
-            : nota.textoCompleto;
-        _itens = ItensParser.deNotaOcr(nota.textoCompleto);
-        _avisoIa = nota.encontrouAlgo
-            ? (nota.passes > 1
-                ? 'A foto estava difícil de ler: recuperei os dados '
-                    'realçando a imagem. Confira campo a campo.'
-                : 'Dados extraídos da nota pelo OCR — confira antes de salvar.')
-            : 'Não consegui ler os dados desta nota (a foto ficou anexada). '
-                'Notas impressas funcionam melhor que manuscritas — tente '
-                'fotografar de frente, com boa luz e sem sombra.';
+        _textoOcr = textoLido.trim().isEmpty ? null : textoLido;
+        _itens = ItensParser.deNotaOcr(textoLido);
+        _avisoIa = OcrNotaService.avisoDaLeitura(nota);
       });
     } catch (e) {
       if (!mounted) return;
-      setState(() => _avisoIa = 'Erro ao ler a nota: $e');
+      // O erro técnico ("PlatformException(...)") não diz a quem está no
+      // canteiro o que fazer; a mensagem diz.
+      setState(() => _avisoIa = OcrNotaService.mensagemDeErro(e));
     } finally {
       if (mounted) setState(() => _processando = false);
     }
@@ -211,7 +232,14 @@ class _NovoLancamentoScreenState extends State<NovoLancamentoScreen> {
 
     try {
       final obra = await db.obra(widget.obraId).first;
-      if (obra == null) throw Exception('Obra não encontrada');
+      if (obra == null) {
+        if (!mounted) return;
+        setState(() => _salvando = false);
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('Esta obra não foi encontrada — ela pode ter sido '
+                'removida. Volte e abra a obra de novo.')));
+        return;
+      }
 
       String? fornecedorId;
       String? fornecedorNome;
@@ -278,8 +306,8 @@ class _NovoLancamentoScreenState extends State<NovoLancamentoScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _salvando = false);
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Não foi possível salvar: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(NovoLancamentoScreen.mensagemAoSalvar(e))));
     }
   }
 
@@ -466,8 +494,7 @@ class _NovoLancamentoScreenState extends State<NovoLancamentoScreen> {
                             style: IconButton.styleFrom(
                                 backgroundColor: Colors.black54),
                             icon: const Icon(Icons.close, size: 18),
-                            onPressed: () =>
-                                setState(() => _fotoNota = null),
+                            onPressed: () => setState(() => _fotoNota = null),
                           ),
                         ),
                       ],
@@ -494,4 +521,3 @@ class _NovoLancamentoScreenState extends State<NovoLancamentoScreen> {
     );
   }
 }
-

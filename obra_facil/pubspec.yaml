@@ -36,6 +36,7 @@ dependencies:
   # IA on-device
   google_mlkit_text_recognition: ^0.14.0 # OCR de notas fiscais (offline)
   google_mlkit_image_labeling: ^0.13.0 # reconhecimento de materiais (offline)
+  google_mlkit_barcode_scanning: ^0.13.0 # QR da NFC-e e código de barras do DANFE (offline)
   speech_to_text: ^7.0.0 # lançamento por voz
 
   # Notificações fora do app

@@ -47,8 +47,30 @@ abstract class Adaptadores {
     };
   }
 
+  /// Nota fiscal: passa ao OCR tudo o que o aparelho teria na mão — o
+  /// texto com a posição de cada linha (quando o caso traz `blocos`) e o
+  /// que o leitor de código de barras leu (`codigos`).
   static Map<String, Object?> ocrNota(Map<String, dynamic> entrada) {
-    final nota = OcrNotaService.parsearTexto(textoOcr(entrada));
+    final codigos = [
+      for (final c in (entrada['codigos'] as List?) ?? const [])
+        CodigoLido(c['formato'] as String, c['valor'] as String),
+    ];
+    final texto = entrada['texto'];
+    final nota = OcrNotaService.interpretar(texto is String
+        ? EntradaOcr.deTexto(texto, codigos: codigos)
+        : EntradaOcr([
+            for (final b in (entrada['blocos'] as List?) ?? const [])
+              BlocoOcr([
+                for (final l in b['linhas'] as List)
+                  LinhaOcr(
+                    l['t'] as String,
+                    (l['l'] as num).toDouble(),
+                    (l['tp'] as num).toDouble(),
+                    (l['r'] as num).toDouble(),
+                    (l['b'] as num).toDouble(),
+                  ),
+              ]),
+          ], codigos: codigos));
     return {
       'fornecedor': nota.fornecedorNome,
       'cnpj': nota.cnpj,

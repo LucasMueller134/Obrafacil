@@ -23,6 +23,7 @@ class _DemoIaScreenState extends State<DemoIaScreen> {
   final _voz = VozService();
 
   NotaFiscalExtraida? _nota;
+  String? _erroNota;
   bool _lendoNota = false;
 
   String _transcricao = '';
@@ -63,10 +64,22 @@ class _DemoIaScreenState extends State<DemoIaScreen> {
         .pickImage(source: origem, imageQuality: 92, maxWidth: 2200);
     if (xfile == null || !mounted) return;
 
-    setState(() => _lendoNota = true);
+    setState(() {
+      _lendoNota = true;
+      _erroNota = null;
+    });
     try {
       final nota = await _ocr.lerNota(xfile.path);
       if (mounted) setState(() => _nota = nota);
+    } catch (e) {
+      // Sem o catch, a falha do leitor sumia em silêncio e o botão só
+      // voltava ao normal; a mensagem diz o que tentar.
+      if (mounted) {
+        setState(() {
+          _nota = null;
+          _erroNota = OcrNotaService.mensagemDeErro(e);
+        });
+      }
     } finally {
       if (mounted) setState(() => _lendoNota = false);
     }
@@ -82,8 +95,8 @@ class _DemoIaScreenState extends State<DemoIaScreen> {
   }
 
   Future<void> _demonstrarVisao() async {
-    final xfile = await ImagePicker()
-        .pickImage(source: ImageSource.camera, imageQuality: 90, maxWidth: 1600);
+    final xfile = await ImagePicker().pickImage(
+        source: ImageSource.camera, imageQuality: 90, maxWidth: 1600);
     if (xfile == null || !mounted) return;
 
     setState(() => _reconhecendo = true);
@@ -124,35 +137,53 @@ class _DemoIaScreenState extends State<DemoIaScreen> {
             botao: 'Ler nota',
             carregando: _lendoNota,
             onPressed: _demonstrarOcr,
-            resultado: _nota == null
-                ? null
-                : Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _Linha('Fornecedor', _nota!.fornecedorNome ?? '—'),
-                      _Linha('CNPJ', _nota!.cnpj ?? '—'),
-                      _Linha(
-                          'Total',
-                          _nota!.valorTotal != null
-                              ? Formatters.moeda(_nota!.valorTotal!)
-                              : '—'),
-                      _Linha(
-                          'Data',
-                          _nota!.data != null
-                              ? Formatters.data(_nota!.data!)
-                              : '—'),
-                      if (!_nota!.encontrouAlgo)
-                        const Padding(
-                          padding: EdgeInsets.only(top: 6),
-                          child: Text(
-                            'Nada reconhecido — tente uma foto mais nítida, '
-                            'bem iluminada e sem inclinação.',
-                            style: TextStyle(
-                                fontSize: 12, color: AppColors.alerta),
-                          ),
-                        ),
-                    ],
-                  ),
+            resultado: _erroNota != null
+                ? Text(
+                    _erroNota!,
+                    style:
+                        const TextStyle(fontSize: 12, color: AppColors.alerta),
+                  )
+                : _nota == null
+                    ? null
+                    : Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _Linha('Fornecedor', _nota!.fornecedorNome ?? '—'),
+                          _Linha(
+                              'CNPJ',
+                              _nota!.cnpj == null
+                                  ? '—'
+                                  : _nota!.cnpjDaChave
+                                      ? '${_nota!.cnpj} (da chave de acesso)'
+                                      : _nota!.cnpj!),
+                          _Linha(
+                              'Total',
+                              _nota!.valorTotal != null
+                                  ? Formatters.moeda(_nota!.valorTotal!)
+                                  : '—'),
+                          _Linha(
+                              'Data',
+                              _nota!.data != null
+                                  ? Formatters.data(_nota!.data!)
+                                  : '—'),
+                          if (_nota!.chaveAcesso != null)
+                            _Linha(
+                                'Chave de acesso',
+                                ChaveAcesso.validar(_nota!.chaveAcesso!)
+                                        ?.formatada ??
+                                    _nota!.chaveAcesso!),
+                          if (!_nota!.encontrouAlgo)
+                            const Padding(
+                              padding: EdgeInsets.only(top: 6),
+                              child: Text(
+                                'Nada reconhecido — tente uma foto mais nítida, '
+                                'bem iluminada e sem inclinação.',
+                                style: TextStyle(
+                                    fontSize: 12, color: AppColors.alerta),
+                              ),
+                            ),
+                        ],
+                      ),
           ),
           const SizedBox(height: 12),
 
@@ -194,8 +225,8 @@ class _DemoIaScreenState extends State<DemoIaScreen> {
                                 ? Formatters.data(_interpretado!.data!)
                                 : '—'),
                         _Linha('Categoria', _interpretado!.categoria.label),
-                        _Linha('Fornecedor',
-                            _interpretado!.fornecedorNome ?? '—'),
+                        _Linha(
+                            'Fornecedor', _interpretado!.fornecedorNome ?? '—'),
                         if (_interpretado!.itens.isNotEmpty)
                           _Linha(
                               'Materiais',
@@ -222,24 +253,21 @@ class _DemoIaScreenState extends State<DemoIaScreen> {
                 : _materiais!.isEmpty
                     ? const Text(
                         'Nenhum material de construção reconhecido nesta foto.',
-                        style:
-                            TextStyle(fontSize: 12, color: AppColors.alerta),
+                        style: TextStyle(fontSize: 12, color: AppColors.alerta),
                       )
                     : Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           for (final m in _materiais!)
                             Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(vertical: 3),
+                              padding: const EdgeInsets.symmetric(vertical: 3),
                               child: Row(
                                 children: [
                                   Expanded(child: Text(m.material)),
                                   SizedBox(
                                     width: 90,
                                     child: ClipRRect(
-                                      borderRadius:
-                                          BorderRadius.circular(4),
+                                      borderRadius: BorderRadius.circular(4),
                                       child: LinearProgressIndicator(
                                         value: m.confianca,
                                         minHeight: 8,
@@ -374,8 +402,8 @@ class _Linha extends StatelessWidget {
           ),
           Expanded(
             child: Text(valor,
-                style: const TextStyle(
-                    fontSize: 13, fontWeight: FontWeight.w600)),
+                style:
+                    const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
           ),
         ],
       ),
