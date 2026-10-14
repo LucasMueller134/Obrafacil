@@ -436,7 +436,7 @@
   },
   "ocr_notas": {
     "casos": 18,
-    "casos_perfeitos": 11,
+    "casos_perfeitos": 12,
     "campos": {
       "fornecedor": {
         "avaliados": 17,
@@ -456,11 +456,11 @@
       },
       "total": {
         "avaliados": 18,
-        "acertos": 14,
-        "errados": 4,
+        "acertos": 15,
+        "errados": 3,
         "omitidos": 0,
         "inventados": 0,
-        "acuracia": 0.7778
+        "acuracia": 0.8333
       },
       "data": {
         "avaliados": 18,
@@ -474,7 +474,7 @@
     "por_particao": {
       "dev": {
         "casos": 6,
-        "casos_perfeitos": 4,
+        "casos_perfeitos": 5,
         "campos": {
           "fornecedor": {
             "avaliados": 6,
@@ -494,11 +494,11 @@
           },
           "total": {
             "avaliados": 6,
-            "acertos": 4,
-            "errados": 2,
+            "acertos": 5,
+            "errados": 1,
             "omitidos": 0,
             "inventados": 0,
-            "acuracia": 0.6667
+            "acuracia": 0.8333
           },
           "data": {
             "avaliados": 6,
@@ -556,13 +556,6 @@
         "campo": "total",
         "esperado": 2480,
         "obtido": 100.0
-      },
-      {
-        "id": "ocr-danfe-blocos-cnpj-ocr-errado-01",
-        "particao": "dev",
-        "campo": "total",
-        "esperado": 4860,
-        "obtido": 4620.0
       },
       {
         "id": "ocr-cupom-deposito-sao-jose-01",

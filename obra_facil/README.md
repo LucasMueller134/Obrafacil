@@ -20,7 +20,7 @@ custo**. A visão geral do projeto está no [README da raiz](../README.md).
 | Diário por voz | `lib/services/ia/diario_voz_service.dart` | Mesmo reconhecedor + clima, equipe, fase e data |
 | Foto do canteiro | `lib/services/ia/diario_foto_service.dart` | Classificador do ML Kit + análise de cor + modelo próprio opcional |
 | Material pela câmera | `lib/services/ia/material_vision_service.dart` | Classificador do ML Kit + texto da embalagem |
-| Mudança visual entre fotos | `lib/services/ia/progresso_foto_service.dart` | Comparação de imagens (luz equalizada + bordas) |
+| Mudança visual entre fotos | `lib/services/ia/progresso_foto_service.dart` | Comparação de imagens (luz normalizada + bordas) |
 | Previsões e relatório | `lib/services/ia/previsao_*.dart`, `relatorio_semanal_service.dart`, `perguntas_obra_service.dart` | Regressão e regras em Dart puro |
 
 **Nenhuma chave de API.** O app não usa serviço de IA na nuvem: a única

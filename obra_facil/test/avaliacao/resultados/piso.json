@@ -1,0 +1,29 @@
+{
+  "voz_lancamento": {
+    "valor": 0.913,
+    "categoria": 0.9783,
+    "fornecedor": 0.913,
+    "data": 0.9783,
+    "itens": 1.0
+  },
+  "voz_diario": {
+    "clima": 0.9,
+    "pessoas": 0.871,
+    "fase": 0.7931,
+    "data": 0.9
+  },
+  "ocr_notas": {
+    "fornecedor": 0.8235,
+    "cnpj": 0.9444,
+    "total": 0.8333,
+    "data": 0.9444
+  },
+  "foto_diario": {
+    "fase": 0.7083,
+    "materiais": 0.9,
+    "clima": 1.0
+  },
+  "material": {
+    "material": 1.0
+  }
+}

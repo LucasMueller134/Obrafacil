@@ -9,14 +9,14 @@ nuvem, sem custo e sem chave de API.
 | | Antes | Depois |
 |---|---|---|
 | Valor do gasto entendido pela voz | 57% | **91%** |
-| Total da nota fiscal | 39% | **78%** |
+| Total da nota fiscal | 39% | **83%** |
 | CNPJ da nota | 72% | **94%** |
 | Material reconhecido pela câmera | 57% | **100%** |
 | Fase da obra pelo relato falado | 66% | **79%** |
 | Equipe (nº de pessoas) pelo relato falado | 65% | **87%** |
 | Fase da obra pela foto | 50% | **71%** (50% → 50% na metade reservada) |
 
-Medido em 133 casos (seção 5). Custo mensal: **R$ 0**.
+Medido em 133 casos (seção 6). Defeitos achados numa revisão adversarial: 27, todos corrigidos (seção 5). Custo mensal: **R$ 0**.
 
 ## 2. O que estava errado
 
@@ -131,14 +131,41 @@ avaliação conta separadamente "errado" e "omitido".
   estrutura.
 - Monte de areia sem obra não sugere fase.
 - Material: o texto da embalagem entra como evidência forte.
-- Suporte a modelo próprio treinado com as fotos da obra (seção 9).
+- Suporte a modelo próprio treinado com as fotos da obra (seção 10).
 
-**Mudança visual entre fotos.** A luz é equalizada e as bordas são
-comparadas; os textos não prometem mais "avanço real".
+**Mudança visual entre fotos.** A imagem é reduzida por média de área,
+a luz é normalizada com ganho limitado (para não amplificar o ruído da
+câmera) e as bordas são comparadas com um gradiente mínimo. Mesma parede
+fotografada de novo: 0% de mudança; parede nova: 18%; reboco sobre
+tijolo: 71%. Os textos não prometem mais "avanço real".
 
 **Erros.** Mensagens que dizem o que fazer, sem texto técnico.
 
-## 5. Como foi medido
+## 5. Revisão adversarial
+
+Depois da implementação, quatro revisores independentes (voz, OCR, visão
+e um transversal: build, privacidade, documentação e script de treino)
+procuraram defeitos no código novo. Só valia achado confirmado por um
+teste que falhava ou por um caminho concreto até a falha.
+
+- **27 defeitos confirmados:** 9 de severidade alta, 12 média e 6 baixa.
+  Exemplos:
+  - "pra obra 2" somava R$ 2 ao valor;
+  - "a 80 o cento" virava 100;
+  - "35 e 50" era somado em vez de virar R$ 35,50;
+  - "TOTAL (3 ITENS) R$ 350,00" saía como R$ 3,00;
+  - o CNPJ do cliente podia virar o do fornecedor;
+  - porta de madeira virava forma de laje;
+  - o modelo treinado com só algumas fases forçava uma delas em qualquer
+    foto.
+- **Todos corrigidos.** Cada um tem teste permanente em
+  `obra_facil/test/revisao_*_test.dart` e nos testes de cada módulo.
+- **Mais um defeito antigo:** um número absurdo de longo, lixo do OCR,
+  derrubava a leitura da nota. Também corrigido.
+- **Situação final:** 611 testes Flutter e 6 testes do script de treino
+  passando; analisador sem nenhum aviso.
+
+## 6. Como foi medido
 
 - **Conjunto:** 133 casos em `obra_facil/test/avaliacao/casos/`
   - 46 lançamentos por voz
@@ -167,7 +194,7 @@ comparadas; os textos não prometem mais "avanço real".
   Com `AVALIACAO_SALVAR=<rótulo>`, o resultado é gravado em
   `resultados/<rótulo>.json`.
 
-## 6. Resultados antes × depois
+## 7. Resultados antes × depois
 
 <!-- tabela gerada a partir de resultados/antes.json e resultados/depois.json -->
 | Módulo | Campo | Antes | Depois | Antes (teste) | Depois (teste) | Errado antes → depois |
@@ -183,7 +210,7 @@ comparadas; os textos não prometem mais "avanço real".
 | Voz → diário | data | 85% | **90%** | 80% | 80% | 1 → 1 |
 | Nota fiscal (OCR) | fornecedor | 71% | **82%** | 73% | 73% | 4 → 1 |
 | Nota fiscal (OCR) | cnpj | 72% | **94%** | 67% | 92% | 3 → 0 |
-| Nota fiscal (OCR) | total | 39% | **78%** | 42% | 83% | 11 → 4 |
+| Nota fiscal (OCR) | total | 39% | **83%** | 42% | 83% | 11 → 3 |
 | Nota fiscal (OCR) | data | 89% | **94%** | 92% | 92% | 1 → 1 |
 | Foto do canteiro | fase | 50% | **71%** | 50% | 50% | 9 → 3 |
 | Foto do canteiro | materiais | 75% | **90%** | 73% | 82% | 5 → 2 |
@@ -194,7 +221,7 @@ comparadas; os textos não prometem mais "avanço real".
 |---|---|---|---|
 | Voz → lançamento | 46 | 16 (35%) | **37 (80%)** |
 | Voz → diário | 31 | 13 (42%) | **19 (61%)** |
-| Nota fiscal (OCR) | 18 | 3 (17%) | **11 (61%)** |
+| Nota fiscal (OCR) | 18 | 3 (17%) | **12 (67%)** |
 | Foto do canteiro | 24 | 11 (46%) | **17 (71%)** |
 | Material pela câmera | 14 | 8 (57%) | **14 (100%)** |
 
@@ -205,9 +232,9 @@ comparadas; os textos não prometem mais "avanço real".
   metade reservada. Lá, a mudança foi de segurança: fase errada preenchida
   caiu de 5 para 3, e fase deixada em branco subiu de 2 para 4.
 - **Conclusão:** regras em cima de um classificador genérico não
-  generalizam para a fase da obra. O caminho é o modelo próprio (seção 9).
+  generalizam para a fase da obra. O caminho é o modelo próprio (seção 10).
 
-## 7. Limitações e ameaças à validade
+## 8. Limitações e ameaças à validade
 
 - **Casos sintéticos.** Imitam a saída real, mas não substituem fotos e
   áudios do canteiro. Cada erro real deve virar um caso `"origem": "real"`
@@ -224,8 +251,10 @@ comparadas; os textos não prometem mais "avanço real".
   naquela gravação.
 - **Treino do modelo próprio não executado aqui.** O script foi validado
   até o download do modelo base, que é bloqueado na rede deste ambiente.
+  Os 6 testes do script (`python -m unittest discover -s
+  ferramentas/treinar_modelo -p "test_*.py"`) não fazem parte do CI.
 
-## 8. Custos e configuração
+## 9. Custos e configuração
 
 - **Custo mensal: R$ 0.** Nenhuma chamada a serviço pago; tudo roda no
   celular. A única saída de dados possível é opcional: sem o pacote de voz
@@ -248,10 +277,11 @@ comparadas; os textos não prometem mais "avanço real".
   - guardar o nome do modelo e os limites no Remote Config;
   - nada de chave no código.
 
-## 9. Próximos passos recomendados
+## 10. Próximos passos recomendados
 
 1. **Treinar o modelo próprio de fases** com 100 a 200 fotos por fase, de
-   pelo menos 3 obras (`docs/ia/treinar-modelo.md`). É o único caminho que
+   pelo menos 3 obras, mais a pasta `outros` (obrigatória: sem ela o modelo
+   força uma fase em qualquer foto) — ver `docs/ia/treinar-modelo.md`. É o único caminho que
    resolve a fase pela foto no aparelho. Medir com o mesmo conjunto, com as
    fotos reais como casos `"real"`.
 2. **Coletar casos reais.** Cada erro no canteiro, entre transcrição, texto
@@ -265,7 +295,7 @@ comparadas; os textos não prometem mais "avanço real".
    PR separado e testado no aparelho. Não era necessário para a IA
    on-device e mexe no app inteiro.
 
-## 10. Trechos para o texto do TCC
+## 11. Trechos para o texto do TCC
 
 > **Justificativa da IA embarcada.** Optou-se por executar toda a
 > inferência no próprio dispositivo (Google ML Kit e o reconhecedor de voz
@@ -301,7 +331,7 @@ comparadas; os textos não prometem mais "avanço real".
 > distinguindo valores errados preenchidos de campos omitidos.
 
 > **Resultados.** A revisão elevou a acurácia do valor interpretado da fala
-> de 57% para 91%, do total da nota fiscal de 39% para 78% e do material
+> de 57% para 91%, do total da nota fiscal de 39% para 83% e do material
 > reconhecido pela câmera de 57% para 100%. Na fase da obra pela foto, a
 > acurácia na metade reservada não se alterou (50%), embora os
 > preenchimentos errados tenham caído. Esse resultado indica o limite das

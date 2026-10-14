@@ -77,7 +77,7 @@ O diferencial central do ObraFácil é rodar inteligência **dentro do próprio 
 | 3 | Diário de obra por voz | **Reconhecedor do Android (offline) + parser pt-BR** | Transforma o relato do dia em clima, tamanho da equipe, fase e data |
 | 4 | Leitura da foto do canteiro | **Google ML Kit** + análise de cor + modelo próprio opcional | Sugere fase, material aparente e clima; só preenche a fase quando a evidência sustenta |
 | 5 | Material pela câmera | **Google ML Kit** (imagem + texto da embalagem) | Identifica o material pela foto e pelo que está escrito no saco, lata ou caixa |
-| 6 | Mudança visual entre fotos | Comparação de imagens (luz equalizada + bordas) | Mede quanto a cena mudou entre duas fotos do mesmo ponto |
+| 6 | Mudança visual entre fotos | Comparação de imagens (luz normalizada + bordas) | Mede quanto a cena mudou entre duas fotos do mesmo ponto |
 | 7 | Previsão de estouro e de estoque | Regressão em Dart puro | Antecipa quando o orçamento vai estourar e quando o material acaba |
 | 8 | Relatório semanal e assistente | Regras em Dart puro | Resume a semana e responde perguntas sobre a obra |
 

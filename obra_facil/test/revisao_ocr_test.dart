@@ -296,4 +296,9 @@ void main() {
       expect(chamadas, isEmpty);
     });
   });
+  test('número absurdo de longo lido pelo OCR não derruba a leitura', () {
+    final nota = OcrNotaService.parsearTexto(
+        'DEPOSITO SAO JOSE LTDA\nTOTAL ${'9' * 400},00\nVALOR A PAGAR R\$ 350,00');
+    expect(nota.valorTotal, 350);
+  });
 }

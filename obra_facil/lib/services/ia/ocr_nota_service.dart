@@ -1345,13 +1345,17 @@ class OcrNotaService {
       }
     }
 
-    double milhar(String s) => double.parse(s.replaceAll(RegExp('[.,]'), ''));
-    coletar(_regexValor, _Valor.virgula,
-        (m) => double.parse('${milhar(m.group(1)!).toInt()}.${m.group(2)}'));
-    coletar(_regexValorMilharVirgula, _Valor.virgula,
-        (m) => double.parse('${milhar(m.group(1)!).toInt()}.${m.group(2)}'));
-    coletar(_regexValorPontoMilhar, _Valor.ponto,
-        (m) => double.parse('${milhar(m.group(1)!).toInt()}.${m.group(2)}'));
+    String digitos(String s) => s.replaceAll(RegExp('[.,]'), '');
+    double milhar(String s) => double.parse(digitos(s));
+    // O decimal é montado direto dos dígitos: passar por double e voltar
+    // com toInt() quebrava num número absurdo de longo (lixo do OCR), que
+    // vira infinito — aqui ele vira infinito e o filtro de plausível o
+    // descarta.
+    double comCentavos(RegExpMatch m) =>
+        double.parse('${digitos(m.group(1)!)}.${m.group(2)}');
+    coletar(_regexValor, _Valor.virgula, comCentavos);
+    coletar(_regexValorMilharVirgula, _Valor.virgula, comCentavos);
+    coletar(_regexValorPontoMilhar, _Valor.ponto, comCentavos);
     coletar(_regexValorPonto, _Valor.ponto,
         (m) => double.parse('${m.group(1)}.${m.group(2)}'));
     coletar(_regexValorInteiroComRs, _Valor.inteiroComRs,
