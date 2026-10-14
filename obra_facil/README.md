@@ -23,7 +23,10 @@ custo**. A visão geral do projeto está no [README da raiz](../README.md).
 | Mudança visual entre fotos | `lib/services/ia/progresso_foto_service.dart` | Comparação de imagens (luz equalizada + bordas) |
 | Previsões e relatório | `lib/services/ia/previsao_*.dart`, `relatorio_semanal_service.dart`, `perguntas_obra_service.dart` | Regressão e regras em Dart puro |
 
-**Nenhuma chave de API.** O app não chama serviço de IA na nuvem. O único
+**Nenhuma chave de API.** O app não usa serviço de IA na nuvem: a única
+exceção é opcional e explícita — quando falta o pacote de voz offline, a
+pessoa pode escolher o reconhecimento online do Google para uma gravação, e
+a tela avisa que o áudio vai para o Google. O único
 arquivo de configuração externa é `lib/firebase_options.dart`, gerado pelo
 `flutterfire configure`; a chave que aparece nele identifica o projeto
 Firebase e não é segredo — quem protege os dados são as regras de

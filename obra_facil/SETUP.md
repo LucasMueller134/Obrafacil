@@ -99,11 +99,12 @@ lib/
   Storage é transparente.
 - **IA 100% on-device**: ML Kit (modelos TFLite embarcados) para OCR,
   código de barras e visão; reconhecedor de voz do Android em modo
-  offline; regressão e geração de relatório em Dart puro. Nada sai do
-  aparelho e tudo funciona sem internet. Para a voz offline, o celular
-  precisa do pacote de reconhecimento de português baixado (o app explica
-  como e permite usar o reconhecimento online numa gravação, se a pessoa
-  escolher). Acerto de cada IA, medido antes e depois:
+  offline; regressão e geração de relatório em Dart puro. Por padrão
+  nada sai do aparelho e tudo funciona sem internet. Para a voz offline, o
+  celular precisa do pacote de reconhecimento de português baixado; sem
+  ele, o app explica como baixar e oferece o reconhecimento online do
+  Google só para aquela gravação — e só se a pessoa escolher (a tela avisa
+  que, nesse caso, o áudio vai para o Google). Acerto de cada IA, medido antes e depois:
   [docs/ia/RELATORIO-IA.md](../docs/ia/RELATORIO-IA.md).
 - **Fluxo de aprovação**: lançamento de mestre nasce `pendente`; do dono
   nasce `aprovado`. Só entra nos gráficos e na previsão o que foi aprovado.

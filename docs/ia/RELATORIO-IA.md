@@ -228,7 +228,9 @@ comparadas; os textos não prometem mais "avanço real".
 ## 8. Custos e configuração
 
 - **Custo mensal: R$ 0.** Nenhuma chamada a serviço pago; tudo roda no
-  celular.
+  celular. A única saída de dados possível é opcional: sem o pacote de voz
+  offline, a pessoa pode escolher o reconhecimento online do Google numa
+  gravação (gratuito, e a tela avisa que o áudio vai para o Google).
 - **Chaves e variáveis de ambiente: nenhuma.**
   - O app não usa chave de API de IA.
   - `lib/firebase_options.dart` (gerado pelo `flutterfire configure`)
@@ -267,7 +269,9 @@ comparadas; os textos não prometem mais "avanço real".
 
 > **Justificativa da IA embarcada.** Optou-se por executar toda a
 > inferência no próprio dispositivo (Google ML Kit e o reconhecedor de voz
-> do Android em modo offline), sem serviços de nuvem. A escolha atende a
+> do Android em modo offline), sem serviços de nuvem por padrão — o
+> reconhecimento online do Google só é usado se o usuário o escolher numa
+> gravação, quando falta o pacote de voz offline. A escolha atende a
 > três requisitos do contexto de obra: funcionamento sem conectividade no
 > canteiro, custo operacional nulo para o pequeno construtor e minimização
 > do tráfego de dados pessoais (imagens e voz de trabalhadores), em linha
