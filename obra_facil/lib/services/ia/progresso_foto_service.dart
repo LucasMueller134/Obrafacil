@@ -5,32 +5,68 @@ import 'dart:typed_data';
 import 'package:image/image.dart' as img;
 
 class ComparacaoFotos {
-  /// 0 a 1 — quanto a cena mudou entre as duas fotos.
+  /// 0 a 1 — quanto a cena mudou entre as duas fotos, já descontada a
+  /// diferença de luz.
   final double indiceMudanca;
 
-  const ComparacaoFotos({required this.indiceMudanca});
+  /// 0 a 1 — quanto o brilho médio das duas fotos difere. Não entra no
+  /// índice; serve para avisar que a comparação foi feita com luz
+  /// diferente.
+  final double diferencaDeLuz;
 
+  const ComparacaoFotos({
+    required this.indiceMudanca,
+    this.diferencaDeLuz = 0,
+  });
+
+  /// As fotos foram tiradas com luz bem diferente (outro horário, sol e
+  /// sombra, flash). A comparação desconta isso, mas mede melhor com a
+  /// mesma luz.
+  bool get luzMuitoDiferente => diferencaDeLuz >= 0.20;
+
+  /// O índice mede mudança visual — formas, bordas, o que apareceu ou
+  /// sumiu da cena —, não o avanço da obra: entulho removido muda a foto
+  /// tanto quanto uma parede levantada. Por isso o texto fala da cena, e
+  /// nunca promete progresso.
   String get interpretacao {
     if (indiceMudanca < 0.10) {
-      return 'Quase nenhuma mudança visível entre as fotos.';
+      return 'Quase nenhuma mudança visual entre as fotos.';
     }
     if (indiceMudanca < 0.30) {
-      return 'Mudança leve — avanço pontual na cena.';
+      return 'Mudança visual leve — algo mudou em parte da cena.';
     }
     if (indiceMudanca < 0.55) {
-      return 'Mudança moderada — a obra avançou de forma perceptível.';
+      return 'Mudança visual moderada — a cena mudou de forma perceptível.';
     }
-    return 'Mudança grande — avanço significativo (ou ângulo de foto muito diferente).';
+    return 'Mudança visual grande — a cena mudou bastante (ou as fotos '
+        'foram tiradas de pontos diferentes).';
   }
 }
 
-/// IA on-device nº 4 — estimativa de progresso por foto (experimental).
+/// IA on-device nº 4 — comparação visual entre duas fotos (experimental).
 ///
-/// Compara duas fotos do mesmo ponto da obra combinando diferença de
-/// histograma de luminância (mudança global da cena) com diferença
-/// pixel a pixel em baixa resolução (mudança estrutural). O cálculo
-/// roda num isolate para não travar a interface.
+/// Compara duas fotos do mesmo ponto da obra pela estrutura da cena, e não
+/// pelo brilho: a diferença pixel a pixel crua confundia luz com obra (a
+/// mesma parede de manhã e à tarde dava "mudança grande"). Agora as duas
+/// fotos têm o histograma de luminância equalizado antes da conta — o que
+/// tira a diferença de exposição — e o índice soma a diferença das
+/// imagens equalizadas com a das bordas, que são as formas da cena: parede
+/// nova, laje, telhado. O cálculo roda num isolate para não travar a
+/// interface.
 class ProgressoFotoService {
+  /// Lado da imagem reduzida: o bastante para ver paredes e vãos, pouco
+  /// para que ruído de câmera e folha balançando não contem como mudança.
+  static const int _lado = 64;
+
+  /// Fração dos pixels de borda mais forte que entra no mapa de bordas.
+  /// O corte é relativo (os 12% mais fortes de cada foto), então uma foto
+  /// com menos contraste tem as mesmas bordas que a outra.
+  static const double _fracaoDeBorda = 0.12;
+
+  /// Diferença média esperada entre duas imagens equalizadas sem relação
+  /// nenhuma (duas variáveis uniformes): é o que vale 100% de mudança.
+  static const double _difEqualizadaMaxima = 1 / 3;
+
   static Future<ComparacaoFotos> comparar(
       String caminhoAntes, String caminhoDepois) async {
     final bytesAntes = await File(caminhoAntes).readAsBytes();
@@ -38,66 +74,165 @@ class ProgressoFotoService {
     return compararBytes(bytesAntes, bytesDepois);
   }
 
+  /// Lança [FormatException] se uma das fotos não puder ser lida: devolver
+  /// "nenhuma mudança" para uma foto corrompida seria uma resposta errada
+  /// com cara de certa.
   static Future<ComparacaoFotos> compararBytes(
-      Uint8List bytesAntes, Uint8List bytesDepois) async {
-    final indice = await Isolate.run(
-        () => _calcularIndice(bytesAntes, bytesDepois));
-    return ComparacaoFotos(indiceMudanca: indice);
-  }
-
-  static double _calcularIndice(
       Uint8List bytesAntes, Uint8List bytesDepois) {
-    final antes = _preparar(bytesAntes);
-    final depois = _preparar(bytesDepois);
-    if (antes == null || depois == null) return 0;
-
-    final difHistograma = _diferencaHistograma(antes, depois);
-    final difPixels = _diferencaPixels(antes, depois);
-
-    // Pesos empíricos: a diferença estrutural (pixels) importa mais que a
-    // variação global de iluminação (histograma).
-    return (0.35 * difHistograma + 0.65 * difPixels).clamp(0.0, 1.0);
+    return Isolate.run(() => _comparar(bytesAntes, bytesDepois));
   }
 
-  /// Reduz para 64x64 em tons de cinza — barato e suficiente para comparar.
-  static img.Image? _preparar(Uint8List bytes) {
-    final decodificada = img.decodeImage(bytes);
-    if (decodificada == null) return null;
-    return img.grayscale(
-      img.copyResize(decodificada, width: 64, height: 64),
-    );
+  static ComparacaoFotos _comparar(
+      Uint8List bytesAntes, Uint8List bytesDepois) {
+    final antes = _luminancia(bytesAntes);
+    final depois = _luminancia(bytesDepois);
+
+    final luz = (_media(antes) - _media(depois)).abs() / 255;
+
+    final eqAntes = _suavizar(_equalizar(antes));
+    final eqDepois = _suavizar(_equalizar(depois));
+
+    final difImagem =
+        (_diferencaMedia(eqAntes, eqDepois) / 255 / _difEqualizadaMaxima)
+            .clamp(0.0, 1.0);
+    final difBordas = _diferencaDeBordas(_bordas(eqAntes), _bordas(eqDepois));
+
+    // As bordas pesam mais: são a estrutura da cena. A diferença das
+    // imagens equalizadas pega o que bordas não mostram — uma superfície
+    // grande que mudou de tom, como o reboco sobre o tijolo.
+    final indice = (0.4 * difImagem + 0.6 * difBordas).clamp(0.0, 1.0);
+    return ComparacaoFotos(indiceMudanca: indice, diferencaDeLuz: luz);
   }
 
-  static double _diferencaHistograma(img.Image a, img.Image b) {
-    const bins = 32;
-    final histA = _histograma(a, bins);
-    final histB = _histograma(b, bins);
-    var soma = 0.0;
-    for (var i = 0; i < bins; i++) {
-      soma += (histA[i] - histB[i]).abs();
+  /// Decodifica e reduz para [_lado]x[_lado] em tons de cinza (0 a 255).
+  static List<int> _luminancia(Uint8List bytes) {
+    img.Image? decodificada;
+    try {
+      decodificada = img.decodeImage(bytes);
+    } catch (_) {
+      // Bytes truncados fazem o decodificador estourar em vez de devolver
+      // null: para quem chama, é a mesma foto ilegível.
+      decodificada = null;
     }
-    return (soma / 2).clamp(0.0, 1.0); // distância L1 normalizada
-  }
-
-  static List<double> _histograma(img.Image imagem, int bins) {
-    final hist = List<double>.filled(bins, 0);
-    for (final pixel in imagem) {
-      final lum = pixel.r.toInt(); // já está em cinza (r == g == b)
-      hist[(lum * bins) ~/ 256] += 1;
+    if (decodificada == null) {
+      throw const FormatException('Foto em formato que não dá para ler.');
     }
-    final total = imagem.width * imagem.height;
-    return hist.map((v) => v / total).toList();
+    final pequena = img.copyResize(decodificada, width: _lado, height: _lado);
+    return [
+      for (final pixel in pequena)
+        (0.299 * pixel.r + 0.587 * pixel.g + 0.114 * pixel.b).round(),
+    ];
   }
 
-  static double _diferencaPixels(img.Image a, img.Image b) {
-    var soma = 0.0;
-    for (var y = 0; y < a.height; y++) {
-      for (var x = 0; x < a.width; x++) {
-        final la = a.getPixel(x, y).r;
-        final lb = b.getPixel(x, y).r;
-        soma += (la - lb).abs() / 255.0;
+  static double _media(List<int> valores) =>
+      valores.fold<int>(0, (a, b) => a + b) / valores.length;
+
+  /// Equalização de histograma: cada tom vira a sua posição na ordem de
+  /// brilho da própria foto. A mesma cena mais escura ou mais clara
+  /// (contanto que a ordem dos tons não mude) dá a mesma imagem.
+  static List<int> _equalizar(List<int> valores) {
+    final histograma = List<int>.filled(256, 0);
+    for (final v in valores) {
+      histograma[v.clamp(0, 255)]++;
+    }
+    final acumulado = List<int>.filled(256, 0);
+    var soma = 0;
+    for (var i = 0; i < 256; i++) {
+      soma += histograma[i];
+      acumulado[i] = soma;
+    }
+    final minimo = acumulado.firstWhere((c) => c > 0);
+    final total = valores.length;
+    // Foto de um tom só (tampa da lente, tela preta): não há o que
+    // equalizar.
+    if (total == minimo) return List<int>.filled(total, 128);
+    return [
+      for (final v in valores)
+        ((acumulado[v.clamp(0, 255)] - minimo) * 255 / (total - minimo))
+            .round(),
+    ];
+  }
+
+  /// Média 3x3: tira o ruído de pixel que viraria borda falsa.
+  static List<int> _suavizar(List<int> v) {
+    final saida = List<int>.filled(v.length, 0);
+    for (var y = 0; y < _lado; y++) {
+      for (var x = 0; x < _lado; x++) {
+        var soma = 0, n = 0;
+        for (var dy = -1; dy <= 1; dy++) {
+          for (var dx = -1; dx <= 1; dx++) {
+            final yy = y + dy, xx = x + dx;
+            if (yy < 0 || yy >= _lado || xx < 0 || xx >= _lado) continue;
+            soma += v[yy * _lado + xx];
+            n++;
+          }
+        }
+        saida[y * _lado + x] = soma ~/ n;
       }
     }
-    return (soma / (a.width * a.height)).clamp(0.0, 1.0);
+    return saida;
+  }
+
+  static double _diferencaMedia(List<int> a, List<int> b) {
+    var soma = 0;
+    for (var i = 0; i < a.length; i++) {
+      soma += (a[i] - b[i]).abs();
+    }
+    return soma / a.length;
+  }
+
+  /// Mapa de bordas: gradiente de Sobel, ficando só com os
+  /// [_fracaoDeBorda] pixels de gradiente mais forte da foto.
+  static List<bool> _bordas(List<int> v) {
+    final magnitude = List<int>.filled(v.length, 0);
+    int p(int x, int y) => v[y * _lado + x];
+    for (var y = 1; y < _lado - 1; y++) {
+      for (var x = 1; x < _lado - 1; x++) {
+        final gx = (p(x + 1, y - 1) + 2 * p(x + 1, y) + p(x + 1, y + 1)) -
+            (p(x - 1, y - 1) + 2 * p(x - 1, y) + p(x - 1, y + 1));
+        final gy = (p(x - 1, y + 1) + 2 * p(x, y + 1) + p(x + 1, y + 1)) -
+            (p(x - 1, y - 1) + 2 * p(x, y - 1) + p(x + 1, y - 1));
+        magnitude[y * _lado + x] = gx.abs() + gy.abs();
+      }
+    }
+    final ordenadas = [...magnitude]..sort();
+    final corte =
+        ordenadas[((1 - _fracaoDeBorda) * (ordenadas.length - 1)).round()];
+    // Foto lisa, sem borda nenhuma: só conta o que tiver algum gradiente.
+    return [
+      for (final m in magnitude) corte == 0 ? m > 0 : m >= corte && m > 0,
+    ];
+  }
+
+  /// Fração das bordas de uma foto que não têm borda correspondente na
+  /// outra. "Correspondente" aceita um pixel de folga em cruz: a mão que
+  /// segura o celular nunca volta exatamente ao mesmo lugar.
+  static double _diferencaDeBordas(List<bool> a, List<bool> b) {
+    var semPar = 0, total = 0;
+    bool temVizinha(List<bool> mapa, int x, int y) {
+      for (final (dx, dy) in const [(0, 0), (1, 0), (-1, 0), (0, 1), (0, -1)]) {
+        final xx = x + dx, yy = y + dy;
+        if (xx < 0 || xx >= _lado || yy < 0 || yy >= _lado) continue;
+        if (mapa[yy * _lado + xx]) return true;
+      }
+      return false;
+    }
+
+    for (var y = 0; y < _lado; y++) {
+      for (var x = 0; x < _lado; x++) {
+        final i = y * _lado + x;
+        if (a[i]) {
+          total++;
+          if (!temVizinha(b, x, y)) semPar++;
+        }
+        if (b[i]) {
+          total++;
+          if (!temVizinha(a, x, y)) semPar++;
+        }
+      }
+    }
+    // Nenhuma borda nas duas: duas fotos lisas e iguais.
+    if (total == 0) return 0;
+    return semPar / total;
   }
 }

@@ -1,0 +1,2 @@
+# Versão com que treinar.py foi escrito e conferido (Python 3.10 ou 3.11).
+mediapipe-model-maker==0.2.1.4

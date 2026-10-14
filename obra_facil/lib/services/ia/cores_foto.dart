@@ -14,6 +14,14 @@ class PaletaObra {
   /// Marrom/ocre: barranco, aterro, solo do canteiro.
   final double terra;
 
+  /// Marrom-amarelado claro: tábua, pontalete, compensado de forma.
+  ///
+  /// Fica separado da terra porque os dois querem dizer etapas opostas da
+  /// obra: barranco é fundação, forma de madeira sobre a laje é estrutura.
+  /// Quando os dois somavam no mesmo campo, a laje vista de cima virava
+  /// "Fundação".
+  final double madeira;
+
   /// Vermelho de cerâmica: tijolo, telha, bloco cerâmico.
   final double tijolo;
 
@@ -34,6 +42,7 @@ class PaletaObra {
 
   const PaletaObra({
     this.terra = 0,
+    this.madeira = 0,
     this.tijolo = 0,
     this.concreto = 0,
     this.claro = 0,
@@ -41,6 +50,20 @@ class PaletaObra {
     this.ceuAzul = 0,
     this.ceuCinza = 0,
   });
+
+  /// A cor da foto foi de fato medida. Sem isso (análise falhou, ou o teste
+  /// não passou paleta) "zero de cinza" não quer dizer "foto sem cinza", e
+  /// nenhuma regra pode concluir nada pela falta de uma cor.
+  bool get medida =>
+      terra +
+          madeira +
+          tijolo +
+          concreto +
+          claro +
+          vegetacao +
+          ceuAzul +
+          ceuCinza >
+      0;
 
   /// Clima provável pelo céu, ou null quando não há céu suficiente na foto
   /// (foto de detalhe, ambiente interno).
@@ -51,6 +74,7 @@ class PaletaObra {
 
   @override
   String toString() => 'PaletaObra(terra: ${terra.toStringAsFixed(2)}, '
+      'madeira: ${madeira.toStringAsFixed(2)}, '
       'tijolo: ${tijolo.toStringAsFixed(2)}, '
       'concreto: ${concreto.toStringAsFixed(2)}, '
       'claro: ${claro.toStringAsFixed(2)}, '
@@ -75,11 +99,11 @@ abstract class CoresFoto {
   static PaletaObra analisar(img.Image original) {
     // 128px de largura basta: a proporção de cor não muda com o detalhe,
     // e assim a conta cabe num piscar mesmo em celular fraco.
-    final imagem = original.width > 128
-        ? img.copyResize(original, width: 128)
-        : original;
+    final imagem =
+        original.width > 128 ? img.copyResize(original, width: 128) : original;
 
-    var terra = 0, tijolo = 0, concreto = 0, claro = 0, vegetacao = 0;
+    var terra = 0, madeira = 0, tijolo = 0, concreto = 0, claro = 0;
+    var vegetacao = 0;
     var ceuAzul = 0, ceuCinza = 0;
     var totalCeu = 0;
     // Brilho médio de cima e de baixo: céu é sempre mais claro que o
@@ -103,7 +127,10 @@ abstract class CoresFoto {
         if (y < limiteCeu) {
           totalCeu++;
           brilhoTopo += valor;
-          if (valor > 0.45 && saturacao > 0.15 && matiz >= 175 && matiz <= 260) {
+          if (valor > 0.45 &&
+              saturacao > 0.15 &&
+              matiz >= 175 &&
+              matiz <= 260) {
             ceuAzul++;
             continue;
           }
@@ -122,6 +149,16 @@ abstract class CoresFoto {
           vegetacao++;
         } else if (matiz <= 22 && saturacao > 0.42 && valor > 0.25) {
           tijolo++;
+        } else if (matiz >= 24 &&
+            matiz <= 44 &&
+            saturacao >= 0.28 &&
+            saturacao <= 0.60 &&
+            valor >= 0.64) {
+          // Madeira crua é o marrom mais claro e mais amarelo do canteiro:
+          // tábua de pinus e compensado ficam acima de 0,64 de brilho, onde
+          // barranco só chega sob sol forte. Areia lavada é mais pálida
+          // (saturação abaixo de 0,28) e fica de fora.
+          madeira++;
         } else if (matiz > 12 &&
             matiz <= 48 &&
             saturacao >= 0.14 &&
@@ -150,6 +187,7 @@ abstract class CoresFoto {
 
     return PaletaObra(
       terra: fatia(terra),
+      madeira: fatia(madeira),
       tijolo: fatia(tijolo),
       concreto: fatia(concreto),
       claro: fatia(claro),

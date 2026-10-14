@@ -11,6 +11,8 @@ import '../../providers/auth_provider.dart';
 import '../../services/firestore_service.dart';
 import '../../services/ia/cores_foto.dart';
 import '../../services/ia/diario_foto_service.dart';
+import '../../services/ia/mensagens_erro.dart';
+import '../../services/ia/modelo_fases.dart';
 import '../../services/ia/voz_service.dart';
 import '../../services/imagem_service.dart';
 import '../../utils/formatters.dart';
@@ -301,21 +303,31 @@ class _FormDiarioState extends State<_FormDiario> {
     );
     if (origem == null) return;
 
-    final xfile = await ImagePicker().pickImage(
-      source: origem,
-      imageQuality: 85,
-      maxWidth: 1600,
-    );
+    final XFile? xfile;
+    try {
+      xfile = await ImagePicker().pickImage(
+        source: origem,
+        imageQuality: 85,
+        maxWidth: 1600,
+      );
+    } catch (e) {
+      // Câmera sem permissão ou indisponível: diz o que fazer, não o código
+      // do erro.
+      debugPrint('Diário: falha ao abrir a câmera: $e');
+      if (mounted) setState(() => _avisoIa = MensagensErro.daCamera(e));
+      return;
+    }
     if (xfile == null || !mounted) return;
+    final caminho = xfile.path;
 
     setState(() {
-      _fotos.add(File(xfile.path));
+      _fotos.add(File(caminho));
       _analisando = true;
       _avisoIa = null;
     });
 
     try {
-      final analise = await _fotoIa.analisar(xfile.path);
+      final analise = await _fotoIa.analisar(caminho);
       if (!mounted) return;
       setState(() {
         _materiaisVistos = analise.materiais;
@@ -341,8 +353,12 @@ class _FormDiarioState extends State<_FormDiario> {
         _avisoIa = _avisoDaFoto(analise, faseConfiavel);
       });
     } catch (e) {
+      debugPrint('Diário: falha ao analisar a foto: $e');
       if (!mounted) return;
-      setState(() => _avisoIa = 'Erro ao analisar a foto: $e');
+      // A foto já está anexada; só a leitura da IA falhou.
+      setState(() => _avisoIa =
+          '${MensagensErro.daAnalise(e, oQue: 'a foto')} A foto ficou '
+              'anexada ao registro.');
     } finally {
       if (mounted) setState(() => _analisando = false);
     }
@@ -367,6 +383,13 @@ class _FormDiarioState extends State<_FormDiario> {
     }
     return 'Reconheci o que aparece na foto, mas não dá para dizer a etapa '
         'da obra por ela. Preencha a fase abaixo.';
+  }
+
+  /// Rótulo do modelo próprio aparece com o nome da fase, para não ser
+  /// confundido com os rótulos em inglês do modelo base.
+  static String _nomeDoRotulo(String rotulo) {
+    final fase = ModeloFases.faseDoRotulo(rotulo);
+    return fase == null ? rotulo : 'Modelo da obra: $fase';
   }
 
   /// Mostra os rótulos crus do modelo. O classificador é de uso geral, não
@@ -411,6 +434,7 @@ class _FormDiarioState extends State<_FormDiario> {
               children: [
                 for (final (rotulo, fatia) in [
                   ('Terra', _paletaVista.terra),
+                  ('Madeira', _paletaVista.madeira),
                   ('Tijolo', _paletaVista.tijolo),
                   ('Concreto', _paletaVista.concreto),
                   ('Parede clara', _paletaVista.claro),
@@ -445,7 +469,8 @@ class _FormDiarioState extends State<_FormDiario> {
                         padding: const EdgeInsets.symmetric(vertical: 4),
                         child: Row(
                           children: [
-                            Expanded(child: SelectableText(r.label)),
+                            Expanded(
+                                child: SelectableText(_nomeDoRotulo(r.label))),
                             Text(
                               '${(r.confianca * 100).toStringAsFixed(0)}%',
                               style: Theme.of(ctx)
@@ -514,10 +539,11 @@ class _FormDiarioState extends State<_FormDiario> {
       ));
       if (mounted) Navigator.pop(context);
     } catch (e) {
+      debugPrint('Diário: falha ao salvar o registro: $e');
       if (!mounted) return;
       setState(() => _salvando = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Não foi possível salvar: $e')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(MensagensErro.aoSalvar(e))));
     }
   }
 

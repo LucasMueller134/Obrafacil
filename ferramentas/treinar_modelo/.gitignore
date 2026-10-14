@@ -1,0 +1,4 @@
+# Saída do treino: o modelo que vai para o app é copiado à mão para
+# obra_facil/assets/modelos/ (ver docs/ia/treinar-modelo.md).
+saida/
+__pycache__/

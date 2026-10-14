@@ -37,6 +37,7 @@ dependencies:
   google_mlkit_text_recognition: ^0.14.0 # OCR de notas fiscais (offline)
   google_mlkit_image_labeling: ^0.13.0 # reconhecimento de materiais (offline)
   google_mlkit_barcode_scanning: ^0.13.0 # QR da NFC-e e código de barras do DANFE (offline)
+  path_provider: ^2.1.5 # cópia local do modelo próprio de fases (opcional)
   speech_to_text: ^7.0.0 # lançamento por voz
 
   # Notificações fora do app
@@ -60,6 +61,10 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    # Modelo próprio de fases da obra (opcional) — ver docs/ia/treinar-modelo.md.
+    # Sem o fases_obra.tflite aqui, o app usa só o modelo base do ML Kit.
+    - assets/modelos/
 
 # Ícone do launcher — gerado no CI com: dart run flutter_launcher_icons
 flutter_launcher_icons:

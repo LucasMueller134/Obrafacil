@@ -1,6 +1,7 @@
 import 'package:obra_facil/services/ia/cores_foto.dart';
 import 'package:obra_facil/services/ia/diario_foto_service.dart';
 import 'package:obra_facil/services/ia/diario_voz_service.dart';
+import 'package:obra_facil/services/ia/material_vision_service.dart';
 import 'package:obra_facil/services/ia/ocr_nota_service.dart';
 import 'package:obra_facil/services/ia/voz_service.dart';
 
@@ -94,50 +95,17 @@ abstract class Adaptadores {
     };
   }
 
-  /// Linha de base do reconhecimento de material: o serviço original não
-  /// expunha a regra fora do ML Kit, então ela está reproduzida aqui tal
-  /// como era em material_vision_service.dart (mapa de rótulos, confiança
-  /// mínima 0,45, mais confiante primeiro).
+  /// Material pela câmera: rótulos do classificador mais o texto que o
+  /// OCR leu na embalagem; vale o primeiro material da lista.
   static Map<String, Object?> material(Map<String, dynamic> entrada) {
-    const mapa = {
-      'brick': 'Tijolo',
-      'brickwork': 'Tijolo',
-      'wood': 'Madeira',
-      'lumber': 'Madeira',
-      'plank': 'Madeira',
-      'plywood': 'Madeira',
-      'concrete': 'Concreto',
-      'cement': 'Cimento',
-      'sand': 'Areia',
-      'gravel': 'Brita',
-      'rock': 'Brita',
-      'stone': 'Brita',
-      'metal': 'Vergalhão de aço',
-      'steel': 'Vergalhão de aço',
-      'iron': 'Vergalhão de aço',
-      'wire': 'Fio elétrico',
-      'cable': 'Fio elétrico',
-      'pipe': 'Cano PVC',
-      'plumbing': 'Cano PVC',
-      'tile': 'Piso cerâmico',
-      'flooring': 'Piso cerâmico',
-      'roof': 'Telha',
-      'paint': 'Tinta',
-      'door': 'Porta',
-      'window': 'Janela',
-      'glass': 'Vidro',
-      'ladder': 'Escada',
-      'scaffolding': 'Andaime',
-    };
-    final rotulos = [
-      for (final r in entrada['rotulos'] as List)
-        if ((r[1] as num) >= 0.45) (r[0] as String, (r[1] as num).toDouble()),
-    ]..sort((a, b) => b.$2.compareTo(a.$2));
-    for (final (rotulo, _) in rotulos) {
-      final m = mapa[rotulo.toLowerCase()];
-      if (m != null) return {'material': m};
-    }
-    return {'material': null};
+    final detectados = MaterialVisionService.interpretar(
+      [
+        for (final r in entrada['rotulos'] as List)
+          RotuloFoto(r[0] as String, (r[1] as num).toDouble()),
+      ],
+      texto: entrada['texto'] as String? ?? '',
+    );
+    return {'material': detectados.isEmpty ? null : detectados.first.material};
   }
 
   // ---------------------------------------------------------------- apoio
@@ -181,6 +149,7 @@ abstract class Adaptadores {
       vegetacao: v('vegetacao'),
       ceuAzul: v('ceuAzul'),
       ceuCinza: v('ceuCinza'),
+      madeira: v('madeira'),
     );
   }
 

@@ -11,6 +11,7 @@ import '../../constants/app_constants.dart';
 import '../../models/models.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/firestore_service.dart';
+import '../../services/ia/mensagens_erro.dart';
 import '../../services/ia/progresso_foto_service.dart';
 import '../../services/imagem_service.dart';
 import '../../utils/formatters.dart';
@@ -29,7 +30,7 @@ class GaleriaScreen extends StatefulWidget {
 }
 
 class _GaleriaScreenState extends State<GaleriaScreen> {
-  /// Modo de comparação por IA: seleciona 2 fotos.
+  /// Modo de comparação visual por IA: seleciona 2 fotos.
   bool _comparando = false;
   final List<FotoObraModel> _selecionadas = [];
 
@@ -46,7 +47,7 @@ class _GaleriaScreenState extends State<GaleriaScreen> {
           IconButton(
             tooltip: _comparando
                 ? 'Cancelar comparação'
-                : 'Comparar progresso (IA)',
+                : 'Comparar duas fotos (IA)',
             icon: Icon(_comparando ? Icons.close : Icons.compare),
             onPressed: () => setState(() {
               _comparando = !_comparando;
@@ -162,17 +163,29 @@ class _GaleriaScreenState extends State<GaleriaScreen> {
       barrierDismissible: false,
       builder: (_) => const Center(child: CircularProgressIndicator()),
     ));
-    final resultado = await ProgressoFotoService.compararBytes(
-      ImagemService.bytesDe(fotos[0].url),
-      ImagemService.bytesDe(fotos[1].url),
-    );
+    final ComparacaoFotos resultado;
+    try {
+      resultado = await ProgressoFotoService.compararBytes(
+        ImagemService.bytesDe(fotos[0].url),
+        ImagemService.bytesDe(fotos[1].url),
+      );
+    } catch (e) {
+      // Sem isto, uma foto ilegível deixava o carregamento aberto para
+      // sempre, sem como fechar.
+      debugPrint('Galeria: falha ao comparar as fotos: $e');
+      if (!mounted) return;
+      Navigator.pop(context); // fecha o loading
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(MensagensErro.daAnalise(e, oQue: 'as fotos'))));
+      return;
+    }
     if (!mounted) return;
     Navigator.pop(context); // fecha o loading
 
     await showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Progresso por foto (IA)'),
+        title: const Text('Mudança visual entre as fotos (IA)'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -203,7 +216,7 @@ class _GaleriaScreenState extends State<GaleriaScreen> {
             ),
             const SizedBox(height: 12),
             Text(
-              'Índice de mudança: '
+              'Mudança visual: '
               '${(resultado.indiceMudanca * 100).toStringAsFixed(0)}%',
               style: Theme.of(ctx)
                   .textTheme
@@ -213,10 +226,20 @@ class _GaleriaScreenState extends State<GaleriaScreen> {
             const SizedBox(height: 6),
             Text(resultado.interpretacao,
                 style: Theme.of(ctx).textTheme.bodySmall),
+            if (resultado.luzMuitoDiferente) ...[
+              const SizedBox(height: 6),
+              Text(
+                'As fotos têm luz bem diferente. A comparação já desconta '
+                'isso, mas mede melhor com fotos no mesmo horário.',
+                style: Theme.of(ctx).textTheme.bodySmall,
+              ),
+            ],
             const SizedBox(height: 6),
             Text(
-              'Análise experimental feita no aparelho, comparando a '
-              'estrutura das duas imagens.',
+              'Análise experimental feita no aparelho: compara as formas e '
+              'bordas das duas imagens, já descontando a diferença de luz. '
+              'Mostra o quanto a cena mudou, não o quanto a obra avançou — '
+              'para comparar, fotografe sempre do mesmo ponto.',
               style: Theme.of(ctx)
                   .textTheme
                   .bodySmall

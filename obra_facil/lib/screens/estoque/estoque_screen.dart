@@ -7,6 +7,7 @@ import '../../constants/app_constants.dart';
 import '../../models/models.dart';
 import '../../services/firestore_service.dart';
 import '../../services/ia/material_vision_service.dart';
+import '../../services/ia/mensagens_erro.dart';
 import '../../services/ia/previsao_estoque_service.dart';
 import '../../utils/formatters.dart';
 import '../../utils/validators.dart';
@@ -277,12 +278,20 @@ class _FormEstoqueState extends State<_FormEstoque> {
 
   /// IA de visão: fotografa o material e sugere o nome.
   Future<void> _identificarPelaCamera() async {
-    final xfile = await ImagePicker().pickImage(
-      source: ImageSource.camera,
-      imageQuality: 90,
-      maxWidth: 1600,
-    );
+    final XFile? xfile;
+    try {
+      xfile = await ImagePicker().pickImage(
+        source: ImageSource.camera,
+        imageQuality: 90,
+        maxWidth: 1600,
+      );
+    } catch (e) {
+      debugPrint('Estoque: falha ao abrir a câmera: $e');
+      if (mounted) setState(() => _resultadoVisao = MensagensErro.daCamera(e));
+      return;
+    }
     if (xfile == null || !mounted) return;
+    final caminho = xfile.path;
 
     setState(() {
       _reconhecendo = true;
@@ -290,12 +299,13 @@ class _FormEstoqueState extends State<_FormEstoque> {
     });
     final visao = MaterialVisionService();
     try {
-      final detectados = await visao.reconhecer(xfile.path);
+      final detectados = await visao.reconhecer(caminho);
       if (!mounted) return;
       setState(() {
         if (detectados.isEmpty) {
           _resultadoVisao =
-              'Não reconheci um material de construção nesta foto.';
+              'Não reconheci um material de construção nesta foto. '
+              'Fotografe de perto, com o nome da embalagem aparecendo.';
         } else {
           final melhor = detectados.first;
           _materialCtrl.text = melhor.material;
@@ -306,6 +316,14 @@ class _FormEstoqueState extends State<_FormEstoque> {
               '${detectados.length > 1 ? '; alternativas: ${detectados.skip(1).map((d) => d.material).join(', ')}' : ''})';
         }
       });
+    } catch (e) {
+      // Sem este catch a falha do reconhecimento escapava da tela e o
+      // campo ficava como estava, sem explicação nenhuma.
+      debugPrint('Estoque: falha ao reconhecer o material: $e');
+      if (mounted) {
+        setState(() =>
+            _resultadoVisao = MensagensErro.daAnalise(e, oQue: 'o material'));
+      }
     } finally {
       visao.dispose();
       if (mounted) setState(() => _reconhecendo = false);

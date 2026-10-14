@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:obra_facil/services/ia/cores_foto.dart';
 import 'package:obra_facil/services/ia/diario_foto_service.dart';
 
 void main() {
@@ -143,6 +144,256 @@ void main() {
       expect(a.faseSugerida, 'Revestimentos');
       expect(a.descricaoSugerida.toLowerCase(), contains('revestimentos'));
       expect(a.descricaoSugerida, endsWith('.'));
+    });
+  });
+
+  group('Telhado só com evidência de telhado', () {
+    test('baldrame com "Shingle" e solo não lista telha nem vira cobertura',
+        () {
+      // O modelo genérico chegou a devolver "Shingle" para as formas do
+      // baldrame vistas de cima. Com terra à mostra, isso não basta.
+      final a = DiarioFotoService.interpretar(
+        const [
+          RotuloFoto('Wood', 0.81),
+          RotuloFoto('Roof', 0.74),
+          RotuloFoto('Soil', 0.66),
+          RotuloFoto('Building', 0.60),
+          RotuloFoto('Shingle', 0.55),
+          RotuloFoto('Metal', 0.52),
+        ],
+        paleta: const PaletaObra(terra: 0.30, concreto: 0.20, ceuAzul: 0.3),
+      );
+      expect(a.materiais, isNot(contains('Telha')));
+      expect(a.faseSugerida, 'Fundação');
+      expect(a.materiais, containsAll(<String>['Madeira', 'Vergalhão de aço']));
+    });
+
+    test(
+        'com terra à mostra, telhado ainda vale se a evidência for muito '
+        'forte', () {
+      final a = DiarioFotoService.interpretar(const [
+        RotuloFoto('Roof tile', 0.84),
+        RotuloFoto('Shingle', 0.77),
+        RotuloFoto('Roof', 0.70),
+        RotuloFoto('Soil', 0.50),
+      ]);
+      expect(a.faseSugerida, 'Cobertura');
+      expect(a.materiais, contains('Telha'));
+    });
+
+    test('telha cerâmica sob o céu é cobertura, não alvenaria', () {
+      // O vermelho da telha cai na mesma cor do tijolo; quem diz que é
+      // telhado é o rótulo "Roof" com céu na foto.
+      final a = DiarioFotoService.interpretar(
+        const [RotuloFoto('Roof', 0.82), RotuloFoto('Sky', 0.71)],
+        paleta: const PaletaObra(tijolo: 0.42, ceuAzul: 0.55),
+      );
+      expect(a.faseSugerida, 'Cobertura');
+      expect(a.confiancaFase, greaterThanOrEqualTo(0.5));
+      expect(a.materiais, contains('Telha'));
+      expect(a.materiais, isNot(contains('Tijolo')));
+    });
+
+    test('com "Shingle" confirmando o telhado, até o "Brick" é a telha', () {
+      final a = DiarioFotoService.interpretar(
+        const [
+          RotuloFoto('Roof', 0.80),
+          RotuloFoto('Brick', 0.66),
+          RotuloFoto('Shingle', 0.61),
+        ],
+        paleta: const PaletaObra(tijolo: 0.38, ceuAzul: 0.4),
+      );
+      expect(a.faseSugerida, 'Cobertura');
+      expect(a.materiais, contains('Telha'));
+      expect(a.materiais, isNot(contains('Tijolo')));
+    });
+
+    test(
+        'vermelho com "Roof" mas sem céu nem telhado específico segue '
+        'sendo tijolo', () {
+      // Parede de tijolo vista de cima: o "Roof" é o ângulo, não telhado.
+      final a = DiarioFotoService.interpretar(
+        const [RotuloFoto('Roof', 0.70), RotuloFoto('Brick', 0.66)],
+        paleta: const PaletaObra(tijolo: 0.40, concreto: 0.2),
+      );
+      expect(a.faseSugerida, 'Alvenaria');
+      expect(a.materiais, isNot(contains('Telha')));
+    });
+  });
+
+  group('Madeira não é barranco', () {
+    test('forma de laje vista de cima não vira fundação', () {
+      // Paleta como a análise antiga media: a madeira da forma entrava
+      // como "terra". Dois rótulos de madeira e nenhum de solo dizem que o
+      // marrom é a forma.
+      final a = DiarioFotoService.interpretar(
+        const [
+          RotuloFoto('Wood', 0.86),
+          RotuloFoto('Roof', 0.71),
+          RotuloFoto('Floor', 0.64),
+          RotuloFoto('Plank', 0.58),
+        ],
+        paleta: const PaletaObra(terra: 0.62, concreto: 0.12),
+      );
+      expect(a.faseSugerida, 'Estrutura');
+      expect(a.confiancaFase, greaterThanOrEqualTo(0.5));
+      expect(a.materiais, contains('Madeira'));
+      expect(a.materiais, isNot(contains('Telha')));
+    });
+
+    test('forma de laje com a madeira medida pela cor também é estrutura', () {
+      final a = DiarioFotoService.interpretar(
+        const [RotuloFoto('Wood', 0.80), RotuloFoto('Roof', 0.68)],
+        paleta: const PaletaObra(madeira: 0.55, concreto: 0.10),
+      );
+      expect(a.faseSugerida, 'Estrutura');
+      expect(a.confiancaFase, greaterThanOrEqualTo(0.5));
+    });
+
+    test('um rótulo de madeira com marrom moderado não é barranco', () {
+      final a = DiarioFotoService.interpretar(
+        const [RotuloFoto('Wood', 0.78), RotuloFoto('Roof', 0.66)],
+        paleta: const PaletaObra(terra: 0.38),
+      );
+      expect(a.faseSugerida, isNot('Fundação'));
+    });
+
+    test('madeira e solo juntos continuam fundação (baldrame)', () {
+      final a = DiarioFotoService.interpretar(
+        const [
+          RotuloFoto('Wood', 0.80),
+          RotuloFoto('Plank', 0.62),
+          RotuloFoto('Soil', 0.60),
+          RotuloFoto('Metal', 0.55),
+        ],
+        paleta: const PaletaObra(terra: 0.40, madeira: 0.15),
+      );
+      expect(a.faseSugerida, 'Fundação');
+      expect(a.confiancaFase, greaterThanOrEqualTo(0.5));
+    });
+
+    test('piso de madeira pronto não vira forma de laje', () {
+      final a = DiarioFotoService.interpretar(
+        const [
+          RotuloFoto('Wood', 0.88),
+          RotuloFoto('Floor', 0.80),
+          RotuloFoto('Hardwood', 0.72),
+          RotuloFoto('Plank', 0.60),
+          RotuloFoto('Flooring', 0.58),
+        ],
+      );
+      expect(a.faseSugerida, isNot('Estrutura'));
+    });
+  });
+
+  group('Bloco, reboco e contrapiso', () {
+    test('parede de bloco de concreto é alvenaria de bloco, não tijolo', () {
+      final a = DiarioFotoService.interpretar(
+        const [
+          RotuloFoto('Wall', 0.84),
+          RotuloFoto('Concrete', 0.72),
+          RotuloFoto('Brick', 0.61),
+        ],
+        paleta: const PaletaObra(concreto: 0.58, claro: 0.05, ceuAzul: 0.2),
+      );
+      expect(a.faseSugerida, 'Alvenaria');
+      expect(a.confiancaFase, greaterThanOrEqualTo(0.5));
+      expect(a.materiais, contains('Bloco de concreto'));
+      expect(a.materiais, isNot(contains('Tijolo')));
+    });
+
+    test('parede de tijolo vermelho continua tijolo', () {
+      final a = DiarioFotoService.interpretar(
+        const [RotuloFoto('Brick', 0.88), RotuloFoto('Wall', 0.75)],
+        paleta: const PaletaObra(tijolo: 0.45, concreto: 0.30),
+      );
+      expect(a.materiais, contains('Tijolo'));
+      expect(a.materiais, isNot(contains('Bloco de concreto')));
+    });
+
+    test('parede rebocada cinza é reboco, não estrutura', () {
+      final a = DiarioFotoService.interpretar(
+        const [RotuloFoto('Wall', 0.82), RotuloFoto('Concrete', 0.70)],
+        paleta: const PaletaObra(concreto: 0.62, claro: 0.10),
+      );
+      expect(a.faseSugerida, 'Reboco e contrapiso');
+      expect(a.confiancaFase, greaterThanOrEqualTo(0.5));
+    });
+
+    test('contrapiso cinza é reboco e contrapiso', () {
+      final a = DiarioFotoService.interpretar(
+        const [RotuloFoto('Floor', 0.79), RotuloFoto('Concrete', 0.74)],
+        paleta: const PaletaObra(concreto: 0.66),
+      );
+      expect(a.faseSugerida, 'Reboco e contrapiso');
+      expect(a.materiais, isNot(contains('Piso cerâmico')));
+    });
+
+    test('concreto com ferragem continua estrutura', () {
+      final a = DiarioFotoService.interpretar(
+        const [
+          RotuloFoto('Floor', 0.70),
+          RotuloFoto('Concrete', 0.68),
+          RotuloFoto('Metal', 0.60),
+        ],
+        paleta: const PaletaObra(concreto: 0.55),
+      );
+      expect(a.faseSugerida, 'Estrutura');
+    });
+  });
+
+  group('Fundação precisa de obra na foto', () {
+    test('monte de areia sem obra não sugere fase', () {
+      final a = DiarioFotoService.interpretar(
+        const [
+          RotuloFoto('Sand', 0.84),
+          RotuloFoto('Soil', 0.71),
+          RotuloFoto('Rock', 0.55),
+        ],
+        paleta: const PaletaObra(terra: 0.48, madeira: 0.12, ceuAzul: 0.3),
+      );
+      expect(a.faseSugerida, isNull);
+      expect(a.materiais, contains('Areia'));
+    });
+
+    test('terra roxa com ferragem é fundação, não alvenaria', () {
+      // O solo vermelho cai na faixa de cor do tijolo; sem parede nem
+      // rótulo de alvenaria, o vermelho é o próprio chão.
+      final a = DiarioFotoService.interpretar(
+        const [RotuloFoto('Soil', 0.74), RotuloFoto('Metal', 0.63)],
+        paleta: const PaletaObra(tijolo: 0.40, terra: 0.10),
+      );
+      expect(a.faseSugerida, 'Fundação');
+      expect(a.materiais, isNot(contains('Tijolo')));
+    });
+
+    test('baldrame em terra roxa visto de cima continua fundação', () {
+      // "Roof" é o ângulo; com solo à mostra, o vermelho não é telha nem
+      // tijolo.
+      final a = DiarioFotoService.interpretar(
+        const [
+          RotuloFoto('Roof', 0.74),
+          RotuloFoto('Soil', 0.66),
+          RotuloFoto('Wood', 0.60),
+          RotuloFoto('Metal', 0.55),
+        ],
+        paleta: const PaletaObra(tijolo: 0.42, terra: 0.08, ceuAzul: 0.2),
+      );
+      expect(a.faseSugerida, 'Fundação');
+      expect(a.materiais, isNot(contains('Tijolo')));
+      expect(a.materiais, isNot(contains('Telha')));
+    });
+
+    test('ferragem na vala aberta dá confiança para preencher a fundação', () {
+      // Os pontos de concreto e ferragem passam para a fundação quando a
+      // terra está à mostra — e a confiança tem de contar com eles.
+      final a = DiarioFotoService.interpretar(const [
+        RotuloFoto('Soil', 0.70),
+        RotuloFoto('Metal', 0.62),
+        RotuloFoto('Concrete', 0.55),
+      ]);
+      expect(a.faseSugerida, 'Fundação');
+      expect(a.confiancaFase, greaterThanOrEqualTo(0.5));
     });
   });
 }

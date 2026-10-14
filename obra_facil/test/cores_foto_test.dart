@@ -29,6 +29,8 @@ const _parede = (238, 236, 232); // parede pintada
 const _mato = (86, 130, 58); // vegetação
 const _ceuAzul = (110, 165, 225);
 const _ceuCinza = (205, 208, 212);
+const _tabua = (205, 170, 120); // pinus / compensado de forma
+const _areia = (190, 175, 140); // areia lavada, pálida
 
 void main() {
   group('Leitura das cores da foto', () {
@@ -59,6 +61,27 @@ void main() {
       final p = CoresFoto.analisar(_cena(chao: _mato));
       expect(p.vegetacao, greaterThan(0.5));
       expect(p.terra, lessThan(0.05));
+    });
+
+    test('tábua e compensado caem em madeira, não em terra', () {
+      final p = CoresFoto.analisar(_cena(chao: _tabua));
+      expect(p.madeira, greaterThan(0.5));
+      expect(p.terra, lessThan(0.05));
+    });
+
+    test('barranco não vira madeira', () {
+      final p = CoresFoto.analisar(_cena(chao: _terra, ceu: _ceuAzul));
+      expect(p.madeira, lessThan(0.05));
+    });
+
+    test('areia lavada não vira madeira', () {
+      final p = CoresFoto.analisar(_cena(chao: _areia));
+      expect(p.madeira, lessThan(0.05));
+    });
+
+    test('paleta não medida é reconhecida como tal', () {
+      expect(const PaletaObra().medida, isFalse);
+      expect(CoresFoto.analisar(_cena(chao: _concreto)).medida, isTrue);
     });
   });
 
@@ -125,6 +148,42 @@ void main() {
       );
       expect(a.faseSugerida, 'Alvenaria');
       expect(a.materiais, contains('Tijolo'));
+    });
+
+    test('forma de madeira vista de cima é estrutura, não fundação', () {
+      final a = DiarioFotoService.interpretar(
+        const [RotuloFoto('Wood', 0.82), RotuloFoto('Roof', 0.70)],
+        paleta: CoresFoto.analisar(_cena(chao: _tabua)),
+      );
+      expect(a.faseSugerida, 'Estrutura');
+      expect(a.materiais, isNot(contains('Telha')));
+    });
+
+    test('telhado cerâmico sob céu azul é cobertura', () {
+      final a = DiarioFotoService.interpretar(
+        const [RotuloFoto('Roof', 0.80), RotuloFoto('Sky', 0.66)],
+        paleta: CoresFoto.analisar(_cena(chao: _tijolo, ceu: _ceuAzul)),
+      );
+      expect(a.faseSugerida, 'Cobertura');
+      expect(a.materiais, contains('Telha'));
+    });
+
+    test('parede cinza com rótulo de tijolo é bloco de concreto', () {
+      final a = DiarioFotoService.interpretar(
+        const [RotuloFoto('Brick', 0.70), RotuloFoto('Wall', 0.68)],
+        paleta: CoresFoto.analisar(_cena(chao: _concreto, ceu: _ceuCinza)),
+      );
+      expect(a.faseSugerida, 'Alvenaria');
+      expect(a.materiais, contains('Bloco de concreto'));
+      expect(a.materiais, isNot(contains('Tijolo')));
+    });
+
+    test('monte de areia ao sol não é fundação', () {
+      final a = DiarioFotoService.interpretar(
+        const [RotuloFoto('Sand', 0.86), RotuloFoto('Soil', 0.62)],
+        paleta: CoresFoto.analisar(_cena(chao: _terra, ceu: _ceuAzul)),
+      );
+      expect(a.faseSugerida, isNull);
     });
   });
 }
