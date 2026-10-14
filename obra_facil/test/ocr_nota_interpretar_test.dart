@@ -372,8 +372,15 @@ void main() {
     test('CNPJ inválido nunca vence um válido', () {
       final nota = _lerTexto('DEPOSITO CENTRAL LTDA\n'
           'CNPJ 12.345.678/0001-90\n'
-          'Desenvolvido por Automa Sistemas CNPJ 04.567.890/0001-79');
+          'Matriz: CNPJ 04.567.890/0001-79');
       expect(nota.cnpj, '04.567.890/0001-79');
+      // o válido da software house é de terceiro: não toma o lugar
+      expect(
+          _lerTexto('DEPOSITO CENTRAL LTDA\n'
+                  'CNPJ 12.345.678/0001-90\n'
+                  'Desenvolvido por Automa Sistemas CNPJ 04.567.890/0001-79')
+              .cnpj,
+          '12.345.678/0001-90');
     });
 
     test('vários válidos: o do topo, não o de destinatário ou software', () {

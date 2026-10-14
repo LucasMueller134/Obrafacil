@@ -26,8 +26,9 @@ class NotaFiscalExtraida {
   final DateTime? data;
   final String textoCompleto;
 
-  /// Quantos passes de imagem foram necessários (1 = leu de primeira).
-  /// A tela usa para avisar que a foto estava difícil de ler.
+  /// Quantos passes de imagem trouxeram dados (1 = tudo veio da foto
+  /// original; uma variante que nada mudou não conta). A tela usa para
+  /// avisar que a foto estava difícil de ler.
   final int passes;
 
   /// Chave de acesso (44 dígitos, DV conferido), lida do QR Code, do
@@ -85,17 +86,30 @@ class NotaFiscalExtraida {
     bool bate(DateTime? d) => d != null && (chave == null || chave.mesmoMes(d));
     final usarEste = textoCompleto.length >= outra.textoCompleto.length;
 
+    final fornecedor = fornecedorNome ?? outra.fornecedorNome;
+    final cnpjFinal = cnpjDaChave ?? cnpjLido;
+    final valor = valorTotal ?? outra.valorTotal;
+    final dataFinal =
+        bate(data) ? data : (bate(outra.data) ? outra.data : null);
+    // Só conta o passe que mudou algum campo: a variante que leu o mesmo
+    // texto não recuperou nada, e o aviso da tela não pode dizer que sim.
+    final trouxeAlgo = fornecedor != fornecedorNome ||
+        cnpjFinal != cnpj ||
+        valor != valorTotal ||
+        dataFinal != data ||
+        digitosChave != chaveAcesso;
+
     return NotaFiscalExtraida(
-      fornecedorNome: fornecedorNome ?? outra.fornecedorNome,
-      cnpj: cnpjDaChave ?? cnpjLido,
-      valorTotal: valorTotal ?? outra.valorTotal,
-      data: bate(data) ? data : (bate(outra.data) ? outra.data : null),
+      fornecedorNome: fornecedor,
+      cnpj: cnpjFinal,
+      valorTotal: valor,
+      data: dataFinal,
       textoCompleto: usarEste ? textoCompleto : outra.textoCompleto,
       textoReconstruido: usarEste
           ? textoReconstruido ?? outra.textoReconstruido
           : outra.textoReconstruido ?? textoReconstruido,
       chaveAcesso: digitosChave,
-      passes: passes + outra.passes,
+      passes: passes + (trouxeAlgo ? outra.passes : 0),
     );
   }
 }
@@ -143,7 +157,13 @@ class OcrNotaService {
   /// Depois disto não começa outro passe: o que já foi lido é devolvido.
   static const Duration _limiteTotal = Duration(seconds: 60);
 
+  /// Ligado no [dispose]. No Android, o plugin recria o reconhecedor
+  /// nativo que recebe uma chamada depois de fechado, e esse nunca mais é
+  /// fechado: a leitura em andamento tem de parar antes do próximo passe.
+  bool _fechado = false;
+
   Future<NotaFiscalExtraida> lerNota(String caminhoImagem) async {
+    if (_fechado) throw StateError('O leitor de notas já foi fechado.');
     final relogio = Stopwatch()..start();
     // O código não depende do texto: lê em paralelo com o OCR.
     final codigosFuturo = _lerCodigos(caminhoImagem);
@@ -180,10 +200,14 @@ class OcrNotaService {
         : const [_Variante.realce, _Variante.binarizada];
 
     for (final variante in variantes) {
-      if (relogio.elapsed > _limiteTotal) break;
+      // A tela fechou o leitor (o usuário voltou no meio da leitura): o
+      // que já foi lido é devolvido, sem gerar nem ler outra variante.
+      if (_fechado || relogio.elapsed > _limiteTotal) break;
       final caminho = await _gerarVariante(caminhoImagem, variante);
       if (caminho == null) continue;
       try {
+        // fechado enquanto a variante era gerada (o finally apaga o arquivo)
+        if (_fechado) break;
         final lidos = await _reconhecer(caminho);
         resultado =
             resultado.mesclar(interpretar(EntradaOcr(lidos, codigos: codigos)));
@@ -336,6 +360,7 @@ class OcrNotaService {
   }
 
   void dispose() {
+    _fechado = true;
     _recognizer.close();
     _leitorCodigos.close();
   }
@@ -646,22 +671,25 @@ class OcrNotaService {
             quem.hasMatch(antes) ||
             (soRotulo && i > 0 && quem.hasMatch(linhas[i - 1].chave));
         final emitente = menciona(_mencionaEmitente);
-        final terceiro =
-            !emitente && (secaoDeTerceiro || menciona(_mencionaTerceiro));
-        candidatos.add(
-            _CandidatoCnpj(digitos, i, terceiro: terceiro, emitente: emitente));
+        // O de quem comprou, do contador ou da software house nunca é o do
+        // fornecedor, nem quando o do emitente saiu ilegível: a tela acha
+        // o fornecedor pelo CNPJ, e com o do cliente todas as notas dele
+        // cairiam no primeiro fornecedor salvo com esse número. Sem CNPJ
+        // o fornecedor é achado pelo nome.
+        if (!emitente && (secaoDeTerceiro || menciona(_mencionaTerceiro))) {
+          continue;
+        }
+        candidatos.add(_CandidatoCnpj(digitos, i, emitente: emitente));
       }
     }
     if (candidatos.isEmpty) return null;
 
     // Uma nota traz vários CNPJ (emitente, contador, software house,
     // destinatário). Um inválido é dígito lido errado e nunca vence um
-    // válido; entre os válidos, o rotulado como emitente, depois os sem
-    // dono declarado (o emitente está no topo) e por último os de
-    // terceiros.
+    // válido; entre os válidos, o rotulado como emitente e depois os sem
+    // dono declarado (o emitente está no topo).
     int peso(_CandidatoCnpj c) =>
-        (cnpjValido(c.digitos) ? 0 : 3) +
-        (c.emitente ? 0 : (c.terceiro ? 2 : 1));
+        (cnpjValido(c.digitos) ? 0 : 2) + (c.emitente ? 0 : 1);
     candidatos.sort((a, b) {
       final porPeso = peso(a).compareTo(peso(b));
       return porPeso != 0 ? porPeso : a.ordem.compareTo(b.ordem);
@@ -963,6 +991,24 @@ class OcrNotaService {
     'TROCO',
   };
 
+  /// Palavras de contagem: "3 ITENS", "10 PECAS" é quantidade, não valor.
+  static const Set<String> _contagens = {
+    'ITENS',
+    'ITEM',
+    'PECAS',
+    'PECA',
+    'VOLUMES',
+    'VOLUME',
+  };
+
+  /// Número inteiro logo antes da posição ("TOTAL (3 ", "TOTAL 3").
+  static final RegExp _numeroNoFim = RegExp(r'(?<![\d.,])\d+\s*$');
+
+  /// O inteiro seguido de palavra de contagem ("3 ITENS", "2 itens").
+  static final RegExp _contagemEmSeguida = RegExp(
+      r'^\s*(?:ITENS|ITEM|PE[CÇ]AS?|VOLUMES?)(?![A-Za-zÀ-ÿ])',
+      caseSensitive: false);
+
   /// "TOTAL COM FRETE" é o total, com o frete dentro.
   static const Set<String> _incluem = {'COM', 'C', 'INCL', 'INCLUSO'};
 
@@ -988,12 +1034,28 @@ class OcrNotaService {
   static List<_Rotulo> _rotulosDe(String chave,
       {List<int> inicios = const []}) {
     final rotulos = <_Rotulo>[];
-    for (final m in _regexRotulos.allMatches(chave)) {
+    final casados = _regexRotulos.allMatches(chave).toList();
+    for (var k = 0; k < casados.length; k++) {
+      final m = casados[k];
       final texto = m.group(0)!.replaceAll(RegExp(r'\s+'), ' ');
       final nivel = _rotulosValor[texto] ?? _nivelDoCasamento(texto);
       final de = inicios.where((i) => i <= m.start).fold(0, math.max);
-      final ate = inicios.where((i) => i >= m.end).fold(chave.length, math.min);
+      var ate = inicios.where((i) => i >= m.end).fold(chave.length, math.min);
+      // Rótulo de mais de uma palavra logo depois é o campo vizinho da
+      // fileira ("VALOR TOTAL DA NOTA VALOR APROX TRIBUTOS"): as palavras
+      // dele não qualificam este. Uma palavra só, colada ("TOTAL
+      // DESCONTOS"), ainda qualifica.
+      final seguinte = k + 1 < casados.length ? casados[k + 1] : null;
+      if (seguinte != null && seguinte.group(0)!.contains(RegExp(r'\s'))) {
+        ate = math.min(ate, seguinte.start);
+      }
       final antes = chave.substring(de, m.start);
+      // "TOTAL (3 ITENS) R$ 350,00": depois de um número, "ITENS" é a
+      // unidade da contagem, e não um rótulo com valor próprio — como
+      // rótulo, ele cortava a linha e deixava o "3" como valor do TOTAL.
+      if (_contagens.contains(texto) && _numeroNoFim.hasMatch(antes)) {
+        continue;
+      }
       // "TOTAL COM DESCONTO", "TOTAL C/ FRETE": o desconto e o frete ali
       // descrevem o total logo antes, não são rótulos com valor próprio.
       // "TOTAL SEM DESCONTO" diz que aquele total ainda não é o cobrado.
@@ -1014,7 +1076,7 @@ class OcrNotaService {
         }
       }
       rotulos.add(_Rotulo(m.start, m.end,
-          _nivelQualificado(antes, chave.substring(m.end, ate), nivel)));
+          _nivelQualificado(texto, antes, chave.substring(m.end, ate), nivel)));
     }
     return rotulos;
   }
@@ -1032,10 +1094,23 @@ class OcrNotaService {
 
   static final RegExp _palavra = RegExp(r'[A-Z0-9$]+');
 
+  /// Rótulo que abre com "VALOR" ou abreviação ("VL.", "VLR", "V.").
+  static final RegExp _comecaPorValor = RegExp(r'^(?:VALOR|VLR?\b|V\b)');
+
+  /// Qualificadores de quantidade, que valem antes até de um "VALOR".
+  static const Set<String> _quantidades = {
+    'QTD',
+    'QTDE',
+    'QUANT',
+    'QUANTIDADE',
+    'PESO',
+  };
+
   /// O nível do rótulo depois de olhar as palavras em volta: "TOTAL" de
   /// imposto ou de itens vira rótulo falso; um "TOTAL" genérico (níveis 1 e
   /// 2) sobe para o da nota ou desce para o dos produtos.
-  static int _nivelQualificado(String antesDele, String depoisDele, int nivel) {
+  static int _nivelQualificado(
+      String rotulo, String antesDele, String depoisDele, int nivel) {
     if (nivel == _rotuloFalso) return nivel;
     final depois = _palavra.allMatches(depoisDele).take(3);
     for (final p in depois) {
@@ -1047,10 +1122,20 @@ class OcrNotaService {
         if (_daNotaInteira.contains(w)) return 0;
       }
     }
+    // A palavra antes qualifica o "TOTAL" ("DESCONTO TOTAL", "QTD TOTAL":
+    // ali "total" é adjetivo), mas não o "VALOR": o do frete se escreve
+    // "VALOR DO FRETE", com o qualificador depois. Antes de "VALOR ..." /
+    // "VL TOTAL" o imposto, o frete ou o desconto é a célula vizinha da
+    // fileira do DANFE ("VALOR TOTAL DO IPI VALOR TOTAL DA NOTA",
+    // "DESCONTO VALOR A PAGAR"), e desqualificar ali jogava o total para o
+    // preço de um item. Quantidade ou peso ao lado continua valendo: "QTD
+    // VL TOTAL" é a coluna da tabela de itens, com o valor de um item.
+    final doValor = _comecaPorValor.hasMatch(rotulo);
     final antes = _palavra.allMatches(antesDele).toList();
     for (final p in antes.reversed.take(2)) {
       final w = p.group(0)!;
       if (RegExp(r'[\d$]').hasMatch(w)) break;
+      if (doValor && !_quantidades.contains(w)) continue;
       if (_qualificamAntes.contains(w)) return _rotuloFalso;
     }
     return nivel;
@@ -1248,6 +1333,12 @@ class OcrNotaService {
       for (final m in regex.allMatches(texto)) {
         final v = valor(m);
         if (!_valorPlausivel(v)) continue;
+        // "TOTAL: 3 ITENS 350": o 3 é a contagem, nunca o valor de um
+        // rótulo — sem isto, ele empatava com o 350 e vinha primeiro.
+        if (tipo == _Valor.inteiro &&
+            _contagemEmSeguida.hasMatch(texto.substring(m.end))) {
+          continue;
+        }
         // o mesmo número achado por duas regras fica com a mais confiável
         if (achados.any((a) => m.start < a.fim && a.inicio < m.end)) continue;
         achados.add(_Valor(m.start, m.end, v, tipo));
@@ -1725,12 +1816,8 @@ class _CandidatoCnpj {
   final String digitos;
   final int ordem;
 
-  /// Rotulado como de destinatário, contador, software house...
-  final bool terceiro;
-
   /// Rotulado como do emitente ("EMITENTE ... CNPJ").
   final bool emitente;
 
-  const _CandidatoCnpj(this.digitos, this.ordem,
-      {this.terceiro = false, this.emitente = false});
+  const _CandidatoCnpj(this.digitos, this.ordem, {this.emitente = false});
 }

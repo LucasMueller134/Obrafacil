@@ -152,12 +152,14 @@ VALOR TOTAL 505,00
     });
 
     test('vírgula lida como ponto ainda vira valor', () {
-      expect(OcrNotaService.parsearTexto('TOTAL R\$ 350.00').valorTotal, 350.00);
+      expect(
+          OcrNotaService.parsearTexto('TOTAL R\$ 350.00').valorTotal, 350.00);
     });
 
     test('letra lida no lugar de dígito é corrigida', () {
       // O ML Kit troca 0 por O e 5 por S em impressão fraca.
-      expect(OcrNotaService.parsearTexto('TOTAL R\$ 35O,OO').valorTotal, 350.00);
+      expect(
+          OcrNotaService.parsearTexto('TOTAL R\$ 35O,OO').valorTotal, 350.00);
       expect(OcrNotaService.parsearTexto('VALOR TOTAL 1.2S0,00').valorTotal,
           1250.00);
     });
@@ -171,10 +173,12 @@ VALOR TOTAL 505,00
 
   group('CNPJ e data', () {
     test('prefere o CNPJ com dígito verificador válido', () {
+      // Sem dono declarado nos dois. (Com "CONTADOR" na frente, o válido
+      // é de terceiro e não vale — ver revisao_ocr_test.dart.)
       const texto = '''
 CONSTRUMAIS LTDA
 CNPJ 12.345.678/0001-90
-CONTADOR 11.222.333/0001-81
+CNPJ 11.222.333/0001-81
 TOTAL 10,00
 ''';
       expect(OcrNotaService.parsearTexto(texto).cnpj, '11.222.333/0001-81');
