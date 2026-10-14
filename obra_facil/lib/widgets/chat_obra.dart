@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
@@ -56,6 +58,8 @@ class _ChatObraState extends State<ChatObra>
 
   @override
   void dispose() {
+    // Saiu da tela falando: o microfone não fica aberto.
+    if (_ouvindoVoz) unawaited(_voz.cancelar());
     _campoCtrl.dispose();
     _scrollCtrl.dispose();
     super.dispose();
@@ -86,7 +90,9 @@ class _ChatObraState extends State<ChatObra>
     });
   }
 
-  Future<void> _falar() async {
+  /// Pergunta por voz, no aparelho. [online] só quando o usuário escolheu
+  /// o reconhecimento do Google depois de ver que falta o pacote offline.
+  Future<void> _falar({bool online = false}) async {
     if (_ouvindoVoz) {
       await _voz.parar();
       setState(() => _ouvindoVoz = false);
@@ -100,13 +106,34 @@ class _ChatObraState extends State<ChatObra>
       return;
     }
     setState(() => _ouvindoVoz = true);
-    await _voz.ouvir((texto, finalizou) {
-      if (!mounted) return;
-      setState(() {
-        _campoCtrl.text = texto;
-        if (finalizou) _ouvindoVoz = false;
-      });
-    });
+    await _voz.ouvir(
+      (texto, finalizou) {
+        if (!mounted) return;
+        setState(() {
+          _campoCtrl.text = texto;
+          if (finalizou) _ouvindoVoz = false;
+        });
+      },
+      online: online,
+      // Sem estes dois, um erro do reconhecedor deixava o botão em
+      // "ouvindo" para sempre.
+      onErro: (erro) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(erro.mensagem),
+          duration: Duration(seconds: erro.ofereceOnline ? 12 : 4),
+          action: erro.ofereceOnline
+              ? SnackBarAction(
+                  label: 'Usar online do Google',
+                  onPressed: () => _falar(online: true),
+                )
+              : null,
+        ));
+      },
+      onFim: () {
+        if (mounted) setState(() => _ouvindoVoz = false);
+      },
+    );
   }
 
   @override

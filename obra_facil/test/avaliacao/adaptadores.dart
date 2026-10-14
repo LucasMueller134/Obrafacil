@@ -14,10 +14,8 @@ abstract class Adaptadores {
   static final DateTime agora = DateTime(2026, 7, 6, 10);
 
   static Map<String, Object?> vozLancamento(Map<String, dynamic> entrada) {
-    final r = VozService.interpretar(
-      entrada['transcricao'] as String,
-      agora: agora,
-    );
+    final r =
+        VozService.interpretarHipoteses(_hipoteses(entrada), agora: agora);
     return {
       'valor': r.valor,
       'categoria': r.categoria.name,
@@ -35,10 +33,8 @@ abstract class Adaptadores {
   }
 
   static Map<String, Object?> vozDiario(Map<String, dynamic> entrada) {
-    final r = DiarioVozService.interpretar(
-      entrada['transcricao'] as String,
-      agora: agora,
-    );
+    final r = DiarioVozService.interpretarHipoteses(_hipoteses(entrada),
+        agora: agora);
     return {
       'clima': r.clima,
       'pessoas': r.numeroPessoas,
@@ -145,6 +141,22 @@ abstract class Adaptadores {
   }
 
   // ---------------------------------------------------------------- apoio
+
+  /// Hipóteses do reconhecedor como o app as recebe: a principal (a
+  /// transcrição) primeiro, seguida das alternativas. Alguns casos repetem
+  /// a principal no começo da lista, com a confiança dela; nos outros a
+  /// confiança da principal é desconhecida (0).
+  static List<(String, double)> _hipoteses(Map<String, dynamic> entrada) {
+    final principal = entrada['transcricao'] as String;
+    final alternativas = [
+      for (final a in (entrada['alternativas'] as List?) ?? const [])
+        (a[0] as String, (a[1] as num).toDouble()),
+    ];
+    if (alternativas.isNotEmpty && alternativas.first.$1 == principal) {
+      return alternativas;
+    }
+    return [(principal, 0), ...alternativas];
+  }
 
   /// Texto corrido como o `RecognizedText.text` do ML Kit: blocos na ordem
   /// em que vieram, linhas de cada bloco separadas por quebra de linha.
