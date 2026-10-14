@@ -185,5 +185,44 @@ void main() {
       );
       expect(a.faseSugerida, isNull);
     });
+
+    test('porta de madeira já instalada não vira forma de laje', () {
+      // Parede pintada, porta de madeira clara no meio e piso cinza: o tom
+      // da porta cai na faixa de madeira, e "Floor" faz o plano horizontal.
+      final foto = img.Image(width: 300, height: 400);
+      for (var y = 0; y < 400; y++) {
+        for (var x = 0; x < 300; x++) {
+          final cor = y >= 300
+              ? (150, 150, 150)
+              : (x >= 90 && x < 210 && y >= 40)
+                  ? (205, 160, 110)
+                  : (235, 235, 230);
+          foto.setPixelRgb(x, y, cor.$1, cor.$2, cor.$3);
+        }
+      }
+      final a = DiarioFotoService.interpretar(
+        const [
+          RotuloFoto('Door', 0.86),
+          RotuloFoto('Wood', 0.74),
+          RotuloFoto('Floor', 0.61),
+        ],
+        paleta: CoresFoto.analisar(foto),
+      );
+      // A tela preenche a fase a partir de 0,5 de confiança.
+      final preenchida = a.confiancaFase >= 0.5 ? a.faseSugerida : null;
+      expect(preenchida, isNot('Estrutura'));
+    });
+
+    test('janela de madeira na parede também não é forma de laje', () {
+      final a = DiarioFotoService.interpretar(
+        const [
+          RotuloFoto('Window', 0.82),
+          RotuloFoto('Wood', 0.70),
+          RotuloFoto('Floor', 0.58),
+        ],
+        paleta: const PaletaObra(madeira: 0.30, claro: 0.40),
+      );
+      expect(a.faseSugerida, isNot('Estrutura'));
+    });
   });
 }

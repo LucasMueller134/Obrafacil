@@ -21,6 +21,15 @@ void main() {
       expect(m, contains('galeria'));
     });
 
+    test('tela sem galeria, sem câmera, manda digitar e não ir à galeria', () {
+      // O estoque só identifica o material pela câmera.
+      final m = MensagensErro.daCamera(
+          PlatformException(code: 'no_available_camera'),
+          temGaleria: false);
+      expect(m, isNot(contains('galeria')));
+      expect(m, contains('Digite'));
+    });
+
     test('falha da IA não mostra a exceção crua', () {
       final erro = PlatformException(
           code: 'ImageLabelingError', message: 'Failed to load model');

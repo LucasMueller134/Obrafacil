@@ -71,6 +71,16 @@ void main() {
       expect(m, isNot(contains('Areia')));
     });
 
+    test('"Votorantim Cimentos" no saco de argamassa não vira cimento', () {
+      // "X Cimentos" é o nome da empresa, impresso também na argamassa.
+      final m = _materiais(
+        const [],
+        'Votorantim Cimentos\nvotomassa\nArgamassa AC I\nUso interno\n20kg',
+      );
+      expect(m.first, 'Argamassa');
+      expect(m, isNot(contains('Cimento')));
+    });
+
     test('cimento que indica o uso em argamassa continua cimento', () {
       final m = _materiais(
         const [],
@@ -78,6 +88,47 @@ void main() {
       );
       expect(m.first, 'Cimento');
       expect(m, isNot(contains('Argamassa')));
+    });
+
+    test('lista na linha de baixo do "Indicado para:" é só citação', () {
+      // O OCR devolve cada linha impressa separada: o cabeçalho fica numa
+      // linha e a lista de superfícies nas seguintes.
+      final m = _materiais(
+        const [],
+        'Suvinil\nSelador Acrílico\nIndicado para:\n'
+        'reboco, concreto, blocos de concreto,\ntelhas de fibrocimento\n3,6 L',
+      );
+      expect(m.first, 'Tinta');
+      expect(m, isNot(contains('Bloco de concreto')));
+      expect(m, isNot(contains('Telha')));
+    });
+
+    test('usos um por linha no saco de cimento não viram o produto', () {
+      final m = _materiais(
+        const [],
+        'Votoran\nCP II-F-32\nIndicado para:\nArgamassas\nConcretos\n50 kg',
+      );
+      expect(m.first, 'Cimento');
+      expect(m, isNot(contains('Argamassa')));
+    });
+
+    test('lista que segue depois da vírgula na outra linha é citação', () {
+      final m = _materiais(
+        const [],
+        'CIMENTO PORTLAND CP II-E-32\nIdeal para concreto, reboco,\n'
+        'argamassas e contrapisos',
+      );
+      expect(m.first, 'Cimento');
+      expect(m, isNot(contains('Argamassa')));
+    });
+
+    test('a lista de usos acaba na linha da quantidade', () {
+      // O nome do produto impresso depois da lista continua sendo o nome.
+      final m = _materiais(
+        const [],
+        'Indicado para:\nparedes internas\n18 L\nTINTA ACRÍLICA',
+      );
+      expect(m.first, 'Tinta');
     });
 
     test('cabo com isolação de PVC não vira cano', () {
@@ -92,6 +143,40 @@ void main() {
     test('tubo de esgoto é cano PVC', () {
       expect(
           _materiais(const [], 'TIGRE\nTUBO ESGOTO 100mm').first, 'Cano PVC');
+    });
+
+    test('marca que vende vários produtos não prova o material sozinha', () {
+      // Eternit e Tigre vendem caixa d'água; Belgo vende arame e prego.
+      expect(
+        _materiais(const [], "ETERNIT\nCaixa d'água\n1000 litros\nPolietileno"),
+        isNot(contains('Telha')),
+      );
+      expect(
+        _materiais(const [], "TIGRE\nCaixa d'água\n500 L"),
+        isNot(contains('Cano PVC')),
+      );
+      expect(
+        _materiais(
+          const [RotuloFoto('Metal', 0.70)],
+          'BELGO\nArame recozido\nBWG 18\n1 kg',
+        ),
+        isNot(contains('Vergalhão de aço')),
+      );
+    });
+
+    test('telha com a marca e o tipo gravados continua telha', () {
+      final m = _materiais(
+        const [RotuloFoto('Roof', 0.58)],
+        'BRASILIT\nONDULADA 6mm',
+      );
+      expect(m.first, 'Telha');
+    });
+
+    test('"tubo" sozinho é a embalagem, não o cano', () {
+      expect(
+        _materiais(const [], 'Selante PU 40\nCinza\nTubo 400g'),
+        isNot(contains('Cano PVC')),
+      );
     });
 
     test('etiqueta CA-50 confirma o vergalhão', () {

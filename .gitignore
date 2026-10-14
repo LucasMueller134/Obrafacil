@@ -1,2 +1,9 @@
 # Configuração local do assistente (não versionar)
 .claude/
+
+# Treino do modelo próprio de fases (docs/ia/treinar-modelo.md), rodado a
+# partir da raiz: as fotos do canteiro mostram funcionários (dado pessoal,
+# LGPD) e o repositório é público; a saída é o .tflite e os rótulos, que vão
+# para obra_facil/assets/modelos/ à mão.
+/fotos/
+/saida/

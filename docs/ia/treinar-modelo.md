@@ -40,18 +40,22 @@ arquivo `.tflite` vai dentro do app.
 | Recomendado | 100 a 200 |
 | Com `--ajuste-fino` | 300 ou mais |
 
-- **Não precisa treinar as 10 fases.** Treine só as que você tem fotos; o
-  modelo só opina sobre as fases que aprendeu, e as outras continuam com o
-  modelo base.
+- **Não precisa treinar as 10 fases, mas as que ficarem de fora vão para
+  `outros`.** O modelo sempre escolhe uma das classes que aprendeu: treinado
+  só com fundação e estrutura, ele chama a foto de pintura de "estrutura"
+  com 50% ou mais, e o app preenche a fase errada. Ponha as fotos das fases
+  que você não vai treinar na pasta `outros`; sem isso o modelo chuta uma das
+  fases treinadas.
 - **Equilibre as fases.** Se uma tem 300 fotos e outra 40, o modelo tende a
   chutar a maior. O script compensa com peso por classe e avisa quando a
   diferença passa de 3 para 1, mas fotos a mais na fase pequena ajudam mais.
 - **Use fotos de pelo menos 3 obras diferentes.** Com uma obra só, o modelo
   aprende a obra (o muro do vizinho, a cor da terra), não a fase.
-- **Crie também a pasta `outros`** (50 a 100 fotos): nota fiscal, selfie,
-  material solto, almoço da equipe — tudo que vai parar no diário e não é
-  fase nenhuma. Sem ela o modelo é obrigado a escolher uma fase para tudo.
-  O app ignora esse rótulo.
+- **A pasta `outros` é obrigatória** (50 a 100 fotos, mais as das fases que
+  ficaram fora do treino): nota fiscal, selfie, material solto, almoço da
+  equipe — tudo que vai parar no diário e não é fase treinada. Sem ela o
+  modelo é obrigado a escolher uma fase para tudo, e o script recusa o
+  treino. O app ignora esse rótulo.
 
 ## 2. Como fotografar
 
@@ -68,9 +72,10 @@ registrar o dia no diário:
 - **Nada de rajada.** Dez fotos quase iguais tiradas em sequência valem por
   uma e, pior, uma cai no treino e a outra no teste, inflando a nota. Prefira
   poucas fotos diferentes a muitas parecidas.
-- Formato: JPEG ou PNG. Fotos HEIC do iPhone precisam ser convertidas (o
-  script avisa quais ignorou). O tamanho não importa: o modelo reduz tudo
-  para 224×224.
+- Formato: JPEG ou PNG. Fotos HEIC do iPhone, WebP e BMP precisam ser
+  convertidas (o script avisa quais ignorou), e arquivo que só tem o nome de
+  foto — cópia cortada, o `._` que o macOS cria — também fica de fora. O
+  tamanho não importa: o modelo reduz tudo para 224×224.
 
 ## 3. Organizar as pastas
 
@@ -92,6 +97,10 @@ fotos/
 Pasta com outro nome é ignorada (o script avisa). Foto repetida — o mesmo
 arquivo em duas pastas — entra uma vez só.
 
+As fotos mostram a equipe (dado pessoal, pela LGPD) e o repositório é
+público: deixe-as fora dele ou na pasta `fotos/` da raiz, que o `.gitignore`
+já exclui, assim como a `saida/` do treino local.
+
 ## 4. Conferir antes de treinar
 
 ```bash
@@ -108,7 +117,10 @@ modelo base (MobileNet/EfficientNet). A internet só é usada aqui, no treino:
 o app continua 100% no aparelho.
 
 1. Compacte a pasta `fotos/` num `fotos.zip` e envie para o seu Google Drive
-   (por exemplo em `MeuDrive/obrafacil/fotos.zip`).
+   (por exemplo em `MeuDrive/obrafacil/fotos.zip`). Tanto faz compactar a
+   pasta ou o que está dentro dela: se o zip trouxer a pasta `fotos/` (o
+   normal no "Compactar" do Windows e do macOS), o script acha as fases uma
+   pasta abaixo, em `/content/fotos/fotos/`, e ignora a `__MACOSX`.
 2. Abra <https://colab.research.google.com>, crie um notebook e, em
    **Ambiente de execução → Alterar o tipo de ambiente**, escolha **GPU T4**
    (treina em minutos em vez de dezenas de minutos).
@@ -165,8 +177,10 @@ comandos.
    nome tem de ser exatamente esse). A pasta já está declarada no
    `pubspec.yaml`.
 2. Gere o app de novo (`flutter build apk` ou o CI). Atualizações seguintes
-   do modelo são copiadas de novo para o aparelho automaticamente: o app
-   compara o tamanho do arquivo.
+   do modelo são copiadas de novo para o aparelho automaticamente: na
+   primeira foto de cada sessão o app compara o conteúdo da cópia com o
+   modelo que veio no app (o tamanho não basta: o modelo retreinado com as
+   mesmas fases tem sempre o mesmo número de bytes).
 3. No aparelho, tire uma foto no diário e abra **"Ver o que a IA viu na
    foto"**: deve aparecer uma linha `Modelo da obra: <fase>`.
 
@@ -203,7 +217,8 @@ comandos.
 | Sintoma | Causa provável |
 |---|---|
 | "É preciso de pelo menos duas classes com fotos" | Os nomes das pastas não batem com as fases (o script lista os aceitos). |
+| "Falta a pasta 'outros' com fotos" | Crie a pasta `outros` com fotos que não são de fase nenhuma e as das fases que você não vai treinar. |
 | Acurácia alta no treino e baixa em `--dados-teste` | Fotos de uma obra só, ou rajadas quase iguais: o modelo decorou a obra. |
-| Sempre a mesma fase | Classes desequilibradas, ou falta a pasta `outros`. |
+| Sempre a mesma fase | Classes desequilibradas, ou a pasta `outros` com poucas fotos (ou sem as fases que ficaram fora do treino). |
 | "Modelo da obra" nunca aparece no app | Arquivo com outro nome ou fora de `assets/modelos/`, ou o ML Kit recusou o modelo — veja o log do aparelho. |
 | Erro de download no treino | Sem acesso ao TF Hub (rede bloqueada): treine no Colab. |

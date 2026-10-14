@@ -29,13 +29,17 @@ class MaterialDetectado {
 /// Peso perto de 1 é o nome do produto ("CIMENTO", "ARGAMASSA"); perto de
 /// 0,8, uma marca ou código que só existe naquele produto ("Votoran",
 /// "CA-50"); 0,25, uma palavra que aparece em outros produtos e só ajuda a
-/// desempatar ("Nacional", "cerâmico") — sozinha ela fica abaixo do corte
-/// para listar.
+/// desempatar ("Nacional", "cerâmico", a marca que vende de tudo, como
+/// Tigre ou Gerdau) — sozinha ela fica abaixo do corte para listar.
 class _Termo {
   final String texto;
   final double peso;
 
-  const _Termo(this.texto, this.peso);
+  /// Aceita o plural ("argamassas", "telhas"). Desligado onde o plural é
+  /// outra coisa: "Votorantim Cimentos" é a empresa, não o produto.
+  final bool plural;
+
+  const _Termo(this.texto, this.peso, {this.plural = true});
 }
 
 /// IA on-device nº 1 — reconhecimento de material pela câmera.
@@ -140,7 +144,7 @@ class MaterialVisionService {
   /// "CP-II", "CP II" e "cp ii" são o mesmo termo.
   static const Map<String, List<_Termo>> _termos = {
     'Cimento': [
-      _Termo('cimento', 1),
+      _Termo('cimento', 1, plural: false),
       _Termo('portland', 0.9),
       _Termo('cp i', 0.85),
       _Termo('cp ii', 0.85),
@@ -190,13 +194,15 @@ class MaterialVisionService {
     ],
     'Cano PVC': [
       _Termo('cano', 1),
-      _Termo('tubo', 0.8),
       _Termo('pvc', 0.85),
       _Termo('esgoto', 0.8),
       _Termo('soldavel', 0.9),
-      _Termo('tigre', 0.8),
-      _Termo('amanco', 0.8),
-      _Termo('krona', 0.8),
+      // "Tubo" é também a embalagem de selante e silicone, e Tigre, Amanco
+      // e Krona vendem caixa d'água e conexão: sozinhos, só desempatam.
+      _Termo('tubo', 0.25),
+      _Termo('tigre', 0.25),
+      _Termo('amanco', 0.25),
+      _Termo('krona', 0.25),
     ],
     'Vergalhão de aço': [
       _Termo('vergalhao', 1),
@@ -204,10 +210,11 @@ class MaterialVisionService {
       _Termo('ca 60', 0.9),
       _Termo('ca50', 0.9),
       _Termo('ca60', 0.9),
-      _Termo('gerdau', 0.8),
-      _Termo('arcelormittal', 0.8),
-      _Termo('arcelor', 0.8),
-      _Termo('belgo', 0.8),
+      // Usinas que vendem também arame, prego e tela.
+      _Termo('gerdau', 0.25),
+      _Termo('arcelormittal', 0.25),
+      _Termo('arcelor', 0.25),
+      _Termo('belgo', 0.25),
     ],
     'Fio elétrico': [
       _Termo('fio', 1),
@@ -250,9 +257,13 @@ class MaterialVisionService {
       _Termo('telha', 1),
       _Termo('fibrocimento', 0.9),
       _Termo('cumeeira', 0.8),
-      _Termo('eternit', 0.85),
-      _Termo('brasilit', 0.85),
-      _Termo('imbralit', 0.8),
+      // Tipo impresso na peça: com a marca valendo só desempate, é o que
+      // reconhece a telha que não traz a palavra "telha".
+      _Termo('ondulada', 0.8),
+      // Também fabricam caixa d'água.
+      _Termo('eternit', 0.25),
+      _Termo('brasilit', 0.25),
+      _Termo('imbralit', 0.25),
     ],
     'Bloco de concreto': [
       _Termo('bloco de concreto', 1),
@@ -326,7 +337,19 @@ class MaterialVisionService {
     'isolamento',
     'isolado',
     'isolada',
+    // Cabeçalhos da lista de usos: "Uso: concretos, argamassas".
+    'uso',
+    'aplicacao',
+    'aplicacoes',
+    'indicacao',
+    'indicacoes',
   ];
+
+  /// Quantas linhas abaixo de um cabeçalho de uso ("Indicado para:")
+  /// ainda são a lista. Passar do fim da lista só deixa de listar o que
+  /// vem depois (o campo fica vazio); parar antes deixa um material citado
+  /// valer como o produto, e esse vai para o campo.
+  static const int _linhasDaLista = 4;
 
   /// Peso máximo de um material só citado. Fica abaixo do corte de
   /// [_confiancaParaListar]: citação desempata, nunca lista sozinha.
@@ -344,19 +367,41 @@ class MaterialVisionService {
 
     // ----- Texto da embalagem
     final linhas = _linhasNormalizadas(texto);
+    // O OCR devolve cada linha impressa separada, e a lista de usos quase
+    // nunca cabe na linha da deixa: "Indicado para:" numa linha, "reboco,
+    // concreto, blocos de concreto," e "telhas" nas de baixo. Por isso a
+    // citação passa para as linhas seguintes enquanto a lista continua.
+    var linhasDeLista = 0;
     for (var n = 0; n < linhas.length; n++) {
-      final linha = linhas[n];
+      final (:linha, :continua) = linhas[n];
       final corte = _inicioDoUso(linha);
+      // Linha com deixa própria começa outra frase e é lida por ela; a
+      // quantidade ("3,6 L", "50 kg") encerra a lista.
+      final herdada =
+          linhasDeLista > 0 && corte == -1 && !RegExp('^[0-9]').hasMatch(linha);
       for (final entrada in _termos.entries) {
         for (final termo in entrada.value) {
-          final posicao = _posicaoDaPalavra(linha, termo.texto);
+          final posicao =
+              _posicaoDaPalavra(linha, termo.texto, plural: termo.plural);
           if (posicao == -1) continue;
           de(entrada.key).somarTexto(
             termo,
-            citado: corte != -1 && posicao > corte,
+            citado: herdada || (corte != -1 && posicao > corte),
             posicao: n * 1000 + posicao,
           );
         }
+      }
+      if (corte != -1 && _deixasDeUso.contains(linha.split(' ').last)) {
+        // Cabeçalho: a deixa fecha a linha e a lista vem embaixo.
+        linhasDeLista = _linhasDaLista;
+      } else if (herdada) {
+        linhasDeLista--;
+      } else {
+        linhasDeLista = 0;
+      }
+      // Linha citada que termina em vírgula ou "e" segue na de baixo.
+      if ((corte != -1 || herdada) && continua && linhasDeLista < 1) {
+        linhasDeLista = 1;
       }
     }
 
@@ -365,7 +410,7 @@ class MaterialVisionService {
     // palavras de verdade bastam — vergalhão de obra não vem com texto
     // impresso que não seja a etiqueta dele mesmo.
     final palavras = linhas
-        .expand((l) => l.split(' '))
+        .expand((l) => l.linha.split(' '))
         .where((p) => RegExp('[a-z]').allMatches(p).length >= 3);
     final textoLegivel = palavras.length >= 2;
 
@@ -375,7 +420,11 @@ class MaterialVisionService {
       final mapeado = _rotulos[r.label.toLowerCase().trim()];
       if (mapeado == null) continue;
       final (material, peso) = mapeado;
-      final textoConfirma = (evidencias[material]?.doProduto ?? 0) > 0;
+      // Só confirma o texto que listaria o material sozinho: a palavra que
+      // só desempata ("BELGO" no arame) não transforma a lata ou o rolo
+      // de arame do "Metal" em vergalhão.
+      final textoConfirma =
+          (evidencias[material]?.doProduto ?? 0) >= _confiancaParaListar;
       if (peso <= _pesoDeRotuloGenerico && textoLegivel && !textoConfirma) {
         continue;
       }
@@ -445,15 +494,24 @@ class MaterialVisionService {
   /// hífen trocados por espaço ("CP-II-F" vira "cp ii f", "mm²" vira
   /// "mm2") e com os dígitos que o OCR troca por letra corrigidos dentro
   /// das palavras ("CIMENT0" vira "cimento").
-  static List<String> _linhasNormalizadas(String texto) {
-    final linhas = <String>[];
+  ///
+  /// [continua] diz se a frase segue na linha de baixo — termina em
+  /// vírgula, ponto e vírgula, "e" ou "ou" —, o que só dá para ver antes
+  /// de a pontuação sumir.
+  static List<({String linha, bool continua})> _linhasNormalizadas(
+      String texto) {
+    final linhas = <({String linha, bool continua})>[];
     for (final bruta in texto.split(RegExp(r'[\n\r]+'))) {
       final limpa = TextoBr.normalizar(bruta)
           .replaceAll('²', '2')
           .replaceAll(RegExp(r'[^a-z0-9]+'), ' ')
           .trim();
       if (limpa.isEmpty) continue;
-      linhas.add(limpa.split(' ').map(_corrigirLetras).join(' '));
+      final palavras = limpa.split(' ').map(_corrigirLetras).toList();
+      final continua = RegExp(r'[,;]\s*$').hasMatch(bruta) ||
+          palavras.last == 'e' ||
+          palavras.last == 'ou';
+      linhas.add((linha: palavras.join(' '), continua: continua));
     }
     return linhas;
   }
@@ -482,9 +540,10 @@ class MaterialVisionService {
   }
 
   /// Onde [termo] aparece em [linha] como palavra inteira — aceitando o
-  /// plural, como [TextoBr.contemPalavra] —, ou -1. A linha já vem de
-  /// [_linhasNormalizadas]: palavras separadas por um espaço só.
-  static int _posicaoDaPalavra(String linha, String termo) {
+  /// plural, como [TextoBr.contemPalavra], se [plural] —, ou -1. A linha já
+  /// vem de [_linhasNormalizadas]: palavras separadas por um espaço só.
+  static int _posicaoDaPalavra(String linha, String termo,
+      {bool plural = true}) {
     var i = linha.indexOf(termo);
     while (i != -1) {
       final fim = i + termo.length;
@@ -492,7 +551,8 @@ class MaterialVisionService {
       var fimDaPalavra = linha.indexOf(' ', fim);
       if (fimDaPalavra == -1) fimDaPalavra = linha.length;
       final sobra = linha.substring(fim, fimDaPalavra);
-      if (comeca && (sobra.isEmpty || sobra == 's' || sobra == 'es')) {
+      if (comeca &&
+          (sobra.isEmpty || (plural && (sobra == 's' || sobra == 'es')))) {
         return i;
       }
       i = linha.indexOf(termo, i + 1);

@@ -287,7 +287,11 @@ class _FormEstoqueState extends State<_FormEstoque> {
       );
     } catch (e) {
       debugPrint('Estoque: falha ao abrir a câmera: $e');
-      if (mounted) setState(() => _resultadoVisao = MensagensErro.daCamera(e));
+      // Esta tela só tem a câmera: sem ela, a saída é digitar o material.
+      if (mounted) {
+        setState(() =>
+            _resultadoVisao = MensagensErro.daCamera(e, temGaleria: false));
+      }
       return;
     }
     if (xfile == null || !mounted) return;

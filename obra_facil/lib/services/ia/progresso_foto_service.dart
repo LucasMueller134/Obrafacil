@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:isolate';
+import 'dart:math' show max;
 import 'dart:typed_data';
 
 import 'package:image/image.dart' as img;
@@ -47,12 +48,12 @@ class ComparacaoFotos {
 ///
 /// Compara duas fotos do mesmo ponto da obra pela estrutura da cena, e não
 /// pelo brilho: a diferença pixel a pixel crua confundia luz com obra (a
-/// mesma parede de manhã e à tarde dava "mudança grande"). Agora as duas
-/// fotos têm o histograma de luminância equalizado antes da conta — o que
-/// tira a diferença de exposição — e o índice soma a diferença das
-/// imagens equalizadas com a das bordas, que são as formas da cena: parede
-/// nova, laje, telhado. O cálculo roda num isolate para não travar a
-/// interface.
+/// mesma parede de manhã e à tarde dava "mudança grande"). Agora cada foto
+/// tem a faixa de tons esticada para a escala inteira antes da conta — o
+/// que tira a diferença de exposição —, com um limite de ganho para não
+/// esticar o ruído do sensor, e o índice soma a diferença das imagens
+/// normalizadas com a das bordas, que são as formas da cena: parede nova,
+/// laje, telhado. O cálculo roda num isolate para não travar a interface.
 class ProgressoFotoService {
   /// Lado da imagem reduzida: o bastante para ver paredes e vãos, pouco
   /// para que ruído de câmera e folha balançando não contem como mudança.
@@ -63,9 +64,24 @@ class ProgressoFotoService {
   /// com menos contraste tem as mesmas bordas que a outra.
   static const double _fracaoDeBorda = 0.12;
 
-  /// Diferença média esperada entre duas imagens equalizadas sem relação
+  /// Diferença média esperada entre duas imagens normalizadas sem relação
   /// nenhuma (duas variáveis uniformes): é o que vale 100% de mudança.
-  static const double _difEqualizadaMaxima = 1 / 3;
+  static const double _difNormalizadaMaxima = 1 / 3;
+
+  /// Faixa de tons mínima, como fração do brilho médio, que a
+  /// normalização estica para a escala inteira. Uma foto quase de um tom
+  /// só (parede rebocada ou pintada, contrapiso) tem pouco contraste além
+  /// do ruído do sensor: esticá-la como as outras — o que a equalização de
+  /// histograma fazia — transformava ±2 níveis de ruído em dezenas, e o
+  /// Sobel lia isso como borda. Por ser fração do brilho, a mesma parede
+  /// com outra luz é esticada do mesmo jeito.
+  static const double _contrasteMinimo = 0.30;
+
+  /// Gradiente mínimo para um pixel ser borda, além do corte relativo.
+  /// Depois da média 3x3, é um degrau de uns 18 níveis: sem este piso, o
+  /// corte relativo de uma foto lisa cai quase a zero e todo ruído vira
+  /// borda.
+  static const int _bordaMinima = 48;
 
   static Future<ComparacaoFotos> comparar(
       String caminhoAntes, String caminhoDepois) async {
@@ -89,16 +105,16 @@ class ProgressoFotoService {
 
     final luz = (_media(antes) - _media(depois)).abs() / 255;
 
-    final eqAntes = _suavizar(_equalizar(antes));
-    final eqDepois = _suavizar(_equalizar(depois));
+    final eqAntes = _suavizar(_normalizar(antes));
+    final eqDepois = _suavizar(_normalizar(depois));
 
     final difImagem =
-        (_diferencaMedia(eqAntes, eqDepois) / 255 / _difEqualizadaMaxima)
+        (_diferencaMedia(eqAntes, eqDepois) / 255 / _difNormalizadaMaxima)
             .clamp(0.0, 1.0);
     final difBordas = _diferencaDeBordas(_bordas(eqAntes), _bordas(eqDepois));
 
     // As bordas pesam mais: são a estrutura da cena. A diferença das
-    // imagens equalizadas pega o que bordas não mostram — uma superfície
+    // imagens normalizadas pega o que bordas não mostram — uma superfície
     // grande que mudou de tom, como o reboco sobre o tijolo.
     final indice = (0.4 * difImagem + 0.6 * difBordas).clamp(0.0, 1.0);
     return ComparacaoFotos(indiceMudanca: indice, diferencaDeLuz: luz);
@@ -117,7 +133,15 @@ class ProgressoFotoService {
     if (decodificada == null) {
       throw const FormatException('Foto em formato que não dá para ler.');
     }
-    final pequena = img.copyResize(decodificada, width: _lado, height: _lado);
+    // Média da área de cada pixel, e não o pixel mais próximo: a média
+    // apaga o ruído do sensor (numa foto de 900 px, cada pixel reduzido
+    // junta uns 200), o vizinho mais próximo o deixa passar inteiro.
+    final pequena = img.copyResize(
+      decodificada,
+      width: _lado,
+      height: _lado,
+      interpolation: img.Interpolation.average,
+    );
     return [
       for (final pixel in pequena)
         (0.299 * pixel.r + 0.587 * pixel.g + 0.114 * pixel.b).round(),
@@ -127,29 +151,22 @@ class ProgressoFotoService {
   static double _media(List<int> valores) =>
       valores.fold<int>(0, (a, b) => a + b) / valores.length;
 
-  /// Equalização de histograma: cada tom vira a sua posição na ordem de
-  /// brilho da própria foto. A mesma cena mais escura ou mais clara
-  /// (contanto que a ordem dos tons não mude) dá a mesma imagem.
-  static List<int> _equalizar(List<int> valores) {
-    final histograma = List<int>.filled(256, 0);
-    for (final v in valores) {
-      histograma[v.clamp(0, 255)]++;
-    }
-    final acumulado = List<int>.filled(256, 0);
-    var soma = 0;
-    for (var i = 0; i < 256; i++) {
-      soma += histograma[i];
-      acumulado[i] = soma;
-    }
-    final minimo = acumulado.firstWhere((c) => c > 0);
-    final total = valores.length;
-    // Foto de um tom só (tampa da lente, tela preta): não há o que
-    // equalizar.
-    if (total == minimo) return List<int>.filled(total, 128);
+  /// Normalização da luz: estica a faixa de tons da foto (do 2º ao 98º
+  /// percentil, para ignorar os poucos pixels extremos) para a escala
+  /// inteira, centrada no meio. A mesma cena mais escura ou mais clara dá
+  /// a mesma imagem. O ganho tem teto: a faixa nunca conta como menor que
+  /// [_contrasteMinimo] do brilho médio (nem que 12 níveis, na foto quase
+  /// preta), e o ruído de uma parede lisa continua pequeno.
+  static List<int> _normalizar(List<int> valores) {
+    final ordenados = [...valores]..sort();
+    final baixo = ordenados[(ordenados.length * 0.02).floor()];
+    final alto = ordenados[(ordenados.length * 0.98).floor()];
+    final faixa =
+        max(alto - baixo, max(_contrasteMinimo * _media(valores), 12));
+    final ganho = 255 / faixa;
+    final meio = (alto + baixo) / 2;
     return [
-      for (final v in valores)
-        ((acumulado[v.clamp(0, 255)] - minimo) * 255 / (total - minimo))
-            .round(),
+      for (final v in valores) (128 + (v - meio) * ganho).round().clamp(0, 255),
     ];
   }
 
@@ -198,9 +215,10 @@ class ProgressoFotoService {
     final ordenadas = [...magnitude]..sort();
     final corte =
         ordenadas[((1 - _fracaoDeBorda) * (ordenadas.length - 1)).round()];
-    // Foto lisa, sem borda nenhuma: só conta o que tiver algum gradiente.
+    // Foto lisa, sem borda nenhuma: o piso absoluto impede que o ruído
+    // que sobrou vire borda só por estar entre os mais fortes da foto.
     return [
-      for (final m in magnitude) corte == 0 ? m > 0 : m >= corte && m > 0,
+      for (final m in magnitude) m >= corte && m >= _bordaMinima,
     ];
   }
 

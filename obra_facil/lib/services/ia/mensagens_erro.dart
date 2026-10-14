@@ -12,15 +12,21 @@ import 'package:flutter/services.dart';
 /// indo para o log (`debugPrint` em quem chama), não para o usuário.
 abstract class MensagensErro {
   /// Falha ao abrir a câmera ou a galeria.
-  static String daCamera(Object erro) {
+  ///
+  /// [temGaleria] diz se a tela oferece a galeria como saída. O estoque só
+  /// identifica o material pela câmera: mandar "escolher da galeria" ali
+  /// deixava a pessoa sem caminho nenhum.
+  static String daCamera(Object erro, {bool temGaleria = true}) {
     final codigo = _codigo(erro);
     if (_negouPermissao(codigo)) {
       return 'O app não tem permissão para usar a câmera ou as fotos. '
           'Libere nas configurações do celular e tente de novo.';
     }
     if (codigo.contains('no_available_camera')) {
-      return 'Não encontrei uma câmera disponível neste aparelho. '
-          'Escolha uma foto da galeria.';
+      final saida = temGaleria
+          ? 'Escolha uma foto da galeria.'
+          : 'Digite o nome do material no campo.';
+      return 'Não encontrei uma câmera disponível neste aparelho. $saida';
     }
     if (erro is MissingPluginException) return _soNoCelular;
     return 'Não consegui abrir a câmera agora. Tente de novo.';

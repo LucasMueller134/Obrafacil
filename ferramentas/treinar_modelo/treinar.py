@@ -25,7 +25,8 @@ maiúscula e espaço não importam — "Reboco e contrapiso" vira
       estrutura/
       alvenaria/
       ...
-      outros/              fotos que não são de nenhuma fase (opcional)
+      outros/              fotos que não são de nenhuma fase, e as das fases
+                           que você não for treinar (obrigatória)
 
 Depende de `mediapipe-model-maker` (testado com 0.2.1.4). O primeiro treino
 baixa o modelo base do TF Hub, então precisa de internet — no Google Colab
@@ -60,15 +61,26 @@ FASES = [
     "Acabamento",
 ]
 
-# Classe opcional para o que não é nenhuma fase (selfie, nota fiscal, foto
-# do almoço). Sem ela, o modelo é obrigado a escolher uma fase para tudo;
-# com ela, aprende a dizer "não sei". O app ignora este rótulo.
+# Classe para o que não é nenhuma fase treinada (selfie, nota fiscal, foto
+# do almoço, foto de uma fase que ficou fora do treino). É obrigatória: o
+# classificador termina em softmax, então sem ela a maior saída de qualquer
+# foto é pelo menos 1/N — com duas fases, sempre 50% ou mais —, e o app
+# trata isso como evidência forte e preenche a fase errada. Com ela, o
+# modelo aprende a dizer "não sei". O app ignora este rótulo.
 OUTROS = "outros"
 
-# Formatos que o TensorFlow decodifica. HEIC (padrão do iPhone) e WebP não:
-# precisam ser convertidos para JPEG antes.
-EXTENSOES = {".jpg", ".jpeg", ".png", ".bmp", ".gif"}
-EXTENSOES_A_CONVERTER = {".heic", ".heif", ".webp"}
+# Formatos que o Model Maker decodifica: o image_utils.load_image dele usa
+# decode_jpeg ou decode_png (que também lê GIF). HEIC (padrão do iPhone),
+# WebP e BMP não — o decode_png recusa BMP no meio do treino — e precisam
+# ser convertidos para JPEG antes.
+EXTENSOES = {".jpg", ".jpeg", ".png", ".gif"}
+EXTENSOES_A_CONVERTER = {".heic", ".heif", ".webp", ".bmp"}
+
+# Começo do arquivo de cada formato aceito. A extensão não basta: o "._"
+# que o macOS deixa ao lado de cada foto, a foto cortada no meio da cópia
+# ou o HEIC renomeado para .jpg também terminam em .jpg, passam no
+# --verificar (o Model Maker só lê as fotos no treino) e derrubam o treino.
+ASSINATURAS = (b"\xff\xd8\xff", b"\x89PNG\r\n\x1a\n", b"GIF87a", b"GIF89a")
 
 # Abaixo disso o modelo decora as fotos em vez de aprender a fase.
 MINIMO_POR_FASE = 30
@@ -99,6 +111,34 @@ def rotulo_da_fase(nome: str) -> str:
 ROTULOS = {rotulo_da_fase(f): f for f in FASES}
 
 
+def _pastas_visiveis(pasta: Path) -> list[Path]:
+    """Subpastas, sem as de sistema: a __MACOSX que o "Compactar" do macOS
+    põe no zip e as ocultas (.Trash, .ipynb_checkpoints)."""
+    return sorted(p for p in pasta.iterdir()
+                  if p.is_dir() and p.name != "__MACOSX" and not p.name.startswith("."))
+
+
+def localizar_raiz(origem: Path) -> Path:
+    """A pasta que tem as pastas das fases.
+
+    Compactar a pasta fotos/ pelo Windows ou pelo macOS põe a raiz fotos/
+    dentro do zip, e o `unzip -d /content/fotos` do guia gera
+    /content/fotos/fotos/<fase>/. Quando `origem` não tem nenhuma fase e tem
+    uma única subpasta que tem, o dataset está nela.
+    """
+    def tem_fase(pasta: Path) -> bool:
+        return any(rotulo_da_fase(p.name) in ROTULOS or rotulo_da_fase(p.name) == OUTROS
+                   for p in _pastas_visiveis(pasta))
+
+    if not origem.is_dir() or tem_fase(origem):
+        return origem
+    subpastas = _pastas_visiveis(origem)
+    if len(subpastas) == 1 and tem_fase(subpastas[0]):
+        print(f"  - as fases estão em {subpastas[0]}: usando essa pasta.")
+        return subpastas[0]
+    return origem
+
+
 def montar_dataset(origem: Path, destino: Path, classes: list[str] | None = None,
                    do_treino: set[str] | None = None) -> tuple[dict[str, int], set[str]]:
     """Copia as fotos válidas para `destino/<rótulo>/`, uma vez cada.
@@ -118,15 +158,16 @@ def montar_dataset(origem: Path, destino: Path, classes: list[str] | None = None
     """
     if not origem.is_dir():
         sys.exit(f"Pasta de fotos não encontrada: {origem}")
+    origem = localizar_raiz(origem)
 
     contagem: dict[str, int] = {c: 0 for c in classes or []}
     vistas: dict[str, tuple[str, Path]] = {}
-    repetidas = a_converter = ignoradas = no_treino = 0
+    repetidas = a_converter = ignoradas = ilegiveis = no_treino = 0
     # A mesma foto em duas fases é erro de separação, não só repetição: o
     # modelo aprenderia que aquela cena é as duas coisas.
     em_duas_fases: list[tuple[Path, Path]] = []
 
-    for pasta in sorted(p for p in origem.iterdir() if p.is_dir()):
+    for pasta in _pastas_visiveis(origem):
         rotulo = rotulo_da_fase(pasta.name)
         if rotulo not in ROTULOS and rotulo != OUTROS:
             print(f"  ! pasta '{pasta.name}' não é uma fase do app — ignorada. "
@@ -149,6 +190,9 @@ def montar_dataset(origem: Path, destino: Path, classes: list[str] | None = None
                 ignoradas += 1
                 continue
             conteudo = arquivo.read_bytes()
+            if not conteudo.startswith(ASSINATURAS):
+                ilegiveis += 1
+                continue
             resumo = hashlib.sha1(conteudo).hexdigest()
             if resumo in vistas:
                 rotulo_antes, arquivo_antes = vistas[resumo]
@@ -177,7 +221,11 @@ def montar_dataset(origem: Path, destino: Path, classes: list[str] | None = None
         print(f"  ! {no_treino} foto(s) do teste também estão no treino — "
               "ficaram fora do teste.")
     if a_converter:
-        print(f"  ! {a_converter} foto(s) HEIC/WebP ignorada(s): converta para JPEG.")
+        print(f"  ! {a_converter} foto(s) HEIC/WebP/BMP ignorada(s): converta para JPEG.")
+    if ilegiveis:
+        print(f"  ! {ilegiveis} arquivo(s) com nome de foto que não são JPEG, PNG ou "
+              "GIF de verdade (cópia cortada, '._' do macOS, HEIC renomeado) "
+              "ignorado(s).")
     if ignoradas:
         print(f"  - {ignoradas} arquivo(s) que não são foto ignorado(s).")
     return contagem, set(vistas)
@@ -202,6 +250,19 @@ def conferir(contagem: dict[str, int]) -> bool:
     if len(com_fotos) < 2:
         print("\nÉ preciso de pelo menos duas classes com fotos para treinar.")
         return False
+    if OUTROS not in com_fotos:
+        # Recusa em vez de só avisar: o modelo sem "outros" não erra de vez
+        # em quando, erra em toda foto que não é das fases treinadas.
+        print(f"\nFalta a pasta '{OUTROS}' com fotos. Sem ela o modelo é obrigado "
+              "a escolher uma das fases treinadas para qualquer foto — até a da "
+              "nota fiscal — e o app preenche a fase errada. Ponha ali fotos que "
+              "não são de fase nenhuma e as das fases que você não vai treinar.")
+        return False
+    fora = [r for r in ROTULOS if r not in com_fotos]
+    if fora:
+        print(f"\n! Fases fora do treino: {', '.join(fora)}. Ponha fotos delas em "
+              f"'{OUTROS}': senão o modelo chama essas fotos de uma das fases "
+              "treinadas.")
     if min(com_fotos.values()) < MINIMO_POR_FASE // 3:
         print("\nAlguma classe tem fotos de menos para o modelo aprender alguma coisa. "
               "Junte mais fotos dela ou tire a pasta.")
@@ -253,13 +314,36 @@ def treinar(args: argparse.Namespace, dataset: Path, contagem: dict[str, int],
           f"teste: {teste.size}")
 
     saida = Path(args.saida).resolve()
+    # O Model Maker grava um checkpoint por época em export_dir/checkpoint/ e,
+    # no create(), retoma o último que achar lá. Com o --saida de um treino
+    # anterior (o /content/saida fixo do Colab), outro número de classes
+    # quebra o treino e as mesmas classes partem em silêncio dos pesos
+    # antigos — e o "teste" passa a ter fotos que o treino anterior viu. Por
+    # isso o treino roda numa pasta nova e só o resultado vai para --saida.
+    exportacao = Path(tempfile.mkdtemp(prefix="obrafacil_treino_"))
+    try:
+        _treinar_e_exportar(args, image_classifier, quantization, treino,
+                            validacao, teste, contagem, exportacao)
+        saida.mkdir(parents=True, exist_ok=True)
+        for nome in (NOME_DO_ARQUIVO, "labels.txt"):
+            shutil.copy2(exportacao / nome, saida / nome)
+    finally:
+        shutil.rmtree(exportacao, ignore_errors=True)
+    arquivo = saida / NOME_DO_ARQUIVO
+    print(f"\nModelo exportado: {arquivo} ({arquivo.stat().st_size / 1e6:.1f} MB)")
+    print("Próximo passo: copie para obra_facil/assets/modelos/fases_obra.tflite "
+          "e gere o app de novo (docs/ia/treinar-modelo.md).")
+
+
+def _treinar_e_exportar(args, image_classifier, quantization, treino, validacao,
+                        teste, contagem: dict[str, int], exportacao: Path) -> None:
     hparams = image_classifier.HParams(
         epochs=args.epocas,
         batch_size=args.lote,
         learning_rate=args.taxa,
         do_fine_tuning=args.ajuste_fino,
         class_weights=pesos_por_classe(contagem),
-        export_dir=str(saida),
+        export_dir=str(exportacao),
     )
     opcoes = image_classifier.ImageClassifierOptions(
         supported_model=getattr(image_classifier.SupportedModels, MODELOS[args.modelo]),
@@ -282,11 +366,7 @@ def treinar(args: argparse.Namespace, dataset: Path, contagem: dict[str, int],
     # arquivo fica uns 4x menor e continua no formato que o ML Kit aceita.
     config = quantization.QuantizationConfig.for_dynamic() if args.quantizar else None
     modelo.export_model(NOME_DO_ARQUIVO, quantization_config=config)
-    modelo.export_labels(str(saida))
-    arquivo = saida / NOME_DO_ARQUIVO
-    print(f"\nModelo exportado: {arquivo} ({arquivo.stat().st_size / 1e6:.1f} MB)")
-    print("Próximo passo: copie para obra_facil/assets/modelos/fases_obra.tflite "
-          "e gere o app de novo (docs/ia/treinar-modelo.md).")
+    modelo.export_labels(str(exportacao))
 
 
 def main(argv: list[str] | None = None) -> None:

@@ -88,6 +88,11 @@ class DiarioFotoService {
   /// O modelo próprio falhou (ou não existe): não tenta de novo nesta tela.
   bool _semModeloProprio = false;
 
+  /// [dispose] já rodou. A leitura que estava em andamento ainda volta
+  /// depois disso, e criar o classificador próprio nesse ponto deixaria
+  /// um classificador aberto no nativo que ninguém mais fecha.
+  bool _fechado = false;
+
   Future<AnaliseFotoDiario> analisar(String caminhoImagem) async {
     final input = InputImage.fromFilePath(caminhoImagem);
     final labels = await _labeler.processImage(input);
@@ -113,13 +118,14 @@ class DiarioFotoService {
   /// corrompido ou incompatível com o ML Kit deixa a leitura com o modelo
   /// base, como era antes de existir modelo próprio.
   Future<List<RotuloFoto>> _rotulosDoModeloProprio(InputImage input) async {
-    if (_semModeloProprio) return const [];
+    if (_semModeloProprio || _fechado) return const [];
     try {
       final caminho = await ModeloFases.caminhoLocal();
       if (caminho == null) {
         _semModeloProprio = true;
         return const [];
       }
+      if (_fechado) return const [];
       _labelerProprio ??= ImageLabeler(
         options: LocalLabelerOptions(
           modelPath: caminho,
@@ -139,6 +145,7 @@ class DiarioFotoService {
   }
 
   void dispose() {
+    _fechado = true;
     _labeler.close();
     _labelerProprio?.close();
   }
@@ -316,6 +323,11 @@ class DiarioFotoService {
   };
 
   /// Com estes, madeira no chão é piso pronto ou móvel, não forma de laje.
+  ///
+  /// Porta, janela e armário entram porque a madeira clara deles cai na
+  /// mesma faixa de cor da tábua de forma: sem eles aqui, a porta já
+  /// instalada sobre o piso virava "Estrutura" preenchida — e o próprio
+  /// [_fases] já manda porta e janela para o acabamento.
   static const Set<String> _acabamento = {
     'flooring',
     'hardwood',
@@ -327,6 +339,9 @@ class DiarioFotoService {
     'furniture',
     'paint',
     'painting',
+    'door',
+    'window',
+    'cabinetry',
   };
 
   /// O que só aparece onde há obra acontecendo. Terra sozinha pode ser um
