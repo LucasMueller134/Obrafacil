@@ -746,6 +746,16 @@ abstract class DiarioVozService {
       // número seguido de profissão já foi contado acima
       final seguinte = RegExp(r'^\s+([a-z]+)').firstMatch(depois)?.group(1);
       if (seguinte != null && _visitantes.contains(seguinte)) continue;
+      // "mais 2 lajes", "mais 6 pontos": "mais N" só é gente sem
+      // substantivo depois ("eu e mais 2", "mais 2 e o mestre").
+      if (m.pattern == _maisN &&
+          seguinte != null &&
+          !RegExp(r'(?:amos|emos|imos|aram|eram|iram|ou|ei)$')
+              .hasMatch(seguinte) &&
+          !const {'e', 'com', 'comigo', 'hoje', 'ontem', 'ai', 'la'}
+              .contains(seguinte)) {
+        continue;
+      }
       if (foraDoDia(m.start, m.end)) continue;
       total += int.parse(m.group(1)!);
       contados.add((inicioNumero, m.end));

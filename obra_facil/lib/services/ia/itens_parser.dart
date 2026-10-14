@@ -348,6 +348,29 @@ abstract class ItensParser {
   static ItemNoTexto? _itemComMaterialAntes(RegExpMatch m) {
     final canonico = _materialDaFala(m.group(1)!);
     if (canonico == null) return null;
+    // "cimento 50 quilos 10 sacos": o primeiro é o tamanho da embalagem,
+    // a contagem é a que vem depois.
+    final contagem = RegExp(r'^\s+(\d+)\s+(sacos?|latas?|barras?|pacotes?|'
+            r'caixas?|unidades?|pe[cç]as?|gal(?:[aã]o|[oõ]es)|baldes?|rolos?)'
+            r'(?![a-zA-ZÀ-ÿ0-9])')
+        .firstMatch(m.input.substring(m.end));
+    if (contagem != null) {
+      final chave = _chaveDaUnidade(contagem.group(2)!);
+      return ItemNoTexto(
+        ItemMaterialModel(
+          material: canonico,
+          quantidade: _lerQuantidade(contagem.group(1)!),
+          unidade: _unidadeNoEstoque(chave, canonico),
+        ),
+        inicio: m.end +
+            contagem.start +
+            contagem.group(0)!.indexOf(contagem.group(1)!),
+        fimQuantidade: m.end + contagem.end,
+        fim: m.end + contagem.end,
+        quantidadeClara: true,
+        unidadeFalada: chave,
+      );
+    }
     final chaveUnidade = _chaveDaUnidade(m.group(4)!);
     var quantidade = _lerQuantidade(m.group(2)!);
     if (m.group(3)?.isNotEmpty ?? false) quantidade += 0.5;

@@ -179,7 +179,7 @@ class ValorFalado {
       r'custaram|custa|custam|custando|custar|saiu|sairam|sai|saem|saindo|'
       r'ficou|ficaram|fica|ficam|ficando|fechou|fechamos|fechei|fechado|'
       r'fechando|foi|foram|vale|valeu|valia|totalizou|totalizando|somou|'
-      r'somando|deixou|deixaram|deixa|fez|fizeram|faz|baixou|abaixou|'
+      r'somando|deixou|deixaram|deixa|(?:fez|fizeram|faz)(?=\s+(?:por|em|pra|para|a)\s)|baixou|abaixou|'
       r'baixaram|desembolsei|investi|acertei|acertamos|acertou|torrei|'
       r'(?:no\s+)?valor|total|preco|era|eram';
   static const String _entreVerboENumero =
@@ -364,12 +364,14 @@ class ValorFalado {
 
   /// Negociação: o valor dito depois substitui o anterior ("deu 1.230 mas
   /// ele deixou por 1.200").
-  static final RegExp _negociacaoAntes = RegExp(
-      r'(?:^|[^\w])(?:deixou|deixaram|deixa|fez|fizeram|faz|baixou|abaixou|'
-      r'baixaram|fechou|fechamos|fechei|acertou|acertamos|acertei|'
-      r'consegui|conseguimos|conseguiu)'
-      r'(?:\s+(?:o\s+preco|tudo|pra\s+mim|pra\s+gente))?'
-      r'(?:\s+(?:por|em|pra|para|a|de))?\s+(?:r\$\s*)?$');
+  static final RegExp _negociacaoAntes =
+      RegExp(r'(?:^|[^\w])(?:(?:deixou|deixaram|deixa|baixou|abaixou|'
+          r'baixaram|fechou|fechamos|fechei|acertou|acertamos|acertei|'
+          r'consegui|conseguimos|conseguiu)'
+          r'(?:\s+(?:o\s+preco|tudo|pra\s+mim|pra\s+gente))?'
+          r'(?:\s+(?:por|em|pra|para|a|de))?|(?:fez|fizeram|faz)'
+          r'(?:\s+(?:o\s+preco|tudo|pra\s+mim|pra\s+gente))?'
+          r'\s+(?:por|em|pra|para|a))\s+(?:r\$\s*)?$');
   static final RegExp _correcao =
       RegExp(r'(?:^|[^\w])(?:quer\s+dizer|ou\s+melhor|na\s+verdade|alias|digo|'
           r'corrigindo|errei|me\s+enganei|nao\s+nao)(?![\w])');
@@ -436,6 +438,14 @@ class ValorFalado {
       if (n.papel == _Papel.naoDinheiro) continue;
       _avaliarContexto(t, n, quantidades, ignorar);
     }
+    // "Solto no fim da frase" só vale quando nada mais é dinheiro.
+    if (!numeros.any((n) => n.papel == _Papel.dinheiro)) {
+      for (final n in numeros) {
+        if (n.papel == _Papel.indefinido && _ehUltimo(t, n, ignorar)) {
+          n.papel = _Papel.dinheiro;
+        }
+      }
+    }
     _propagarParcelas(t, numeros);
 
     final dinheiro = [
@@ -462,9 +472,22 @@ class ValorFalado {
     var consumidoAte = 0;
     for (final m in _numero.allMatches(t)) {
       if (m.start < consumidoAte) continue; // "e 50 centavos" já lido
-      final n = _Numero(m.start, m.end, _lerNumeroBr(m.group(1)!));
+      var fimNumero = m.end;
+      var valorLido = _lerNumeroBr(m.group(1)!);
+      // "35 e 50", "89 e 90": reais e centavos sem dizer "centavos".
+      final cents =
+          RegExp(r'^\s+e\s+(\d{2})(?![\w.,/])').firstMatch(t.substring(m.end));
+      if (cents != null &&
+          RegExp(r'^\d+$').hasMatch(m.group(1)!) &&
+          !_naoEhDinheiro(t.substring(0, m.end + cents.end - 2),
+              t.substring(m.end + cents.end), 0)) {
+        valorLido += int.parse(cents.group(1)!) / 100;
+        fimNumero = m.end + cents.end;
+        consumidoAte = fimNumero;
+      }
+      final n = _Numero(m.start, fimNumero, valorLido);
       final antes = t.substring(0, m.start);
-      final depois = t.substring(m.end);
+      final depois = t.substring(fimNumero);
 
       final moedaAntes = _moedaAntes.firstMatch(antes);
       final moedaDepois = _moedaDepois.firstMatch(depois);
@@ -473,7 +496,7 @@ class ValorFalado {
         n.forte = true;
         if (moedaAntes != null) n.inicioTrecho = moedaAntes.start;
         if (moedaDepois != null) {
-          n.fimTrecho = m.end + moedaDepois.end;
+          n.fimTrecho = fimNumero + moedaDepois.end;
           final centavos = int.tryParse(moedaDepois.group(1) ?? '');
           if (centavos != null) n.valor += centavos / 100;
         }
@@ -545,6 +568,11 @@ class ValorFalado {
         default:
           return true;
       }
+    }
+    if (valor < 10 &&
+        RegExp(r'(?:^|[^\w])(?:casa|obra|bloco|torre|quarto|ac|cp|ap|unidade)\s*$')
+            .hasMatch(antes)) {
+      return true; // "obra 2", "casa 3", "argamassa ac 2"
     }
     if (_anoAntes.hasMatch(antes)) return true;
     if (_medidaDoMaterial.hasMatch(antes)) return true;
@@ -625,7 +653,6 @@ class ValorFalado {
       evidencia = true;
     }
     if (!evidencia && _verboComQuemRecebeu(antes)) evidencia = true;
-    if (!evidencia && _ehUltimo(t, n, ignorar)) evidencia = true;
 
     if (n.unidadePreco == null) {
       final janela = _janelaAntes(antes);
@@ -874,7 +901,10 @@ class ValorFalado {
       if (alvo == null) return true; // "cada", "a 35": qualquer uma
       return q.unidade == alvo.$2 ||
           q.material.startsWith(alvo.$2) ||
-          q.falada == dita;
+          q.falada == dita ||
+          // "a 60 o metro" de "25 metros quadrados": no canteiro o metro
+          // do preço é o da unidade dita.
+          (q.falada?.startsWith('$dita ') ?? false);
     });
     // Sem a quantidade de que o preço fala, contar outra coisa erraria o
     // valor; "a diária" sozinha é uma diária.

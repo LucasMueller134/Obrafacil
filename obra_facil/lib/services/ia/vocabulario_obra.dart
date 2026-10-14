@@ -178,6 +178,8 @@ abstract class VocabularioObra {
     'ferrugens',
     'assentimento',
     'assentimentos',
+    'fundicao',
+    'fundicoes',
   };
 
   /// Palavras de ligação: nunca entram numa junção ("telha do" não é
@@ -416,6 +418,10 @@ abstract class VocabularioObra {
   /// (pedreira/pedreiro). É flexão ou outra palavra — não ruído.
   static bool _soTerminacao(String a, String b) {
     if (a.startsWith(b) || b.startsWith(a)) return true;
+    if (a.endsWith('s') && b.endsWith('s')) {
+      a = a.substring(0, a.length - 1);
+      b = b.substring(0, b.length - 1);
+    }
     if (a.length != b.length) return false;
     return a.substring(0, a.length - 1) == b.substring(0, b.length - 1);
   }

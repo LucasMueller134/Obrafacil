@@ -226,6 +226,12 @@ abstract class NumeroExtenso {
         i++;
         continue;
       }
+      // "cento" sozinho não é número ("a 80 o cento", "30 por cento"):
+      // só "cento e ..." é.
+      if (w == 'cento' &&
+          (i + 1 >= tokens.length || _limpa(tokens[i + 1]) != 'e')) {
+        break;
+      }
       if (!grupo.aceita(w)) break;
       grupo.somar(w);
       i++;
