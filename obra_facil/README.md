@@ -1,190 +1,40 @@
-# ObraFácil 🏗️
+# ObraFácil — app Flutter
 
-App de gestão inteligente de obras para construção civil.
+App Android de gestão de obras (custos, equipe, estoque, diário e
+cronograma) com IA que roda **no próprio celular, sem internet e sem
+custo**. A visão geral do projeto está no [README da raiz](../README.md).
 
----
+- **Como configurar e rodar:** [SETUP.md](SETUP.md) (Flutter, Firebase,
+  regras do Firestore, roteiro de demonstração).
+- **Como as IAs funcionam e quanto acertam:**
+  [docs/ia/RELATORIO-IA.md](../docs/ia/RELATORIO-IA.md).
+- **Treinar o modelo próprio de fases da obra:**
+  [docs/ia/treinar-modelo.md](../docs/ia/treinar-modelo.md).
 
-## 📋 Funcionalidades
+## IA no aparelho
 
-- ✅ Login com perfis (Dono / Mestre de obras)
-- ✅ Cadastro e listagem de obras
-- ✅ Lançamentos de custos por categoria
-- ✅ **Foto da nota fiscal → IA preenche automaticamente (Claude API)**
-- ✅ **Áudio falado → IA transcreve e preenche (Whisper + Claude)**
-- ✅ Gráficos de gastos por categoria e por semana
-- ✅ Relatório semanal gerado por IA
-- ✅ Controle de estoque com alertas de baixo estoque
-- ✅ Diário de obra (registro diário do que foi feito)
-- ✅ Cronograma por fases com % de conclusão
-- ✅ Galeria de fotos com linha do tempo
-- ✅ Gestão de fornecedores
-- ✅ Firebase (sync em tempo real)
-- ✅ Android first
+| Módulo | Onde | Tecnologia |
+|---|---|---|
+| Nota fiscal por foto | `lib/services/ia/ocr_nota_service.dart` | ML Kit Text Recognition + leitor de QR/código de barras (chave de acesso) + regras para notas brasileiras |
+| Lançamento por voz | `lib/services/ia/voz_service.dart` | Reconhecedor de voz do Android em modo offline + interpretação da frase em pt-BR |
+| Diário por voz | `lib/services/ia/diario_voz_service.dart` | Mesmo reconhecedor + clima, equipe, fase e data |
+| Foto do canteiro | `lib/services/ia/diario_foto_service.dart` | Classificador do ML Kit + análise de cor + modelo próprio opcional |
+| Material pela câmera | `lib/services/ia/material_vision_service.dart` | Classificador do ML Kit + texto da embalagem |
+| Mudança visual entre fotos | `lib/services/ia/progresso_foto_service.dart` | Comparação de imagens (luz equalizada + bordas) |
+| Previsões e relatório | `lib/services/ia/previsao_*.dart`, `relatorio_semanal_service.dart`, `perguntas_obra_service.dart` | Regressão e regras em Dart puro |
 
----
+**Nenhuma chave de API.** O app não chama serviço de IA na nuvem. O único
+arquivo de configuração externa é `lib/firebase_options.dart`, gerado pelo
+`flutterfire configure`; a chave que aparece nele identifica o projeto
+Firebase e não é segredo — quem protege os dados são as regras de
+`firestore.rules`.
 
-## 🚀 Passo a Passo de Configuração
-
-### 1. Criar projeto no Firebase
-
-1. Acesse https://console.firebase.google.com
-2. Clique em **"Adicionar projeto"**
-3. Nome: `obra-facil` → avançar
-4. Ative o Google Analytics se quiser → **Criar projeto**
-
-### 2. Configurar Android no Firebase
-
-1. No painel do Firebase, clique em **"Adicionar app" → Android**
-2. Nome do pacote: `com.obrafacil.obra_facil`
-3. Apelido: `ObraFácil Android`
-4. Clique em **"Registrar app"**
-5. **Baixe o arquivo `google-services.json`**
-6. Copie o `google-services.json` para: `android/app/google-services.json`
-
-### 3. Ativar serviços no Firebase
-
-No console Firebase, ative:
-
-**Authentication:**
-- Menu lateral → Authentication → "Começar"
-- Aba "Sign-in method" → Ativar **E-mail/senha**
-
-**Firestore:**
-- Menu lateral → Firestore Database → "Criar banco de dados"
-- Escolha **Modo de teste** por agora → próximo → criar
-- Região: `us-east1` ou a mais próxima
-
-**Storage:**
-- Menu lateral → Storage → "Começar"
-- Modo de teste → próximo → criar
-
-### 4. Instalar FlutterFire CLI e configurar
+## Testes e avaliação
 
 ```bash
-# Instalar FlutterFire CLI
-dart pub global activate flutterfire_cli
-
-# Na pasta do projeto, executar:
-flutterfire configure
+flutter test                                    # testes unitários
+flutter test test/avaliacao/avaliacao_ia_test.dart   # acerto das IAs por campo
 ```
 
-Selecione o projeto `obra-facil` e marque **Android**.
-
-Isso vai gerar/atualizar o arquivo `lib/firebase_options.dart` automaticamente.
-
-### 5. Configurar as chaves de IA
-
-Abra `lib/constants/app_constants.dart` e substitua:
-
-```dart
-static const String claudeApiKey = 'SUA_CLAUDE_API_KEY_AQUI';
-static const String openAiApiKey = 'SUA_OPENAI_API_KEY_AQUI';
-```
-
-**Como obter as chaves:**
-
-- **Claude API:** https://console.anthropic.com → API Keys → Create Key
-- **OpenAI (Whisper):** https://platform.openai.com → API Keys → Create new secret key
-
-### 6. Instalar dependências e rodar
-
-```bash
-# Instalar pacotes
-flutter pub get
-
-# Verificar ambiente
-flutter doctor
-
-# Rodar no dispositivo/emulador Android
-flutter run
-```
-
----
-
-## 📁 Estrutura do Projeto
-
-```
-lib/
-├── constants/
-│   ├── app_constants.dart    ← Cores, textos, API keys
-│   └── app_theme.dart        ← Tema visual do app
-├── models/
-│   ├── usuario_model.dart
-│   ├── obra_model.dart
-│   ├── lancamento_model.dart
-│   └── models.dart           ← Fornecedor, Estoque, Diário, Cronograma, Galeria
-├── providers/
-│   └── app_provider.dart     ← Estado global do app
-├── services/
-│   ├── auth_service.dart     ← Firebase Auth
-│   ├── firebase_service.dart ← Firestore + Storage
-│   └── ia_service.dart       ← Claude API + Whisper
-├── screens/
-│   ├── auth/                 ← Login e Cadastro
-│   ├── obras/                ← Lista e detalhe de obras
-│   ├── lancamentos/          ← Lista e novo lançamento
-│   ├── estoque/              ← Controle de estoque
-│   ├── diario/               ← Diário de obra
-│   ├── cronograma/           ← Cronograma por fases
-│   ├── galeria/              ← Fotos da obra
-│   ├── fornecedores/         ← Gestão de fornecedores
-│   └── relatorios/           ← Relatórios e gráficos
-└── main.dart
-```
-
----
-
-## ⚠️ Regras do Firestore (Segurança)
-
-No console Firebase → Firestore → Regras, cole:
-
-```
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /{document=**} {
-      allow read, write: if request.auth != null;
-    }
-  }
-}
-```
-
-E no Storage → Regras:
-
-```
-rules_version = '2';
-service firebase.storage {
-  match /b/{bucket}/o {
-    match /{allPaths=**} {
-      allow read, write: if request.auth != null;
-    }
-  }
-}
-```
-
----
-
-## 🎨 Paleta de Cores
-
-| Cor | Hex | Uso |
-|-----|-----|-----|
-| Laranja | `#F97316` | Cor principal, botões |
-| Azul escuro | `#1E293B` | AppBar, secundária |
-| Amarelo | `#FCD34D` | Accent / destaque |
-| Verde | `#22C55E` | Sucesso |
-| Vermelho | `#EF4444` | Erro / alerta |
-| Amarelo âmbar | `#F59E0B` | Aviso |
-
----
-
-## 📱 Próximos passos sugeridos
-
-- [ ] Modo offline completo com sincronização (Drift + sync)
-- [ ] Exportar relatório em PDF
-- [ ] Notificações push (Firebase Messaging)
-- [ ] Orçamento baseado em histórico de obras
-- [ ] Comparativo entre obras
-
----
-
-Desenvolvido com Flutter + Firebase + Claude AI + Whisper 🚀
+O conjunto de avaliação e como acrescentar casos reais do canteiro estão em
+[test/avaliacao/LEIA-ME.md](test/avaliacao/LEIA-ME.md).

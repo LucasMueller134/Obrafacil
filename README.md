@@ -51,7 +51,7 @@ Um aplicativo **Android** com **três perfis de acesso** e **fluxo de aprovaçã
 - ✅ Cadastro e gestão de múltiplas obras
 - ✅ Lançamento de custos por categoria (mão de obra, material, equipamento)
 - ✅ **Nota fiscal por foto** → OCR preenche o gasto automaticamente
-- ✅ **Lançamento por voz** → transcrição automática da fala
+- ✅ **Lançamento por voz** → a fala vira o lançamento preenchido, sem internet
 - ✅ Gráficos de gastos por categoria e por semana
 - ✅ Relatório semanal gerado por IA
 - ✅ Controle de estoque com alerta de baixo estoque
@@ -66,19 +66,22 @@ Um aplicativo **Android** com **três perfis de acesso** e **fluxo de aprovaçã
 
 ---
 
-## 🤖 A inovação: 6 IAs embarcadas (on-device)
+## 🤖 A inovação: IA embarcada (on-device)
 
-O diferencial central do ObraFácil é rodar inteligência **dentro do próprio celular**, sem depender de servidor pago nem de internet no canteiro:
+O diferencial central do ObraFácil é rodar inteligência **dentro do próprio celular**, sem depender de servidor pago nem de internet no canteiro. Nenhuma chave de API, nenhum custo por uso.
 
 | # | Módulo | Tecnologia | O que faz |
 |---|--------|-----------|-----------|
-| 1 | Reconhecimento de material | **TensorFlow Lite** | Identifica o material pela câmera em tempo real |
-| 2 | OCR de notas fiscais | **Google ML Kit** | Lê a nota fiscal offline em até 4 passes de imagem (realce, binarização Otsu, rotação) e extrai fornecedor, CNPJ validado, data de emissão, total e itens |
-| 2b | Lançamento por voz | **Speech-to-Text + parser pt-BR** | Entende a frase falada inteira: valor (inclusive por extenso, gíria e "cada"), fornecedor, data, materiais e categoria |
-| 3 | Previsão de estouro | Modelo de **regressão** | Antecipa quando o orçamento vai estourar |
-| 4 | Progresso por foto | Análise comparativa de imagens | Estima o avanço real da obra a partir de fotos |
-| 5 | Diário de obra por voz | **Speech-to-Text + parser pt-BR** | Transforma o relato falado do dia em clima, tamanho da equipe, fase e data |
-| 6 | Leitura da foto do canteiro | **Google ML Kit** | Reconhece a cena da obra e sugere fase, material aparente, clima e um rascunho do registro do dia |
+| 1 | Nota fiscal por foto | **Google ML Kit** (texto + QR/código de barras) | Lê a nota offline, remonta as colunas pela posição do texto e confere CNPJ e data pela chave de acesso da NFC-e/NF-e; extrai fornecedor, CNPJ, data, total e itens |
+| 2 | Lançamento por voz | **Reconhecedor do Android (offline) + parser pt-BR** | Entende a frase falada inteira: valor (com ou sem "reais", "2 mil", "a 35 cada"), fornecedor, data, materiais e categoria, mesmo com o ruído do canteiro |
+| 3 | Diário de obra por voz | **Reconhecedor do Android (offline) + parser pt-BR** | Transforma o relato do dia em clima, tamanho da equipe, fase e data |
+| 4 | Leitura da foto do canteiro | **Google ML Kit** + análise de cor + modelo próprio opcional | Sugere fase, material aparente e clima; só preenche a fase quando a evidência sustenta |
+| 5 | Material pela câmera | **Google ML Kit** (imagem + texto da embalagem) | Identifica o material pela foto e pelo que está escrito no saco, lata ou caixa |
+| 6 | Mudança visual entre fotos | Comparação de imagens (luz equalizada + bordas) | Mede quanto a cena mudou entre duas fotos do mesmo ponto |
+| 7 | Previsão de estouro e de estoque | Regressão em Dart puro | Antecipa quando o orçamento vai estourar e quando o material acaba |
+| 8 | Relatório semanal e assistente | Regras em Dart puro | Resume a semana e responde perguntas sobre a obra |
+
+Quanto cada IA acerta — medido num conjunto de 133 casos, antes e depois da revisão — está em [docs/ia/RELATORIO-IA.md](docs/ia/RELATORIO-IA.md).
 
 ---
 
@@ -90,7 +93,7 @@ O diferencial central do ObraFácil é rodar inteligência **dentro do próprio 
 | Estado / Navegação | Provider, go_router |
 | Nuvem | Firebase (Auth, Firestore, Storage, Messaging) |
 | Banco local / offline | Drift (SQLite) |
-| IA on-device | TensorFlow Lite, Google ML Kit |
+| IA on-device | Google ML Kit (TensorFlow Lite), reconhecedor de voz do Android |
 | Gráficos | fl_chart |
 | Identidade visual | Tema escuro "Canteiro Premium" (laranja `#F97316`, cinza-cimento `#374151`, amarelo-capacete `#FBBF24`) |
 

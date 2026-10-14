@@ -14,6 +14,22 @@ AVALIACAO_SALVAR=depois flutter test test/avaliacao/avaliacao_ia_test.dart
 O resultado gravado vai para `resultados/<rótulo>.json`, com o acerto por
 campo e a lista de cada caso que falhou (esperado × obtido).
 
+- `resultados/antes.json`: o código original das IAs (commit `014dd1a`).
+- `resultados/depois.json`: o código depois da revisão das IAs.
+- `resultados/piso.json`: o acerto mínimo de cada campo. Se uma mudança
+  derrubar algum campo abaixo do piso, o teste falha — é a trava contra
+  regressão. Ao melhorar uma IA de propósito, grave de novo e suba o piso.
+
+## Partição dev / teste
+
+Cada caso tem `"particao": "dev"` ou `"teste"`, sorteada uma vez pelo hash
+do `id`. Os erros da metade **dev** foram usados para entender o que
+corrigir; a metade **teste** ficou reservada, sem ninguém olhar, para medir
+se a correção generaliza. A tabela mostra o acerto geral e, entre
+parênteses, só o da metade teste. Se o "teste" não sobe junto com o geral,
+a melhoria decorou os exemplos em vez de resolver a classe de erro — foi o
+que aconteceu com a fase pela foto, e é o motivo do modelo próprio.
+
 ## Como ler as métricas
 
 Para cada campo:

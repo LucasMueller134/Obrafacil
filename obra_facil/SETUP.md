@@ -70,13 +70,17 @@ lib/
 │   ├── auth_service.dart        # Firebase Auth
 │   ├── firestore_service.dart   # CRUD + streams + offline
 │   ├── imagem_service.dart      # compressão de fotos (base64)
-│   └── ia/                      # os 4 módulos de IA on-device
-│       ├── ocr_nota_service.dart          # ML Kit OCR + parser de nota BR
-│       ├── voz_service.dart               # speech-to-text + parser de frase
-│       ├── material_vision_service.dart   # ML Kit image labeling (TFLite)
-│       ├── previsao_orcamento_service.dart# regressão linear (Dart puro)
-│       ├── progresso_foto_service.dart    # comparação de imagens
-│       └── relatorio_semanal_service.dart # geração de texto
+│   └── ia/                      # IA on-device (ver docs/ia/RELATORIO-IA.md)
+│       ├── ocr_nota_service.dart          # nota fiscal: ML Kit OCR + regras de nota BR
+│       ├── linhas_ocr.dart, chave_acesso.dart # colunas pela posição; chave da NFC-e/NF-e
+│       ├── voz_service.dart, valor_falado.dart # lançamento por voz (fala -> campos)
+│       ├── diario_voz_service.dart        # diário por voz (clima, equipe, fase)
+│       ├── escuta_voz.dart, hipoteses_voz.dart, vocabulario_obra.dart # microfone e ruído
+│       ├── diario_foto_service.dart, cores_foto.dart, modelo_fases.dart # foto do canteiro
+│       ├── material_vision_service.dart   # material pela foto e pelo texto da embalagem
+│       ├── progresso_foto_service.dart    # mudança visual entre duas fotos
+│       ├── previsao_*_service.dart        # regressão (orçamento e estoque)
+│       └── relatorio_semanal_service.dart, perguntas_obra_service.dart # texto por regras
 ├── providers/   # AuthProvider (estado global de sessão)
 ├── router/      # go_router + guarda de autenticação
 ├── screens/     # telas por módulo
@@ -93,8 +97,13 @@ lib/
   Firebase Storage, que passou a exigir plano pago em projetos novos.
   O widget `ImagemObra` também aceita URLs http, então a migração para
   Storage é transparente.
-- **IA 100% on-device**: ML Kit (modelos TFLite embarcados) para OCR e
-  visão; regressão e geração de relatório em Dart puro. Nada sai do
-  aparelho e tudo funciona sem internet.
+- **IA 100% on-device**: ML Kit (modelos TFLite embarcados) para OCR,
+  código de barras e visão; reconhecedor de voz do Android em modo
+  offline; regressão e geração de relatório em Dart puro. Nada sai do
+  aparelho e tudo funciona sem internet. Para a voz offline, o celular
+  precisa do pacote de reconhecimento de português baixado (o app explica
+  como e permite usar o reconhecimento online numa gravação, se a pessoa
+  escolher). Acerto de cada IA, medido antes e depois:
+  [docs/ia/RELATORIO-IA.md](../docs/ia/RELATORIO-IA.md).
 - **Fluxo de aprovação**: lançamento de mestre nasce `pendente`; do dono
   nasce `aprovado`. Só entra nos gráficos e na previsão o que foi aprovado.
