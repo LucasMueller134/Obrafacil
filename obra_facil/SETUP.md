@@ -6,7 +6,7 @@ Passo a passo para rodar o projeto do zero numa máquina nova.
 
 | Ferramenta | Versão | Verificar |
 |---|---|---|
-| Flutter SDK | 3.24+ (canal stable) | `flutter --version` |
+| Flutter SDK | 3.47.7 (canal stable, a mesma do CI; mínimo 3.47 por causa do `flutter_scene`) | `flutter --version` |
 | Android Studio + SDK | API 34+ | `flutter doctor` |
 | Java | 17 (vem com o Android Studio) | `flutter doctor -v` |
 | Conta Google | — | para o Firebase |

@@ -28,6 +28,10 @@ dependencies:
   fl_chart: ^0.69.0
   cached_network_image: ^3.4.1
   flutter_animate: ^4.5.0
+  # Maquete 3D da obra (Flutter GPU). Versão exata: o pacote é pré-1.0 e
+  # versões menores trazem mudanças incompatíveis. Exige Flutter 3.47+.
+  flutter_scene: 0.24.3
+  hooks: ^2.0.0 # usado pelo hook/build.dart criado pelo flutter_scene:init
 
   # Câmera e processamento de imagem
   image_picker: ^1.1.2
@@ -65,6 +69,21 @@ flutter:
     # Modelo próprio de fases da obra (opcional) — ver docs/ia/treinar-modelo.md.
     # Sem o fases_obra.tflite aqui, o app usa só o modelo base do ML Kit.
     - assets/modelos/
+    - flutter_scene_generated/
+    - path: flutter_scene_generated/metal_ios/
+      platforms:
+        - ios
+    - path: flutter_scene_generated/metal_desktop/
+      platforms:
+        - macos
+    - path: flutter_scene_generated/opengl_es_vulkan/
+      platforms:
+        - android
+        - linux
+        - windows
+    - path: flutter_scene_generated/opengl_es/
+      platforms:
+        - web
 
 # Ícone do launcher — gerado no CI com: dart run flutter_launcher_icons
 flutter_launcher_icons:

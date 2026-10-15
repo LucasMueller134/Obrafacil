@@ -36,38 +36,55 @@ jobs:
           # Versão fixa: o canal "stable" mudou sozinho e quebrou a
           # compilação do workmanager (build #20). Builds reprodutíveis
           # pedem versão pinada — atualizar aqui de forma consciente.
-          flutter-version: '3.44.4'
+          # 3.47+ é exigido pelo flutter_scene (maquete 3D, Flutter GPU).
+          flutter-version: '3.47.7'
           channel: stable
           cache: true
 
       - name: Gerar scaffold Android
         run: |
+          # O flutter create reescreve o pubspec.lock do zero (só com os
+          # pacotes do SDK) e o pub get dele resolve o resto na versão mais
+          # nova que o pubspec aceita: sem isto o lock versionado é ignorado
+          # e cada build pega versões de plugin diferentes.
+          cp pubspec.lock "$RUNNER_TEMP/pubspec.lock"
           flutter create . --platforms android --org br.com.obrafacil --project-name obra_facil
+          cp "$RUNNER_TEMP/pubspec.lock" pubspec.lock
           # o flutter create cria um widget_test.dart de exemplo que não compila com o nosso app
           rm -f test/widget_test.dart
 
-      - name: Ajustar minSdk, permissões e nome do app
+      - name: Ajustar permissões, nome do app e Flutter GPU
         run: |
-          # firebase_auth exige Android 6.0+ (minSdk 23)
-          if [ -f android/app/build.gradle.kts ]; then
-            sed -i 's/minSdk = flutter.minSdkVersion/minSdk = 23/' android/app/build.gradle.kts
-          fi
-          if [ -f android/app/build.gradle ]; then
-            sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 23/' android/app/build.gradle
-          fi
+          # Cada sed é conferido: se o template do flutter create mudar, o
+          # build para aqui em vez de seguir sem a configuração.
+          confere() { grep -qF -- "$2" "$1" || { echo "::error file=$1::texto esperado não encontrado: $2"; exit 1; }; }
+          # minSdk: fica o do Flutter (flutter.minSdkVersion = 24), que cobre o
+          # Android 6.0+ (23) exigido pelo firebase_auth. Não adianta fixar 23:
+          # o `flutter build apk` devolve qualquer minSdk < 24 para
+          # flutter.minSdkVersion (MinSdkVersionMigration do Flutter).
+          confere android/app/build.gradle.kts 'minSdk = flutter.minSdkVersion'
           # desliga a minificação R8 no release: o plugin de OCR referencia
           # classes de idiomas (chinês/japonês/coreano) que não incluímos,
           # e o R8 falha com "missing classes" ao tentar encolher o app
-          if [ -f android/app/build.gradle.kts ]; then
-            sed -i 's/signingConfig = signingConfigs.getByName("debug")/signingConfig = signingConfigs.getByName("debug")\n            isMinifyEnabled = false\n            isShrinkResources = false/' android/app/build.gradle.kts
-            grep -A4 'release {' android/app/build.gradle.kts || true
-          fi
+          confere android/app/build.gradle.kts 'signingConfig = signingConfigs.getByName("debug")'
+          sed -i 's/signingConfig = signingConfigs.getByName("debug")/signingConfig = signingConfigs.getByName("debug")\n            isMinifyEnabled = false\n            isShrinkResources = false/' android/app/build.gradle.kts
+          confere android/app/build.gradle.kts 'isMinifyEnabled = false'
+          grep -A4 'release {' android/app/build.gradle.kts || true
           MANIFEST=android/app/src/main/AndroidManifest.xml
           # nome exibido no launcher
+          confere "$MANIFEST" 'android:label="obra_facil"'
           sed -i 's/android:label="obra_facil"/android:label="ObraFácil"/' "$MANIFEST"
           # permissões: internet (Firebase) e microfone (lançamento por voz);
           # queries para o serviço de reconhecimento de fala (Android 11+)
+          confere "$MANIFEST" '<manifest xmlns:android="http://schemas.android.com/apk/res/android">'
           sed -i 's#<manifest xmlns:android="http://schemas.android.com/apk/res/android">#<manifest xmlns:android="http://schemas.android.com/apk/res/android">\n    <uses-permission android:name="android.permission.INTERNET"/>\n    <uses-permission android:name="android.permission.RECORD_AUDIO"/>\n    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>\n    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>\n    <uses-permission android:name="android.permission.VIBRATE"/>\n    <uses-permission android:name="android.permission.WAKE_LOCK"/>\n    <queries>\n        <intent>\n            <action android:name="android.speech.RecognitionService"/>\n        </intent>\n    </queries>#' "$MANIFEST"
+          confere "$MANIFEST" 'android.permission.RECORD_AUDIO'
+          # Flutter GPU (maquete 3D do flutter_scene) vem desligado; liga
+          # dentro de <application>. Sem isto o Scene() do flutter_scene lança
+          # exceção ("Flutter GPU must be enabled...").
+          confere "$MANIFEST" '</application>'
+          sed -i 's#^\( *\)</application>#\1    <meta-data\n\1        android:name="io.flutter.embedding.android.EnableFlutterGPU"\n\1        android:value="true" />\n\1</application>#' "$MANIFEST"
+          confere "$MANIFEST" 'android:name="io.flutter.embedding.android.EnableFlutterGPU"'
           echo "--- Manifest final ---"
           cat "$MANIFEST"
           # flutter_local_notifications exige core library desugaring
@@ -110,6 +127,8 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: build-${{ github.run_number }}
+          # a tag aponta para o commit que foi compilado, não para a main
+          target_commitish: ${{ github.sha }}
           name: 'ObraFácil build ${{ github.run_number }}'
           body: 'APK gerado automaticamente do commit ${{ github.sha }}'
           files: obra_facil/obrafacil-${{ github.run_number }}.apk
