@@ -1,0 +1,6 @@
+# Gerador da maquete 3D (Python 3.13 — exigência do bpy 5.2).
+# O bpy é o Blender inteiro como módulo Python (Cycles com OpenImageDenoise
+# e o exportador glTF vêm junto); não precisa do Blender instalado.
+bpy==5.2.2
+numpy>=2.0
+Pillow>=10.0

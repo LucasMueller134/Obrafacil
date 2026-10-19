@@ -1,0 +1,542 @@
+{
+  "arquivo": "maquete.glb",
+  "unidade": "metro",
+  "eixo_vertical": "+Y",
+  "origem": "centro do tabuleiro, no nível do terreno (topo do tabuleiro); o tabuleiro vai de y=-0,30 a 0",
+  "frente": "+Z (rua)",
+  "raiz": "maquete",
+  "fixos": [
+    "base",
+    "cotas"
+  ],
+  "fases": [
+    {
+      "indice": 0,
+      "no": "fase_00_fundacao",
+      "nome": "Fundação",
+      "progresso_fim": 0.08,
+      "filhos": [
+        "fundacao_radier"
+      ],
+      "fantasma": "fantasma_fase_00",
+      "triangulos": 108,
+      "chamadas_de_desenho": 1,
+      "triangulos_fantasma": 480
+    },
+    {
+      "indice": 1,
+      "no": "fase_01_estrutura",
+      "nome": "Estrutura",
+      "progresso_fim": 0.22,
+      "filhos": [
+        "estrutura_laje",
+        "estrutura_pilares",
+        "estrutura_vigas"
+      ],
+      "fantasma": "fantasma_fase_01",
+      "triangulos": 1728,
+      "chamadas_de_desenho": 3,
+      "triangulos_fantasma": 480
+    },
+    {
+      "indice": 2,
+      "no": "fase_02_alvenaria",
+      "nome": "Alvenaria",
+      "progresso_fim": 0.42,
+      "filhos": [
+        "alvenaria_fiada_00",
+        "alvenaria_fiada_01",
+        "alvenaria_fiada_02",
+        "alvenaria_fiada_03",
+        "alvenaria_fiada_04",
+        "alvenaria_fiada_05",
+        "alvenaria_fiada_06",
+        "alvenaria_fiada_07",
+        "alvenaria_fiada_08",
+        "alvenaria_fiada_09",
+        "alvenaria_fiada_10",
+        "alvenaria_fiada_11",
+        "alvenaria_fiada_12",
+        "alvenaria_fiada_13",
+        "alvenaria_fiada_14"
+      ],
+      "fantasma": "fantasma_fase_02",
+      "triangulos": 13038,
+      "chamadas_de_desenho": 34,
+      "triangulos_fantasma": 696
+    },
+    {
+      "indice": 3,
+      "no": "fase_03_cobertura",
+      "nome": "Cobertura",
+      "progresso_fim": 0.52,
+      "filhos": [
+        "cobertura_telhas",
+        "cobertura_tercas"
+      ],
+      "fantasma": "fantasma_fase_03",
+      "triangulos": 2794,
+      "chamadas_de_desenho": 2,
+      "triangulos_fantasma": 456
+    },
+    {
+      "indice": 4,
+      "no": "fase_04_eletrica",
+      "nome": "Instalações elétricas",
+      "progresso_fim": 0.56,
+      "filhos": [
+        "eletrica_caixa_medicao",
+        "eletrica_eletroduto",
+        "eletrica_poste"
+      ],
+      "fantasma": "fantasma_fase_04",
+      "triangulos": 568,
+      "chamadas_de_desenho": 5,
+      "triangulos_fantasma": 78
+    },
+    {
+      "indice": 5,
+      "no": "fase_05_hidraulica",
+      "nome": "Instalações hidráulicas",
+      "progresso_fim": 0.61,
+      "filhos": [
+        "hidraulica_base",
+        "hidraulica_caixa_dagua",
+        "hidraulica_tubos"
+      ],
+      "fantasma": "fantasma_fase_05",
+      "triangulos": 2204,
+      "chamadas_de_desenho": 3,
+      "triangulos_fantasma": 516
+    },
+    {
+      "indice": 6,
+      "no": "fase_06_reboco",
+      "nome": "Reboco e contrapiso",
+      "progresso_fim": 0.72,
+      "filhos": [
+        "reboco_contrapiso",
+        "reboco_paredes"
+      ],
+      "fantasma": "fantasma_fase_06",
+      "triangulos": 1204,
+      "chamadas_de_desenho": 2,
+      "triangulos_fantasma": 0
+    },
+    {
+      "indice": 7,
+      "no": "fase_07_revestimentos",
+      "nome": "Revestimentos",
+      "progresso_fim": 0.8,
+      "filhos": [
+        "revestimentos_calcada",
+        "revestimentos_peitoris",
+        "revestimentos_pingadeira",
+        "revestimentos_ripado"
+      ],
+      "fantasma": "fantasma_fase_07",
+      "triangulos": 7024,
+      "chamadas_de_desenho": 4,
+      "triangulos_fantasma": 708
+    },
+    {
+      "indice": 8,
+      "no": "fase_08_pintura",
+      "nome": "Pintura",
+      "progresso_fim": 0.9,
+      "filhos": [
+        "pintura_paredes"
+      ],
+      "fantasma": "fantasma_fase_08",
+      "triangulos": 1194,
+      "chamadas_de_desenho": 1,
+      "triangulos_fantasma": 0
+    },
+    {
+      "indice": 9,
+      "no": "fase_09_acabamento",
+      "nome": "Acabamento",
+      "progresso_fim": 1.0,
+      "filhos": [
+        "acabamento_arvores",
+        "acabamento_esquadrias",
+        "acabamento_porta"
+      ],
+      "fantasma": "fantasma_fase_09",
+      "triangulos": 9592,
+      "chamadas_de_desenho": 6,
+      "triangulos_fantasma": 1416
+    }
+  ],
+  "fiadas_alvenaria": [
+    "alvenaria_fiada_00",
+    "alvenaria_fiada_01",
+    "alvenaria_fiada_02",
+    "alvenaria_fiada_03",
+    "alvenaria_fiada_04",
+    "alvenaria_fiada_05",
+    "alvenaria_fiada_06",
+    "alvenaria_fiada_07",
+    "alvenaria_fiada_08",
+    "alvenaria_fiada_09",
+    "alvenaria_fiada_10",
+    "alvenaria_fiada_11",
+    "alvenaria_fiada_12",
+    "alvenaria_fiada_13",
+    "alvenaria_fiada_14"
+  ],
+  "fiadas_platibanda": [
+    "alvenaria_fiada_12",
+    "alvenaria_fiada_13",
+    "alvenaria_fiada_14"
+  ],
+  "pivos": {
+    "base": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "cotas": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "fundacao_radier": [
+      0,
+      0,
+      -3.7
+    ],
+    "estrutura_pilares": [
+      0,
+      0.2,
+      0
+    ],
+    "estrutura_vigas": [
+      0,
+      2.68,
+      0
+    ],
+    "estrutura_laje": [
+      0,
+      3.0,
+      -3.7
+    ],
+    "alvenaria_fiada_00": [
+      0,
+      0.2,
+      0
+    ],
+    "alvenaria_fiada_01": [
+      0,
+      0.4,
+      0
+    ],
+    "alvenaria_fiada_02": [
+      0,
+      0.6,
+      0
+    ],
+    "alvenaria_fiada_03": [
+      0,
+      0.8,
+      0
+    ],
+    "alvenaria_fiada_04": [
+      0,
+      1.0,
+      0
+    ],
+    "alvenaria_fiada_05": [
+      0,
+      1.2,
+      0
+    ],
+    "alvenaria_fiada_06": [
+      0,
+      1.4,
+      0
+    ],
+    "alvenaria_fiada_07": [
+      0,
+      1.6,
+      0
+    ],
+    "alvenaria_fiada_08": [
+      0,
+      1.8,
+      0
+    ],
+    "alvenaria_fiada_09": [
+      0,
+      2.0,
+      0
+    ],
+    "alvenaria_fiada_10": [
+      0,
+      2.2,
+      0
+    ],
+    "alvenaria_fiada_11": [
+      0,
+      2.4,
+      0
+    ],
+    "alvenaria_fiada_12": [
+      0,
+      3.12,
+      0
+    ],
+    "alvenaria_fiada_13": [
+      0,
+      3.32,
+      0
+    ],
+    "alvenaria_fiada_14": [
+      0,
+      3.52,
+      0
+    ],
+    "cobertura_tercas": [
+      0,
+      3.12,
+      0
+    ],
+    "cobertura_telhas": [
+      0,
+      3.12,
+      0
+    ],
+    "eletrica_poste": [
+      6.0,
+      0,
+      4.3
+    ],
+    "eletrica_caixa_medicao": [
+      6.0,
+      1.25,
+      4.3
+    ],
+    "eletrica_eletroduto": [
+      6.0,
+      0,
+      4.3
+    ],
+    "hidraulica_base": [
+      2.9,
+      3.12,
+      -2.2
+    ],
+    "hidraulica_caixa_dagua": [
+      2.9,
+      3.72,
+      -2.2
+    ],
+    "hidraulica_tubos": [
+      2.9,
+      3.12,
+      -2.2
+    ],
+    "reboco_paredes": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "reboco_contrapiso": [
+      0,
+      0.2,
+      0
+    ],
+    "pintura_paredes": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "revestimentos_calcada": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "revestimentos_ripado": [
+      0,
+      0.25,
+      3.55
+    ],
+    "revestimentos_pingadeira": [
+      0,
+      3.738,
+      0
+    ],
+    "revestimentos_peitoris": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "acabamento_esquadrias": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "acabamento_porta": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "acabamento_arvores": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "fantasma_fase_00": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "fantasma_fase_01": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "fantasma_fase_02": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "fantasma_fase_03": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "fantasma_fase_04": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "fantasma_fase_05": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "fantasma_fase_07": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "fantasma_fase_09": [
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  "materiais_de_tema": {
+    "base": {
+      "claro": "#F2F2EF",
+      "escuro": "#2A2D31"
+    },
+    "grade": {
+      "claro": "#DCDDDA",
+      "escuro": "#393D41"
+    },
+    "grade_forte": {
+      "claro": "#C8C9C6",
+      "escuro": "#4D5155"
+    },
+    "cota": {
+      "claro": "#1A1C1F",
+      "escuro": "#ECEDE9"
+    },
+    "fantasma": {
+      "claro": "#1A1C1F",
+      "escuro": "#ECEDE9"
+    }
+  },
+  "fantasma_opacidade": {
+    "claro": 0.78,
+    "escuro": 0.62
+  },
+  "fantasma_opaco": {
+    "claro": "#7D7D7C",
+    "escuro": "#C0C1BE"
+  },
+  "fantasma_nota": "material OPAQUE e doubleSided; para o app, usar a cor fantasma_opaco (a cor do fantasma com a opacidade das imagens, já misturada à base do tema em luz linear) em vez de alfa, que mancharia as 3 faces de cada traço",
+  "fundo": {
+    "claro": "#F4F5F3",
+    "escuro": "#121315"
+  },
+  "camera_padrao": {
+    "alvo": [
+      0,
+      1.1,
+      0
+    ],
+    "azimute_rad": 0.62,
+    "elevacao_rad": 0.52,
+    "fov_vertical_graus": 27.0,
+    "nota": "câmera do protótipo web"
+  },
+  "camera_reserva": {
+    "posicao": [
+      14.54,
+      14.086,
+      20.753
+    ],
+    "alvo": [
+      0.199,
+      -0.046,
+      0.665
+    ],
+    "distancia_m": 28.442,
+    "lente_mm_equivalente": 50,
+    "fov_vertical_graus": 26.99,
+    "resolucao": [
+      1080,
+      720
+    ]
+  },
+  "cotas": [
+    {
+      "texto": "9,40",
+      "centro": [
+        0.0,
+        0.0045,
+        5.72
+      ],
+      "pixel_reserva": [
+        353.6,
+        476.8
+      ]
+    },
+    {
+      "texto": "7,40",
+      "centro": [
+        6.72,
+        0.0045,
+        0.0
+      ],
+      "pixel_reserva": [
+        873.6,
+        452.0
+      ]
+    }
+  ],
+  "reserva": {
+    "pastas": {
+      "claro": "reserva/claro",
+      "escuro": "reserva/escuro"
+    },
+    "estados": {
+      "estado_00.webp": "só a base; tudo em fantasma",
+      "estado_01.webp": "etapa \"Fundação\" concluída; fases seguintes em fantasma",
+      "estado_02.webp": "etapa \"Estrutura\" concluída; fases seguintes em fantasma",
+      "estado_03.webp": "etapa \"Alvenaria\" concluída; fases seguintes em fantasma",
+      "estado_04.webp": "etapa \"Cobertura\" concluída; fases seguintes em fantasma",
+      "estado_05.webp": "etapa \"Instalações elétricas\" concluída; fases seguintes em fantasma",
+      "estado_06.webp": "etapa \"Instalações hidráulicas\" concluída; fases seguintes em fantasma",
+      "estado_07.webp": "etapa \"Reboco e contrapiso\" concluída; fases seguintes em fantasma",
+      "estado_08.webp": "etapa \"Revestimentos\" concluída; fases seguintes em fantasma",
+      "estado_09.webp": "etapa \"Pintura\" concluída; fases seguintes em fantasma",
+      "estado_10.webp": "obra pronta (etapa \"Acabamento\" concluída); sem fantasma"
+    },
+    "regra": "estado N = fases 0..N-1 visíveis, fantasmas N..9 visíveis"
+  },
+  "triangulos_total": 45463
+}
