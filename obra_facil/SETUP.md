@@ -50,6 +50,12 @@ flutter run
 Celular físico com **depuração USB** ativada é o ideal — os módulos de IA
 (câmera, OCR, voz) não funcionam bem no emulador.
 
+> A maquete 3D usa o Flutter GPU (pacote `flutter_scene`), que vem desligado.
+> O APK do CI já liga pelo `AndroidManifest.xml`. Para rodar localmente, use
+> `flutter run --enable-flutter-gpu` ou ponha o mesmo meta-data
+> (`io.flutter.embedding.android.EnableFlutterGPU` = `true`) dentro de
+> `<application>` no `android/app/src/main/AndroidManifest.xml`.
+
 ## 4. Roteiro de demonstração (pitch/banca)
 
 1. Crie uma conta **Dono/Gestor** e uma obra (o cronograma padrão é gerado sozinho).

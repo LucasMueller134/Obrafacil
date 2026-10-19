@@ -69,6 +69,12 @@ flutter:
     # Modelo próprio de fases da obra (opcional) — ver docs/ia/treinar-modelo.md.
     # Sem o fases_obra.tflite aqui, o app usa só o modelo base do ML Kit.
     - assets/modelos/
+    # Maquete 3D: o .glb em assets/3d/ é convertido pelo hook do
+    # flutter_scene (não listar a pasta inteira, senão ele vai duas vezes);
+    # aqui entram só o manifesto e as imagens de reserva.
+    - assets/3d/maquete.json
+    - assets/3d/reserva/claro/
+    - assets/3d/reserva/escuro/
     - flutter_scene_generated/
     - path: flutter_scene_generated/metal_ios/
       platforms:
@@ -84,6 +90,31 @@ flutter:
     - path: flutter_scene_generated/opengl_es/
       platforms:
         - web
+
+  # Fontes embutidas (o canteiro fica sem sinal). Ver assets/fontes/LEIA-ME.md.
+  fonts:
+    - family: Archivo
+      fonts:
+        - asset: assets/fontes/Archivo-SemiCondensed-SemiBold.ttf
+          weight: 600
+        - asset: assets/fontes/Archivo-SemiCondensed-Bold.ttf
+          weight: 700
+        - asset: assets/fontes/Archivo-SemiCondensed-ExtraBold.ttf
+          weight: 800
+    - family: Atkinson
+      fonts:
+        - asset: assets/fontes/AtkinsonHyperlegibleNext-Regular.ttf
+          weight: 400
+        - asset: assets/fontes/AtkinsonHyperlegibleNext-Medium.ttf
+          weight: 500
+        - asset: assets/fontes/AtkinsonHyperlegibleNext-Bold.ttf
+          weight: 700
+    - family: PlexMono
+      fonts:
+        - asset: assets/fontes/IBMPlexMono-Regular.ttf
+          weight: 400
+        - asset: assets/fontes/IBMPlexMono-Medium.ttf
+          weight: 500
 
 # Ícone do launcher — gerado no CI com: dart run flutter_launcher_icons
 flutter_launcher_icons:
