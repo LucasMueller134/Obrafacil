@@ -87,6 +87,9 @@ jobs:
           confere "$MANIFEST" 'android:name="io.flutter.embedding.android.EnableFlutterGPU"'
           echo "--- Manifest final ---"
           cat "$MANIFEST"
+          # Ícone pequeno da notificação (só a transparência conta no Android).
+          cp -r assets/icone/notificacao/. android/app/src/main/res/
+          test -f android/app/src/main/res/drawable-xxhdpi/ic_stat_obrafacil.png || { echo "::error::ícone de notificação não foi copiado"; exit 1; }
           # flutter_local_notifications exige core library desugaring
           cat >> android/app/build.gradle.kts <<'EOF'
 

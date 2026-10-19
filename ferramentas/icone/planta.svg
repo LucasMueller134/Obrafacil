@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 108 108" width="1296" height="1296">
+  <title>ObraFácil: planta baixa (camada da frente do ícone adaptativo, 108 dp)</title>
+  <!--
+    Fonte única do ícone. Quadro de 108 dp do ícone adaptativo do Android:
+    janela visível de 72 dp (18 a 90) e círculo de segurança de 66 dp
+    (raio 33 em 54,54). O desenho vai de 33 a 75 (canto a 29,7 dp do centro)
+    e todas as arestas retas caem na grade de 3 dp. Só caminhos preenchidos,
+    sem rect, stroke, dasharray ou clipPath (vira VectorDrawable direto).
+    O exportar.py troca as cores pelos ids e gera todos os PNGs.
+  -->
+  <!-- construído: o L de parede já levantado e o pé da parede do outro lado da porta -->
+  <path id="construido" fill="#F97316" d="M33,33 H45 V63 H51 V75 H33 Z M63,63 H75 V75 H63 Z"/>
+  <!-- o que falta: eixo tracejado das paredes (traço 6, vão 6), canto em L no encontro -->
+  <path id="falta" fill="#1A1C1F" d="M45,33 H51 V36 H45 Z M57,33 H63 V36 H57 Z M69,33 H75 V39 H72 V36 H69 Z M72,45 H75 V51 H72 Z M72,57 H75 V63 H72 Z"/>
+  <!-- porta: folha aberta (3 x 12) e arco de abertura com centro na dobradiça (51,63), raios 9 a 12, rente ao batente -->
+  <path id="porta" fill="#1A1C1F" d="M51,51 H54 V63 H51 Z M51,51 A12,12 0 0 1 63,63 H60 A9,9 0 0 0 51,54 Z"/>
+</svg>

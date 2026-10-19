@@ -32,7 +32,7 @@ abstract class NotificacaoService {
     }
     await _plugin.initialize(
       const InitializationSettings(
-        android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+        android: AndroidInitializationSettings('ic_stat_obrafacil'),
       ),
     );
     _inicializado = true;

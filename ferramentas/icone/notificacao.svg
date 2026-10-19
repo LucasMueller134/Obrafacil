@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="96" height="96">
+  <title>ObraFácil: ícone de notificação (ic_stat_obrafacil, grade de 24 dp)</title>
+  <!--
+    Desenhado à parte na grade de 24 (a planta de 108 dp reduzida vira
+    borrão aqui). Branco sobre transparente: o Android usa só o alfa.
+    Mesmo ritmo do colorido: traço 3, vão 3 (o primeiro traço de cima fica
+    solto da parede, senão parede + traço + parede de baixo formam um "[");
+    porta proporcional ao vão; arco de verdade, antisserrilhado.
+  -->
+  <path id="construido" fill="#FFFFFF" d="M2,2 H6 V18 H9 V22 H2 Z M17,18 H22 V22 H17 Z"/>
+  <path id="falta" fill="#FFFFFF" d="M8,2 H11 V4 H8 Z M14,2 H17 V4 H14 Z M19,2 H22 V6 H20 V4 H19 Z M20,9 H22 V12 H20 Z M20,15 H22 V18 H20 Z"/>
+  <path id="porta" fill="#FFFFFF" d="M9,10 H11 V18 H9 Z M9,10 A8,8 0 0 1 17,18 H15 A6,6 0 0 0 9,12 Z"/>
+</svg>

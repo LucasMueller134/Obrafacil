@@ -117,17 +117,26 @@ flutter:
           weight: 500
 
 # Ícone do launcher — gerado no CI com: dart run flutter_launcher_icons
+# Fonte e exportação em ferramentas/icone/ (ver o LEIA-ME.md de lá).
 flutter_launcher_icons:
   android: true
   ios: false
   image_path: assets/icone/icon.png
-  adaptive_icon_background: '#F97316'
+  adaptive_icon_background: '#F4F5F3'
   adaptive_icon_foreground: assets/icone/icon_foreground.png
+  # As camadas já vêm no quadro de 108 dp, dentro do círculo de 66 dp.
+  # Sem o 0, o pacote põe um inset de 16% e encolhe o desenho.
+  adaptive_icon_foreground_inset: 0
+  adaptive_icon_monochrome: assets/icone/icon_monochrome.png
 
 # Splash nativa — gerada no CI com: dart run flutter_native_splash:create
 flutter_native_splash:
-  color: '#0F172A'
+  color: '#F4F5F3'
   image: assets/icone/splash.png
+  color_dark: '#121315'
+  image_dark: assets/icone/splash_escuro.png
   android_12:
-    color: '#0F172A'
+    color: '#F4F5F3'
     image: assets/icone/splash.png
+    color_dark: '#121315'
+    image_dark: assets/icone/splash_escuro.png

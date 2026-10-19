@@ -1,0 +1,4 @@
+# Exportação do ícone (exportar.py). Além disto: Node 18+ e o Playwright com
+# o Chromium (npm i playwright && npx playwright install chromium).
+numpy>=2.0
+Pillow>=10.0
