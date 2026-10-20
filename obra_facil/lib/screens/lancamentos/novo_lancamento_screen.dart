@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:firebase_core/firebase_core.dart' show FirebaseException;
 import 'package:flutter/material.dart';
@@ -6,7 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
-import '../../constants/app_colors.dart';
+import '../../design/design.dart';
 import '../../models/models.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/firestore_service.dart';
@@ -19,7 +21,18 @@ import '../../utils/validators.dart';
 import '../../widgets/botao_ia.dart';
 import '../../widgets/painel_voz.dart';
 
-class NovoLancamentoScreen extends StatefulWidget {
+part 'novo_lancamento_partes.dart';
+
+/// Lançar gasto: a tarefa mais frequente do mestre, de luva e com uma mão.
+///
+/// A tela fica na prancheta ([TemaPrancheta], claro ou escuro pelo
+/// sistema): primeiro as duas capturas grandes (foto da nota e fala), o
+/// resultado da leitura como um recibo e, embaixo, o formulário à mão. O
+/// "Salvar lançamento" fica fixo no rodapé.
+///
+/// `?inicio=foto` ou `?inicio=voz` na rota já abre a câmera ou o
+/// microfone, como se o botão tivesse sido tocado.
+class NovoLancamentoScreen extends StatelessWidget {
   final String obraId;
 
   const NovoLancamentoScreen({super.key, required this.obraId});
@@ -47,11 +60,23 @@ class NovoLancamentoScreen extends StatefulWidget {
         'instantes.';
   }
 
+  // O tema fica acima do estado: os diálogos, folhas e avisos que o
+  // estado abre com o próprio context saem na prancheta também.
   @override
-  State<NovoLancamentoScreen> createState() => _NovoLancamentoScreenState();
+  Widget build(BuildContext context) =>
+      TemaPrancheta(child: _NovoLancamento(obraId: obraId));
 }
 
-class _NovoLancamentoScreenState extends State<NovoLancamentoScreen> {
+class _NovoLancamento extends StatefulWidget {
+  final String obraId;
+
+  const _NovoLancamento({required this.obraId});
+
+  @override
+  State<_NovoLancamento> createState() => _NovoLancamentoScreenState();
+}
+
+class _NovoLancamentoScreenState extends State<_NovoLancamento> {
   final _formKey = GlobalKey<FormState>();
   final _descricaoCtrl = TextEditingController();
   final _valorCtrl = TextEditingController();
@@ -71,6 +96,27 @@ class _NovoLancamentoScreenState extends State<NovoLancamentoScreen> {
   final _ocr = OcrNotaService();
   final _voz = VozService();
 
+  // Só interface: a foto enquanto o OCR lê (para a varredura), o que a
+  // leitura trouxe (o recibo), a obra (o nome no título) e onde rolar
+  // quando falta um campo obrigatório.
+  File? _fotoEmLeitura;
+  _Leitura? _leitura;
+
+  /// A última foto não foi lida: o aviso é o erro dela, não a confiança da
+  /// leitura que está no recibo (que continua a da leitura anterior, como
+  /// os campos).
+  bool _leituraFalhou = false;
+  late final Stream<ObraModel?> _obra;
+  final _chaveDescricao = GlobalKey();
+  final _chaveValor = GlobalKey();
+
+  @override
+  void initState() {
+    super.initState();
+    _obra = context.read<FirestoreService>().obra(widget.obraId);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _comecarPelaRota());
+  }
+
   @override
   void dispose() {
     _descricaoCtrl.dispose();
@@ -80,28 +126,26 @@ class _NovoLancamentoScreenState extends State<NovoLancamentoScreen> {
     super.dispose();
   }
 
+  /// `?inicio=foto` / `?inicio=voz`: a mesma ação do botão, uma vez só,
+  /// depois do primeiro quadro.
+  void _comecarPelaRota() {
+    if (!mounted || GoRouter.maybeOf(context) == null) return;
+    final inicio = GoRouterState.of(context).uri.queryParameters['inicio'];
+    if (_processando) return;
+    switch (inicio) {
+      case 'foto':
+        unawaited(_lerNotaFiscal());
+      case 'voz':
+        unawaited(_lancarPorVoz());
+    }
+  }
+
   // ------------------------------------------------------------------ OCR
 
   Future<void> _lerNotaFiscal() async {
     final origem = await showModalBottomSheet<ImageSource>(
       context: context,
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.photo_camera),
-              title: const Text('Tirar foto da nota'),
-              onTap: () => Navigator.pop(ctx, ImageSource.camera),
-            ),
-            ListTile(
-              leading: const Icon(Icons.photo_library),
-              title: const Text('Escolher da galeria'),
-              onTap: () => Navigator.pop(ctx, ImageSource.gallery),
-            ),
-          ],
-        ),
-      ),
+      builder: (ctx) => const _EscolhaDaFoto(),
     );
     if (origem == null) return;
 
@@ -115,6 +159,8 @@ class _NovoLancamentoScreenState extends State<NovoLancamentoScreen> {
     setState(() {
       _processando = true;
       _avisoIa = null;
+      _fotoEmLeitura = File(xfile.path);
+      _leituraFalhou = false;
     });
 
     try {
@@ -143,14 +189,30 @@ class _NovoLancamentoScreenState extends State<NovoLancamentoScreen> {
         _textoOcr = textoLido.trim().isEmpty ? null : textoLido;
         _itens = ItensParser.deNotaOcr(textoLido);
         _avisoIa = OcrNotaService.avisoDaLeitura(nota);
+        _leitura = _Leitura(
+          origem: OrigemLancamento.ocr,
+          valor: nota.valorTotal,
+          fornecedor: nota.fornecedorNome,
+          data: nota.data,
+        );
       });
+      unawaited(nota.encontrouAlgo ? Tato.confirmar() : Tato.erro());
     } catch (e) {
       if (!mounted) return;
       // O erro técnico ("PlatformException(...)") não diz a quem está no
       // canteiro o que fazer; a mensagem diz.
-      setState(() => _avisoIa = OcrNotaService.mensagemDeErro(e));
+      setState(() {
+        _avisoIa = OcrNotaService.mensagemDeErro(e);
+        _leituraFalhou = true;
+      });
+      unawaited(Tato.erro());
     } finally {
-      if (mounted) setState(() => _processando = false);
+      if (mounted) {
+        setState(() {
+          _processando = false;
+          _fotoEmLeitura = null;
+        });
+      }
     }
   }
 
@@ -176,6 +238,13 @@ class _NovoLancamentoScreenState extends State<NovoLancamentoScreen> {
       _avisoIa = interpretado.valor == null
           ? 'Entendi a descrição, mas não o valor — confira o campo.'
           : 'Lançamento interpretado da sua fala — confira antes de salvar.';
+      _leitura = _Leitura(
+        origem: OrigemLancamento.voz,
+        valor: interpretado.valor,
+        fornecedor: interpretado.fornecedorNome,
+        data: interpretado.data,
+      );
+      _leituraFalhou = false;
     });
   }
 
@@ -183,48 +252,76 @@ class _NovoLancamentoScreenState extends State<NovoLancamentoScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (ctx) => Padding(
-        padding: EdgeInsets.only(
-          left: 20,
-          right: 20,
-          top: 20,
-          bottom: MediaQuery.of(ctx).viewPadding.bottom + 24,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Texto lido da nota',
-                style: Theme.of(ctx).textTheme.titleMedium),
-            const SizedBox(height: 4),
-            Text(
-              'Se algum campo saiu errado, copie daqui e cole no formulário.',
-              style: Theme.of(ctx)
-                  .textTheme
-                  .bodySmall
-                  ?.copyWith(color: AppColors.textoSecundario),
-            ),
-            const SizedBox(height: 12),
-            ConstrainedBox(
-              constraints: BoxConstraints(
-                  maxHeight: MediaQuery.of(ctx).size.height * 0.5),
-              child: SingleChildScrollView(
-                child: SelectableText(
-                  _textoOcr ?? '',
-                  style: Theme.of(ctx).textTheme.bodySmall,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
+      builder: (ctx) => _TextoLido(texto: _textoOcr ?? ''),
     );
+  }
+
+  // ------------------------------------------------- Itens, foto e data
+
+  /// Tira o item do estoque deste lançamento, com "Desfazer" por 4 s.
+  void _removerItem(ItemMaterialModel item) {
+    final posicao = _itens.indexOf(item);
+    setState(() => _itens = List.of(_itens)..remove(item));
+    mostrarAviso(
+      context,
+      '${item.resumo} não vai para o estoque.',
+      aoDesfazer: () {
+        if (!mounted || _itens.contains(item)) return;
+        setState(() => _itens = List.of(_itens)
+          ..insert(math.min(math.max(posicao, 0), _itens.length), item));
+      },
+    );
+  }
+
+  /// Desanexa a foto da nota, com "Desfazer" por 4 s.
+  void _removerFoto() {
+    final foto = _fotoNota;
+    setState(() => _fotoNota = null);
+    mostrarAviso(
+      context,
+      'A foto da nota não vai junto.',
+      aoDesfazer: () {
+        if (!mounted || _fotoNota != null) return;
+        setState(() => _fotoNota = foto);
+      },
+    );
+  }
+
+  Future<void> _escolherData() async {
+    final escolhida = await showDatePicker(
+      context: context,
+      initialDate: _data,
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now(),
+      locale: const Locale('pt', 'BR'),
+    );
+    if (escolhida != null) setState(() => _data = escolhida);
+  }
+
+  /// O "Salvar" fica no rodapé e o campo que falta pode estar lá em cima:
+  /// rola até o primeiro campo com erro.
+  void _mostrarPrimeiroErro() {
+    final faltaDescricao =
+        Validators.obrigatorio(_descricaoCtrl.text, 'A descrição') != null;
+    final chave = faltaDescricao ? _chaveDescricao : _chaveValor;
+    final alvo = chave.currentContext;
+    if (alvo == null) return;
+    unawaited(Scrollable.ensureVisible(
+      alvo,
+      alignment: 0.2,
+      duration: context.duracao(Movimento.medio),
+      curve: Movimento.entrar,
+    ));
   }
 
   // ---------------------------------------------------------------- Salvar
 
   Future<void> _salvar() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate()) {
+      unawaited(Tato.erro());
+      _mostrarPrimeiroErro();
+      return;
+    }
     setState(() => _salvando = true);
 
     final db = context.read<FirestoreService>();
@@ -235,9 +332,11 @@ class _NovoLancamentoScreenState extends State<NovoLancamentoScreen> {
       if (obra == null) {
         if (!mounted) return;
         setState(() => _salvando = false);
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-            content: Text('Esta obra não foi encontrada — ela pode ter sido '
-                'removida. Volte e abra a obra de novo.')));
+        unawaited(Tato.erro());
+        mostrarAviso(
+            context,
+            'Esta obra não foi encontrada — ela pode ter sido '
+            'removida. Volte e abra a obra de novo.');
         return;
       }
 
@@ -295,19 +394,24 @@ class _NovoLancamentoScreenState extends State<NovoLancamentoScreen> {
       }
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(usuario.ehDono
-            ? (resumoEstoque.isEmpty
-                ? 'Lançamento registrado.'
-                : 'Registrado! Estoque atualizado: ${resumoEstoque.join(' · ')}')
-            : 'Lançamento enviado para aprovação do dono.'),
-      ));
+      unawaited(Tato.confirmar());
+      // O aviso (e não o SnackBar direto): ele tira o "Desfazer" de um item
+      // tirado agora há pouco, que senão seguraria esta confirmação por
+      // até 4 s e iria junto para a tela de baixo, já sem efeito.
+      mostrarAviso(
+          context,
+          usuario.ehDono
+              ? (resumoEstoque.isEmpty
+                  ? 'Lançamento registrado.'
+                  : 'Registrado! Estoque atualizado: '
+                      '${resumoEstoque.join(' · ')}')
+              : 'Lançamento enviado para aprovação do dono.');
       context.pop();
     } catch (e) {
       if (!mounted) return;
       setState(() => _salvando = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(NovoLancamentoScreen.mensagemAoSalvar(e))));
+      unawaited(Tato.erro());
+      mostrarAviso(context, NovoLancamentoScreen.mensagemAoSalvar(e));
     }
   }
 
@@ -315,209 +419,162 @@ class _NovoLancamentoScreenState extends State<NovoLancamentoScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.cores;
+    final leitura = _leitura;
+    final estiloValor = Tipografia.valorHeroi.copyWith(
+      fontSize: 32,
+      height: 1.1,
+      color: c.grafite,
+    );
     return Scaffold(
-      appBar: AppBar(title: const Text('Novo lançamento')),
+      appBar: AppBar(title: _Titulo(obra: _obra)),
       body: SafeArea(
+        top: false,
+        bottom: false,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.fromLTRB(
+            Espaco.margem,
+            Espaco.e8,
+            Espaco.margem,
+            Espaco.e32,
+          ),
           child: Form(
             key: _formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: BotaoIa(
-                        icone: Icons.document_scanner,
-                        rotulo: 'Foto da nota',
-                        descricao: 'OCR preenche sozinho',
-                        onTap: _processando ? null : _lerNotaFiscal,
+                // Captura primeiro: as duas escolhas grandes, lado a lado
+                // e da mesma altura.
+                IntrinsicHeight(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Expanded(
+                        child: BotaoIa(
+                          icone: Icons.document_scanner_outlined,
+                          rotulo: 'Foto da nota',
+                          descricao: 'A câmera lê valor, data e loja',
+                          onTap: _processando ? null : _lerNotaFiscal,
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: BotaoIa(
-                        icone: Icons.mic,
-                        rotulo: 'Por voz',
-                        descricao: 'Fale o gasto',
-                        onTap: _processando ? null : _lancarPorVoz,
+                      const SizedBox(width: Espaco.entreAlvos),
+                      Expanded(
+                        child: BotaoIa(
+                          icone: Icons.mic_none,
+                          rotulo: 'Falar o gasto',
+                          descricao: 'Diga o que comprou e quanto',
+                          onTap: _processando ? null : _lancarPorVoz,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
                 if (_processando) ...[
-                  const SizedBox(height: 16),
-                  const Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2.5),
-                      ),
-                      SizedBox(width: 10),
-                      Text('Lendo a nota fiscal…'),
-                    ],
+                  const SizedBox(height: Espaco.e16),
+                  _LendoANota(foto: _fotoEmLeitura),
+                ],
+                // A foto que não foi lida: o erro fica fora do recibo (que,
+                // se houver, é o da leitura anterior) e é dito como erro.
+                if (_avisoIa != null &&
+                    (leitura == null || _leituraFalhou)) ...[
+                  const SizedBox(height: Espaco.e16),
+                  _FalhaDaLeitura(mensagem: _avisoIa!),
+                ],
+                if (leitura != null) ...[
+                  const SizedBox(height: Espaco.e16),
+                  _Recibo(
+                    leitura: leitura,
+                    aviso: _leituraFalhou ? null : _avisoIa,
+                    itens: _itens,
+                    foto: _fotoNota,
+                    aoRemoverItem: _removerItem,
+                    aoRemoverFoto: _removerFoto,
+                    aoVerTextoLido: _textoOcr == null ? null : _verTextoLido,
                   ),
                 ],
-                if (_avisoIa != null) ...[
-                  const SizedBox(height: 16),
-                  AvisoIa(mensagem: _avisoIa!),
-                ],
-                if (_textoOcr != null)
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: TextButton.icon(
-                      onPressed: _verTextoLido,
-                      icon: const Icon(Icons.subject, size: 18),
-                      label: const Text('Ver texto lido da nota'),
-                    ),
-                  ),
-                if (_itens.isNotEmpty) ...[
-                  const SizedBox(height: 12),
-                  Text('Materiais para o estoque',
-                      style: Theme.of(context).textTheme.titleSmall),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Detectados automaticamente — entram no estoque quando '
-                    'o lançamento for aprovado. Toque no ✕ para remover.',
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodySmall
-                        ?.copyWith(color: AppColors.textoSecundario),
-                  ),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      for (final item in _itens)
-                        InputChip(
-                          avatar: const Icon(Icons.inventory_2,
-                              size: 16, color: AppColors.laranja),
-                          label: Text(item.resumo),
-                          onDeleted: () => setState(
-                              () => _itens = List.of(_itens)..remove(item)),
-                        ),
-                    ],
-                  ),
-                ],
-                const SizedBox(height: 20),
+                const SizedBox(height: Espaco.e24),
+                LinhaCota(
+                  legenda: leitura == null
+                      ? 'Ou preencha à mão'
+                      : 'Confira e corrija',
+                ),
+                const SizedBox(height: Espaco.e16),
                 TextFormField(
+                  key: _chaveDescricao,
                   controller: _descricaoCtrl,
                   textCapitalization: TextCapitalization.sentences,
+                  // A descrição que vem da fala é comprida: quebra em até
+                  // três linhas em vez de sumir pela direita. O "Enter"
+                  // continua indo para o próximo campo (sem quebra de
+                  // linha no texto).
+                  minLines: 1,
+                  maxLines: 3,
+                  keyboardType: TextInputType.text,
+                  textInputAction: TextInputAction.next,
                   decoration: const InputDecoration(
                     labelText: 'Descrição',
                     hintText: 'Ex.: 10 sacos de cimento CP-II',
-                    prefixIcon: Icon(Icons.notes),
                   ),
                   validator: (v) => Validators.obrigatorio(v, 'A descrição'),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: Espaco.e16),
                 TextFormField(
+                  key: _chaveValor,
                   controller: _valorCtrl,
                   keyboardType:
                       const TextInputType.numberWithOptions(decimal: true),
-                  decoration: const InputDecoration(
-                    labelText: 'Valor (R\$)',
-                    prefixIcon: Icon(Icons.payments_outlined),
+                  style: estiloValor,
+                  decoration: InputDecoration(
+                    labelText: 'Valor',
+                    prefixText: 'R\$ ',
+                    prefixStyle: estiloValor,
                   ),
                   validator: Validators.valor,
                 ),
-                const SizedBox(height: 16),
-                Text('Categoria',
-                    style: Theme.of(context).textTheme.titleSmall),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    for (final c in CategoriaCusto.values)
-                      ChoiceChip(
-                        avatar: Icon(c.icone,
-                            size: 16,
-                            color: _categoria == c
-                                ? AppColors.laranja
-                                : AppColors.textoSecundario),
-                        label: Text(c.label),
-                        selected: _categoria == c,
-                        onSelected: (_) => setState(() => _categoria = c),
-                      ),
+                const SizedBox(height: Espaco.e24),
+                SeletorGrande<CategoriaCusto>(
+                  rotulo: 'Categoria',
+                  opcoes: [
+                    for (final cat in _ordemCategorias)
+                      OpcaoSeletor(valor: cat, rotulo: cat.label),
                   ],
+                  selecionado: _categoria,
+                  aoMudar: (cat) => setState(() => _categoria = cat),
                 ),
-                const SizedBox(height: 16),
-                InkWell(
-                  onTap: () async {
-                    final escolhida = await showDatePicker(
-                      context: context,
-                      initialDate: _data,
-                      firstDate: DateTime(2020),
-                      lastDate: DateTime.now(),
-                      locale: const Locale('pt', 'BR'),
-                    );
-                    if (escolhida != null) setState(() => _data = escolhida);
-                  },
-                  borderRadius: BorderRadius.circular(14),
-                  child: InputDecorator(
-                    decoration: const InputDecoration(
-                      labelText: 'Data do gasto',
-                      prefixIcon: Icon(Icons.calendar_today, size: 20),
-                    ),
-                    child: Text(Formatters.data(_data)),
-                  ),
-                ),
-                const SizedBox(height: 16),
+                const SizedBox(height: Espaco.e24),
+                _CampoData(data: _data, aoTocar: _escolherData),
+                const SizedBox(height: Espaco.e16),
                 TextFormField(
                   controller: _fornecedorCtrl,
                   textCapitalization: TextCapitalization.words,
                   decoration: const InputDecoration(
                     labelText: 'Fornecedor (opcional)',
-                    hintText: 'Cadastrado automaticamente se for novo',
-                    prefixIcon: Icon(Icons.storefront),
+                    hintText: 'Ex.: Depósito São José',
+                    helperText: 'Se for novo, entra no cadastro sozinho.',
                   ),
-                ),
-                if (_fotoNota != null) ...[
-                  const SizedBox(height: 16),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: Stack(
-                      children: [
-                        Image.file(_fotoNota!,
-                            height: 180,
-                            width: double.infinity,
-                            fit: BoxFit.cover),
-                        Positioned(
-                          top: 8,
-                          right: 8,
-                          child: IconButton.filled(
-                            style: IconButton.styleFrom(
-                                backgroundColor: Colors.black54),
-                            icon: const Icon(Icons.close, size: 18),
-                            onPressed: () => setState(() => _fotoNota = null),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-                const SizedBox(height: 24),
-                ElevatedButton(
-                  onPressed: _salvando ? null : _salvar,
-                  child: _salvando
-                      ? const SizedBox(
-                          width: 22,
-                          height: 22,
-                          child: CircularProgressIndicator(
-                              strokeWidth: 2.5, color: Colors.white),
-                        )
-                      : const Text('Salvar lançamento'),
                 ),
               ],
             ),
           ),
         ),
       ),
+      bottomNavigationBar: BarraDeAcao(
+        principal: BotaoPrincipal(
+          rotulo: 'Salvar lançamento',
+          icone: Icons.check,
+          grande: true,
+          carregando: _salvando,
+          aoTocar: _salvar,
+        ),
+      ),
     );
   }
 }
+
+/// A ordem das categorias no seletor: a mais comum primeiro.
+const _ordemCategorias = [
+  CategoriaCusto.material,
+  CategoriaCusto.maoDeObra,
+  CategoriaCusto.equipamento,
+  CategoriaCusto.outros,
+];

@@ -1,13 +1,13 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 
-import '../constants/app_colors.dart';
+import '../design/design.dart';
 import '../services/ia/diario_voz_service.dart';
 import '../services/ia/escuta_voz.dart';
 import '../services/ia/voz_service.dart';
 import '../utils/formatters.dart';
+import 'botao_ia.dart';
 
 /// Um campo que a IA entendeu (ou não) enquanto o usuário fala.
 class LinhaEntendida {
@@ -86,6 +86,9 @@ Future<T?> _abrirPainel<T>(
   return showModalBottomSheet<T>(
     context: context,
     isScrollControlled: true,
+    // Com a fonte grande a folha cresce até o topo: não passa por baixo da
+    // barra de status.
+    useSafeArea: true,
     isDismissible: false,
     enableDrag: false,
     builder: (_) => _PainelVoz<T>(
@@ -295,182 +298,285 @@ class _PainelVozState<T> extends State<_PainelVoz<T>> {
 
   static IconData _iconeDoErro(TipoErroVoz tipo) => switch (tipo) {
         TipoErroVoz.naoEntendi => Icons.hearing,
-        TipoErroVoz.microfone || TipoErroVoz.audio => Icons.mic_off,
+        TipoErroVoz.microfone || TipoErroVoz.audio => Icons.mic_off_outlined,
         TipoErroVoz.ocupado ||
         TipoErroVoz.muitasTentativas =>
           Icons.hourglass_empty,
-        TipoErroVoz.pacoteOffline => Icons.download_for_offline,
+        TipoErroVoz.pacoteOffline => Icons.download_for_offline_outlined,
         TipoErroVoz.semInternet => Icons.wifi_off,
         TipoErroVoz.desconhecido => Icons.error_outline,
       };
 
   @override
   Widget build(BuildContext context) {
-    final textos = Theme.of(context).textTheme;
+    final c = context.cores;
     final erro = _erro;
     // Erro sem nada ouvido: não há o que concluir, só tentar de novo.
     final soTentarDeNovo = erro != null && _transcricao.isEmpty && !_ouvindo;
+    final seguro = MediaQuery.paddingOf(context);
+    final interpretado = _interpretado;
 
-    Widget microfone = Container(
-      width: 84,
-      height: 84,
-      decoration: BoxDecoration(
-        color: _ouvindo
-            ? AppColors.laranja
-            : (erro != null ? AppColors.erro : AppColors.laranja)
-                .withValues(alpha: 0.35),
-        shape: BoxShape.circle,
-      ),
-      child: Icon(_ouvindo ? Icons.mic : Icons.mic_off,
-          size: 40, color: Colors.white),
+    final conteudo = Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Center(child: _Microfone(ouvindo: _ouvindo, erro: erro != null)),
+        const SizedBox(height: Espaco.e8),
+        Semantics(
+          liveRegion: true,
+          child: Text(
+            _titulo,
+            textAlign: TextAlign.center,
+            style: Tipografia.titulo.copyWith(color: c.grafite),
+          ),
+        ),
+        // O exemplo ajuda a começar; com a fala na tela, só ocuparia lugar.
+        if (_transcricao.isEmpty) ...[
+          const SizedBox(height: Espaco.e4),
+          Text(
+            widget.exemplo,
+            textAlign: TextAlign.center,
+            style: Tipografia.apoio.copyWith(color: c.grafite2),
+          ),
+        ],
+        if (_online) ...[
+          const SizedBox(height: Espaco.e12),
+          const Center(
+            child: NotaRevisao(
+              'Reconhecimento online do Google só nesta gravação',
+              tipo: TipoNota.marca,
+              icone: Icons.cloud_outlined,
+            ),
+          ),
+        ],
+        if (erro != null) ...[
+          const SizedBox(height: Espaco.e16),
+          _CaixaDeErro(
+            erro: erro,
+            icone: _iconeDoErro(erro.tipo),
+            onUsarOnline: erro.ofereceOnline ? _usarOnline : null,
+          ),
+        ],
+        if (_transcricao.isNotEmpty) ...[
+          const SizedBox(height: Espaco.e16),
+          _Transcricao(texto: _transcricao),
+        ],
+        if (_avisoConfianca != null) ...[
+          const SizedBox(height: Espaco.e12),
+          AvisoIa(mensagem: _avisoConfianca!),
+        ],
+        // Interpretação ao vivo: os campos se marcam enquanto a pessoa fala.
+        AnimatedSize(
+          duration: context.duracao(Movimento.medio),
+          curve: Movimento.entrar,
+          alignment: Alignment.topCenter,
+          child: interpretado == null
+              ? const SizedBox(width: double.infinity)
+              : Padding(
+                  padding: const EdgeInsets.only(top: Espaco.e16),
+                  // Sem fundo próprio: na prancheta a folha que sobe já é
+                  // a folha; numa tela do tema antigo, fica sobre a dela.
+                  child: Folha(
+                    cor: const Color(0x00000000),
+                    preenchimento: const EdgeInsets.fromLTRB(
+                      Espaco.e12,
+                      Espaco.e12,
+                      Espaco.e12,
+                      Espaco.e8,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const Rotulo('O que entendi'),
+                        const SizedBox(height: Espaco.e4),
+                        for (final linha in widget.linhas(interpretado as T))
+                          _LinhaEntendida(linha: linha, ouvindo: _ouvindo),
+                      ],
+                    ),
+                  ),
+                ),
+        ),
+      ],
     );
-    if (_ouvindo) {
-      microfone = microfone
-          .animate(onPlay: (c) => c.repeat(reverse: true))
-          .scaleXY(
-              begin: 1.0, end: 1.12, duration: 600.ms, curve: Curves.easeInOut);
-    }
 
+    // Os botões ficam fixos embaixo da folha, empilhados: em 360 dp os
+    // três lado a lado não cabem. A ação que fecha com o que foi ouvido
+    // vem primeiro, na largura toda; refazer e desistir ficam embaixo.
+    final botoes = Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (soTentarDeNovo)
+          BotaoPrincipal(
+            rotulo: 'Tentar de novo',
+            icone: Icons.refresh,
+            grande: true,
+            expandir: true,
+            aoTocar: _concluirAoTerminar ? null : _regravar,
+          )
+        else
+          BotaoPrincipal(
+            rotulo: 'Concluir',
+            icone: Icons.check,
+            grande: true,
+            expandir: true,
+            carregando: _concluirAoTerminar,
+            aoTocar: _transcricao.trim().isEmpty ? null : _concluir,
+          ),
+        const SizedBox(height: Espaco.entreAlvos),
+        Row(
+          children: [
+            if (!soTentarDeNovo) ...[
+              Expanded(
+                child: BotaoContorno(
+                  rotulo: 'Regravar',
+                  aoTocar: _concluirAoTerminar ? null : _regravar,
+                ),
+              ),
+              const SizedBox(width: Espaco.entreAlvos),
+            ],
+            Expanded(
+              child: BotaoContorno(rotulo: 'Cancelar', aoTocar: _cancelar),
+            ),
+          ],
+        ),
+      ],
+    );
+
+    final laterais = EdgeInsets.only(
+      left: Espaco.margem + seguro.left,
+      right: Espaco.margem + seguro.right,
+    );
     return Padding(
       padding: EdgeInsets.only(
-        left: 24,
-        right: 24,
-        top: 24,
-        bottom: MediaQuery.of(context).viewPadding.bottom + 24,
+        top: Espaco.e24,
+        bottom: MediaQuery.of(context).viewPadding.bottom + Espaco.e16,
       ),
-      child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Flexible(
+            child: SingleChildScrollView(
+              padding: laterais.copyWith(bottom: Espaco.e16),
+              child: conteudo,
+            ),
+          ),
+          // O traço do rodapé, como na BarraDeAcao: com a fonte grande o
+          // conteúdo rola por baixo dele, e o corte fica visível (sem ele,
+          // "O que entendi" sumia cortado ao meio, sem sinal de que rola).
+          DecoratedBox(
+            decoration: BoxDecoration(
+              border: Border(
+                top: BorderSide(color: c.grafite, width: Traco.fino),
+              ),
+            ),
+            child: Padding(
+              padding: laterais.copyWith(top: Espaco.e16),
+              child: botoes,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// O microfone: círculo de 88 dp. Ouvindo, fica laranja com o microfone
+/// preto e um anel em volta; o anel pulsa (sai do círculo e some) só
+/// enquanto escuta e fica parado com "reduzir animações". Parado, é só o
+/// contorno com o microfone cortado; com erro, o contorno é vermelho.
+class _Microfone extends StatefulWidget {
+  final bool ouvindo;
+  final bool erro;
+
+  const _Microfone({required this.ouvindo, required this.erro});
+
+  static const double diametro = 88;
+  static const double area = 128;
+
+  @override
+  State<_Microfone> createState() => _MicrofoneState();
+}
+
+class _MicrofoneState extends State<_Microfone>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _pulso = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1400),
+  );
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _sincronizar();
+  }
+
+  @override
+  void didUpdateWidget(_Microfone antigo) {
+    super.didUpdateWidget(antigo);
+    _sincronizar();
+  }
+
+  void _sincronizar() {
+    if (widget.ouvindo && !context.reduzirAnimacoes) {
+      if (!_pulso.isAnimating) _pulso.repeat();
+    } else {
+      _pulso
+        ..stop()
+        ..value = 0;
+    }
+  }
+
+  @override
+  void dispose() {
+    _pulso.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.cores;
+    final ouvindo = widget.ouvindo;
+    final contorno = widget.erro ? c.revisao : c.grafite;
+    return Semantics(
+      label: ouvindo ? 'Microfone aberto, ouvindo' : 'Microfone fechado',
+      excludeSemantics: true,
+      child: SizedBox.square(
+        dimension: _Microfone.area,
+        child: Stack(
+          alignment: Alignment.center,
           children: [
-            Center(child: microfone),
-            const SizedBox(height: 14),
-            Text(
-              _titulo,
-              textAlign: TextAlign.center,
-              style: textos.titleSmall,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              widget.exemplo,
-              textAlign: TextAlign.center,
-              style: textos.bodySmall
-                  ?.copyWith(color: AppColors.textoDesabilitado),
-            ),
-            if (_online) ...[
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.cloud_outlined,
-                      size: 15, color: AppColors.info),
-                  const SizedBox(width: 6),
-                  Flexible(
-                    child: Text(
-                      'Reconhecimento online do Google só nesta gravação',
-                      style: textos.bodySmall?.copyWith(color: AppColors.info),
+            if (ouvindo)
+              Positioned.fill(
+                child: RepaintBoundary(
+                  child: CustomPaint(
+                    painter: _PintorAnel(
+                      pulso: _pulso,
+                      cor: c.marcaTexto,
+                      raioBase: _Microfone.diametro / 2 + Espaco.e8,
+                      raioMaximo: _Microfone.area / 2 - Traco.forte,
                     ),
                   ),
-                ],
-              ),
-            ],
-            if (erro != null) ...[
-              const SizedBox(height: 12),
-              _CaixaDeErro(
-                erro: erro,
-                icone: _iconeDoErro(erro.tipo),
-                onUsarOnline: erro.ofereceOnline ? _usarOnline : null,
-              ),
-            ],
-            const SizedBox(height: 14),
-            if (_transcricao.isNotEmpty)
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppColors.fundo,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  '"$_transcricao"',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                      fontStyle: FontStyle.italic,
-                      color: AppColors.amareloCapacete),
                 ),
               ),
-            if (_avisoConfianca != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: Row(
-                  children: [
-                    const Icon(Icons.info_outline,
-                        size: 16, color: AppColors.alerta),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: Text(
-                        _avisoConfianca!,
-                        style:
-                            textos.bodySmall?.copyWith(color: AppColors.alerta),
-                      ),
-                    ),
-                  ],
-                ),
+            AnimatedContainer(
+              duration: context.duracao(Movimento.medio),
+              curve: Movimento.entrar,
+              width: _Microfone.diametro,
+              height: _Microfone.diametro,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: ouvindo ? c.marca : c.folha,
+                border: ouvindo
+                    ? null
+                    : Border.all(color: contorno, width: Traco.forte),
               ),
-            // Interpretação ao vivo
-            AnimatedSize(
-              duration: const Duration(milliseconds: 220),
-              curve: Curves.easeOut,
-              child: _interpretado == null
-                  ? const SizedBox.shrink()
-                  : Container(
-                      margin: const EdgeInsets.only(top: 12),
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        color: AppColors.superficieAlta,
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: AppColors.borda),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          for (final linha in widget.linhas(_interpretado as T))
-                            _LinhaEntendida(linha: linha),
-                        ],
-                      ),
-                    ),
-            ),
-            const SizedBox(height: 18),
-            Row(
-              children: [
-                TextButton(
-                  onPressed: _cancelar,
-                  child: const Text('Cancelar'),
-                ),
-                const Spacer(),
-                OutlinedButton.icon(
-                  onPressed: _concluirAoTerminar ? null : _regravar,
-                  style: OutlinedButton.styleFrom(
-                      minimumSize: const Size(0, 46),
-                      padding: const EdgeInsets.symmetric(horizontal: 14)),
-                  icon: const Icon(Icons.refresh, size: 18),
-                  label: Text(soTentarDeNovo ? 'Tentar de novo' : 'Regravar'),
-                ),
-                if (!soTentarDeNovo) ...[
-                  const SizedBox(width: 10),
-                  ElevatedButton.icon(
-                    onPressed:
-                        _transcricao.trim().isEmpty || _concluirAoTerminar
-                            ? null
-                            : _concluir,
-                    style: ElevatedButton.styleFrom(
-                        minimumSize: const Size(0, 46),
-                        padding: const EdgeInsets.symmetric(horizontal: 18)),
-                    icon: const Icon(Icons.check, size: 18),
-                    label: const Text('Concluir'),
-                  ),
-                ],
-              ],
+              child: Icon(
+                ouvindo ? Icons.mic_none : Icons.mic_off_outlined,
+                size: 44,
+                color: ouvindo ? c.sobreMarca : contorno,
+              ),
             ),
           ],
         ),
@@ -479,10 +585,85 @@ class _PainelVozState<T> extends State<_PainelVoz<T>> {
   }
 }
 
+/// Um anel fixo a [raioBase] e outro que cresce até [raioMaximo] e some.
+class _PintorAnel extends CustomPainter {
+  _PintorAnel({
+    required this.pulso,
+    required this.cor,
+    required this.raioBase,
+    required this.raioMaximo,
+  }) : super(repaint: pulso);
+
+  final Animation<double> pulso;
+  final Color cor;
+  final double raioBase;
+  final double raioMaximo;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final centro = size.center(Offset.zero);
+    final tinta = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = Traco.forte
+      ..color = cor;
+    canvas.drawCircle(centro, raioBase, tinta);
+    final t = Movimento.entrar.transform(pulso.value);
+    if (t <= 0) return;
+    canvas.drawCircle(
+      centro,
+      raioBase + (raioMaximo - raioBase) * t,
+      tinta..color = cor.withValues(alpha: 1 - t),
+    );
+  }
+
+  @override
+  bool shouldRepaint(_PintorAnel antigo) =>
+      antigo.pulso != pulso ||
+      antigo.cor != cor ||
+      antigo.raioBase != raioBase ||
+      antigo.raioMaximo != raioMaximo;
+}
+
+/// A fala como ela chegou, em letra grande (20 sp) para conferir de longe.
+class _Transcricao extends StatelessWidget {
+  final String texto;
+
+  const _Transcricao({required this.texto});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.cores;
+    return Container(
+      padding: const EdgeInsets.only(left: Espaco.e12),
+      decoration: BoxDecoration(
+        border: Border(left: BorderSide(color: c.marca, width: 3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Rotulo('O que ouvi'),
+          const SizedBox(height: Espaco.e4),
+          Text(
+            '"$texto"',
+            style: Tipografia.corpo.copyWith(
+              fontSize: 20,
+              height: 1.35,
+              color: c.grafite,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 /// O erro da escuta com a saída dele. Quando falta o pacote offline, a
 /// instrução para baixá-lo vem com a alternativa explícita do online —
 /// a escolha é do usuário, o padrão continua no aparelho.
-class _CaixaDeErro extends StatelessWidget {
+///
+/// Vibra (Tato.erro) quando aparece e quando o erro muda: de luva e no
+/// barulho, o mestre sente que a escuta parou.
+class _CaixaDeErro extends StatefulWidget {
   final ErroVoz erro;
   final IconData icone;
   final VoidCallback? onUsarOnline;
@@ -494,98 +675,157 @@ class _CaixaDeErro extends StatelessWidget {
   });
 
   @override
+  State<_CaixaDeErro> createState() => _CaixaDeErroState();
+}
+
+class _CaixaDeErroState extends State<_CaixaDeErro> {
+  @override
+  void initState() {
+    super.initState();
+    unawaited(Tato.erro());
+  }
+
+  @override
+  void didUpdateWidget(_CaixaDeErro antigo) {
+    super.didUpdateWidget(antigo);
+    if (!identical(antigo.erro, widget.erro)) unawaited(Tato.erro());
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final textos = Theme.of(context).textTheme;
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppColors.erro.withValues(alpha: 0.10),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.erro.withValues(alpha: 0.45)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(icone, size: 18, color: AppColors.erro),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  erro.mensagem,
-                  style: textos.bodySmall
-                      ?.copyWith(color: AppColors.textoPrimario),
+    final c = context.cores;
+    final erro = widget.erro;
+    final icone = widget.icone;
+    final onUsarOnline = widget.onUsarOnline;
+    return Semantics(
+      container: true,
+      liveRegion: true,
+      child: Container(
+        padding: const EdgeInsets.all(Espaco.e12),
+        decoration: BoxDecoration(
+          borderRadius: Raio.cantoPequeno,
+          border: Border.all(color: c.revisao, width: Traco.fino),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(top: 1),
+                  child: Icon(icone, size: 22, color: c.revisao),
                 ),
+                const SizedBox(width: Espaco.e12),
+                Expanded(
+                  child: Text(
+                    erro.mensagem,
+                    style: Tipografia.corpo.copyWith(
+                      color: c.grafite,
+                      height: 1.35,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            if (onUsarOnline != null) ...[
+              const SizedBox(height: Espaco.e12),
+              BotaoContorno(
+                rotulo: 'Usar reconhecimento online do Google',
+                icone: Icons.cloud_outlined,
+                expandir: true,
+                aoTocar: onUsarOnline,
+              ),
+              const SizedBox(height: Espaco.e8),
+              Text(
+                'Só nesta gravação: o áudio vai para o Google. As próximas '
+                'voltam a ser no aparelho.',
+                textAlign: TextAlign.center,
+                style: Tipografia.apoio.copyWith(color: c.grafite2),
               ),
             ],
-          ),
-          if (onUsarOnline != null) ...[
-            const SizedBox(height: 10),
-            OutlinedButton.icon(
-              onPressed: onUsarOnline,
-              icon: const Icon(Icons.cloud_outlined, size: 18),
-              label: const Text('Usar reconhecimento online do Google'),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Só nesta gravação: o áudio vai para o Google. As próximas '
-              'voltam a ser no aparelho.',
-              textAlign: TextAlign.center,
-              style: textos.bodySmall
-                  ?.copyWith(color: AppColors.textoDesabilitado),
-            ),
           ],
-        ],
+        ),
       ),
     );
   }
 }
 
+/// Uma linha da conferência: caixa marcada (entendido) ou vazia, o rótulo
+/// e o valor. O estado vai na forma e no texto, não só na cor.
 class _LinhaEntendida extends StatelessWidget {
   final LinhaEntendida linha;
 
-  const _LinhaEntendida({required this.linha});
+  /// Ainda ouvindo: o que falta é "ainda não", não "não entendi".
+  final bool ouvindo;
+
+  const _LinhaEntendida({required this.linha, required this.ouvindo});
 
   @override
   Widget build(BuildContext context) {
-    final entendido = linha.valor != null;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 3),
-      child: Row(
-        children: [
-          Icon(linha.icone,
-              size: 16,
-              color:
-                  entendido ? AppColors.laranja : AppColors.textoDesabilitado),
-          const SizedBox(width: 8),
-          SizedBox(
-            width: 86,
-            child: Text(
-              linha.rotulo,
-              style: Theme.of(context)
-                  .textTheme
-                  .bodySmall
-                  ?.copyWith(color: AppColors.textoSecundario),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              linha.valor ?? '—',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    fontWeight: entendido ? FontWeight.w600 : FontWeight.normal,
-                    color: entendido
-                        ? AppColors.textoPrimario
-                        : AppColors.textoDesabilitado,
+    final c = context.cores;
+    final valor = linha.valor;
+    final entendido = valor != null;
+    final texto = valor ?? (ouvindo ? 'ainda não' : 'não entendi');
+    // O rótulo tem 112 dp na fonte normal e cresce com ela (senão
+    // "FORNECEDOR" quebrava no meio com a fonte a 130%). Se rótulo e valor
+    // não cabem lado a lado, o rótulo vai para cima do valor.
+    final escala = MediaQuery.textScalerOf(context);
+    final fatorRotulo = escala.scale(13) / 13;
+    final fatorValor = escala.scale(17) / 17;
+    final larguraRotulo = 112 * fatorRotulo;
+    final caixa = Icon(
+      entendido ? Icons.check_box_outlined : Icons.check_box_outline_blank,
+      size: 24,
+      color: entendido ? c.ok : c.traco,
+    );
+    final valorTexto = Text(
+      texto,
+      style: entendido
+          ? Tipografia.corpoForte.copyWith(color: c.grafite)
+          : Tipografia.apoio.copyWith(color: c.grafite2, height: 1.55),
+    );
+    return Semantics(
+      container: true,
+      label: '${linha.rotulo}: $texto',
+      excludeSemantics: true,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: Espaco.e4),
+        child: LayoutBuilder(
+          builder: (context, limites) {
+            final resto = limites.maxWidth - 24 - Espaco.e8;
+            final ladoALado = resto >= larguraRotulo + 120 * fatorValor;
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                caixa,
+                const SizedBox(width: Espaco.e8),
+                if (ladoALado) ...[
+                  SizedBox(
+                    width: larguraRotulo,
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Rotulo(linha.rotulo),
+                    ),
                   ),
-            ),
-          ),
-          Icon(
-            entendido ? Icons.check_circle : Icons.radio_button_unchecked,
-            size: 15,
-            color: entendido ? AppColors.sucesso : AppColors.textoDesabilitado,
-          ),
-        ],
+                  Expanded(child: valorTexto),
+                ] else
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.only(top: 4),
+                          child: Rotulo(linha.rotulo),
+                        ),
+                        valorTexto,
+                      ],
+                    ),
+                  ),
+              ],
+            );
+          },
+        ),
       ),
     );
   }
