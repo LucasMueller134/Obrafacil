@@ -1,60 +1,71 @@
 import 'package:flutter/material.dart';
 
-import '../constants/app_colors.dart';
+import '../design/design.dart';
 
-/// Cartão pequeno de indicador (ex.: "Gasto total", "Pendentes").
+/// Célula de indicador na linguagem da prancheta (ex.: "Aprovados 16"):
+/// rótulo em caixa alta, o número com algarismos tabulares e, opcional, o
+/// valor em R$ embaixo. Numa `Folha` (contorno no traço), sem cor de status.
 class CartaoResumo extends StatelessWidget {
   final String rotulo;
   final String valor;
-  final IconData icone;
-  final Color cor;
+
+  /// Linha de apoio sob o valor (ex.: "R$ 4.912,40").
+  final String? apoio;
+
+  /// Forma antes do rótulo (ex.: o check do aprovado, a hachura do
+  /// pendente), as mesmas do `SeloStatus`.
+  final Widget? simbolo;
 
   const CartaoResumo({
     super.key,
     required this.rotulo,
     required this.valor,
-    required this.icone,
-    this.cor = AppColors.laranja,
+    this.apoio,
+    this.simbolo,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.superficie,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.borda),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(icone, size: 16, color: cor),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  rotulo,
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodySmall
-                      ?.copyWith(color: AppColors.textoSecundario),
-                  overflow: TextOverflow.ellipsis,
-                ),
+    final c = context.cores;
+    // A folha do design system (borda no traço, raio 4), não uma caixa
+    // desenhada aqui.
+    return MergeSemantics(
+      child: Folha(
+        preenchimento: const EdgeInsets.fromLTRB(
+          Espaco.e12,
+          Espaco.e8,
+          Espaco.e12,
+          Espaco.e12,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              children: [
+                if (simbolo != null) ...[
+                  simbolo!,
+                  const SizedBox(width: Espaco.e8),
+                ],
+                Expanded(child: Rotulo(rotulo)),
+              ],
+            ),
+            const SizedBox(height: 2),
+            Text(
+              valor,
+              style: Tipografia.subtitulo.copyWith(color: c.grafite),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            if (apoio != null)
+              Text(
+                apoio!,
+                style: Tipografia.apoio.copyWith(color: c.grafite2),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            valor,
-            style: Theme.of(context)
-                .textTheme
-                .titleMedium
-                ?.copyWith(fontWeight: FontWeight.w700),
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

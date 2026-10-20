@@ -1,23 +1,30 @@
+import 'dart:async';
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
-import '../../constants/app_colors.dart';
+import '../../design/design.dart';
+import '../../design/maquete/maquete.dart';
 import '../../models/models.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/firestore_service.dart';
 import '../../services/ia/previsao_orcamento_service.dart';
 import '../../utils/formatters.dart';
-import '../../widgets/animacoes.dart';
 import '../../widgets/barra_orcamento.dart';
-import '../../widgets/carregando_obra.dart';
-import '../../widgets/ilustracoes.dart';
 import '../../widgets/cartao_resumo.dart';
 import '../../widgets/grafico_categorias.dart';
 import '../../widgets/grafico_semanal.dart';
 
-/// Dashboard da obra: financeiro, previsão de IA, gráficos e módulos.
+part 'obra_detalhe_secoes.dart';
+
+/// Central da obra, na linguagem da prancheta: o carimbo e a maquete no
+/// topo e, embaixo, o que cada perfil precisa. O dono vê primeiro os gastos
+/// para aprovar, o orçamento contra o avanço, os gráficos, os módulos e os
+/// convites; o mestre tem "lançar gasto" e "diário de hoje" no rodapé e vê
+/// os lançamentos dele que esperam aprovação.
 class ObraDetalheScreen extends StatelessWidget {
   final String obraId;
 
@@ -28,27 +35,97 @@ class ObraDetalheScreen extends StatelessWidget {
     final db = context.read<FirestoreService>();
     final auth = context.watch<AuthProvider>();
 
-    return StreamBuilder<ObraModel?>(
-      stream: db.obra(obraId),
-      builder: (context, obraSnap) {
-        final obra = obraSnap.data;
-        if (obra == null) {
-          return const Scaffold(
-            body: CarregandoObra(mensagem: 'Abrindo a obra…'),
+    return TemaPrancheta(
+      child: StreamBuilder<ObraModel?>(
+        stream: db.obra(obraId),
+        builder: (context, obraSnap) {
+          final obra = obraSnap.data;
+          if (obra == null) {
+            return const _AbrindoObra();
+          }
+          return StreamBuilder<List<LancamentoModel>>(
+            stream: db.lancamentos(obraId),
+            builder: (context, lancSnap) {
+              final lancamentos = lancSnap.data ?? const <LancamentoModel>[];
+              // Só leitura: o avanço da maquete e o resumo dos módulos.
+              return _LeiturasDoAndamento(
+                obraId: obraId,
+                construtor: (context, cronograma, cronogramaFalhou, diario) =>
+                    _Dashboard(
+                  obra: obra,
+                  lancamentos: lancamentos,
+                  cronograma: cronograma,
+                  cronogramaFalhou: cronogramaFalhou,
+                  diario: diario,
+                  ehDono: auth.ehDono,
+                  usuarioId: auth.usuario?.id,
+                ),
+              );
+            },
           );
-        }
-        return StreamBuilder<List<LancamentoModel>>(
-          stream: db.lancamentos(obraId),
-          builder: (context, lancSnap) {
-            final lancamentos = lancSnap.data ?? const <LancamentoModel>[];
-            return _Dashboard(
-              obra: obra,
-              lancamentos: lancamentos,
-              ehDono: auth.ehDono,
-            );
-          },
-        );
-      },
+        },
+      ),
+    );
+  }
+}
+
+/// As duas leituras que a central acrescentou (só leitura): o cronograma,
+/// para a maquete, a fase e o avanço, e o diário, para o resumo do módulo.
+///
+/// As streams são abertas uma vez, quando a central monta, e guardadas
+/// aqui: o StreamBuilder reassina sempre que recebe uma Stream nova, e
+/// pedi-las a cada build fecharia e reabriria os dois listeners do
+/// Firestore a cada mudança na obra ou nos lançamentos.
+class _LeiturasDoAndamento extends StatefulWidget {
+  const _LeiturasDoAndamento({required this.obraId, required this.construtor});
+
+  final String obraId;
+  final Widget Function(
+    BuildContext context,
+    List<CronogramaFaseModel>? cronograma,
+    bool cronogramaFalhou,
+    List<DiarioEntradaModel>? diario,
+  ) construtor;
+
+  @override
+  State<_LeiturasDoAndamento> createState() => _LeiturasDoAndamentoState();
+}
+
+class _LeiturasDoAndamentoState extends State<_LeiturasDoAndamento> {
+  late Stream<List<CronogramaFaseModel>> _cronograma;
+  late Stream<List<DiarioEntradaModel>> _diario;
+
+  @override
+  void initState() {
+    super.initState();
+    _abrir();
+  }
+
+  @override
+  void didUpdateWidget(_LeiturasDoAndamento antigo) {
+    super.didUpdateWidget(antigo);
+    if (antigo.obraId != widget.obraId) _abrir();
+  }
+
+  void _abrir() {
+    final db = context.read<FirestoreService>();
+    _cronograma = db.cronograma(widget.obraId);
+    _diario = db.diario(widget.obraId);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<List<CronogramaFaseModel>>(
+      stream: _cronograma,
+      builder: (context, cronoSnap) => StreamBuilder<List<DiarioEntradaModel>>(
+        stream: _diario,
+        builder: (context, diarioSnap) => widget.construtor(
+          context,
+          cronoSnap.data,
+          cronoSnap.hasError,
+          diarioSnap.data,
+        ),
+      ),
     );
   }
 }
@@ -56,12 +133,24 @@ class ObraDetalheScreen extends StatelessWidget {
 class _Dashboard extends StatelessWidget {
   final ObraModel obra;
   final List<LancamentoModel> lancamentos;
+
+  /// Nulo enquanto carrega.
+  final List<CronogramaFaseModel>? cronograma;
+
+  /// A leitura do cronograma deu erro (o cronograma não vai chegar).
+  final bool cronogramaFalhou;
+  final List<DiarioEntradaModel>? diario;
   final bool ehDono;
+  final String? usuarioId;
 
   const _Dashboard({
     required this.obra,
     required this.lancamentos,
+    required this.cronograma,
+    required this.cronogramaFalhou,
+    required this.diario,
     required this.ehDono,
+    required this.usuarioId,
   });
 
   @override
@@ -72,172 +161,264 @@ class _Dashboard extends StatelessWidget {
     final pendentes = lancamentos
         .where((l) => l.status == StatusLancamento.pendente)
         .toList();
-    final gastoAprovado =
-        aprovados.fold<double>(0, (s, l) => s + l.valor);
-    final valorPendente =
-        pendentes.fold<double>(0, (s, l) => s + l.valor);
+    final gastoAprovado = aprovados.fold<double>(0, (s, l) => s + l.valor);
+    final valorPendente = pendentes.fold<double>(0, (s, l) => s + l.valor);
     final previsao = PrevisaoOrcamentoService.calcular(
       obra: obra,
       lancamentos: lancamentos,
     );
 
+    final resumo = _ResumoObra(
+      obra: obra,
+      cronograma: cronograma,
+      cronogramaFalhou: cronogramaFalhou,
+      diario: diario,
+      aprovados: aprovados.length,
+      pendentes: pendentes.length,
+    );
+    final rotas = _Rotas(obra.id);
+
+    final List<Widget> corpo;
+    final Widget barra;
+    if (ehDono) {
+      corpo = _corpoDono(
+        context,
+        resumo: resumo,
+        rotas: rotas,
+        pendentes: pendentes,
+        valorPendente: valorPendente,
+        gastoAprovado: gastoAprovado,
+        previsao: previsao,
+      );
+      barra = _BarraDono(pendentes: pendentes.length, rotas: rotas);
+    } else {
+      final meusPendentes = [
+        for (final l in pendentes)
+          if (usuarioId != null && l.criadoPorId == usuarioId) l,
+      ];
+      corpo = _corpoMestre(
+        context,
+        resumo: resumo,
+        rotas: rotas,
+        meusPendentes: meusPendentes,
+        aprovados: aprovados.length,
+        pendentes: pendentes.length,
+        valorPendente: valorPendente,
+        gastoAprovado: gastoAprovado,
+        previsao: previsao,
+      );
+      barra = _BarraMestre(rotas: rotas);
+    }
+
     return Scaffold(
       appBar: AppBar(
-        title: Text(obra.nome, overflow: TextOverflow.ellipsis),
         actions: [
           if (ehDono)
             PopupMenuButton<String>(
+              tooltip: 'Ações da obra',
+              icon: const Icon(Icons.more_vert),
               onSelected: (acao) => _executarAcao(context, acao),
               itemBuilder: (_) => [
                 if (obra.status != StatusObra.concluida)
                   const PopupMenuItem(
                     value: 'concluir',
-                    child: Text('Marcar como concluída'),
+                    child: _ItemMenu(
+                      icone: Icons.check_circle_outline,
+                      texto: 'Marcar como concluída',
+                    ),
                   ),
                 if (obra.status == StatusObra.emAndamento)
                   const PopupMenuItem(
                     value: 'pausar',
-                    child: Text('Pausar obra'),
+                    child: _ItemMenu(
+                      icone: Icons.pause_circle_outline,
+                      texto: 'Pausar obra',
+                    ),
                   ),
                 if (obra.status != StatusObra.emAndamento)
                   const PopupMenuItem(
                     value: 'retomar',
-                    child: Text('Retomar obra'),
+                    child: _ItemMenu(
+                      icone: Icons.play_circle_outline,
+                      texto: 'Retomar obra',
+                    ),
                   ),
                 const PopupMenuItem(
                   value: 'excluir',
-                  child: Text('Excluir obra',
-                      style: TextStyle(color: AppColors.erro)),
+                  child: _ItemMenu(
+                    icone: Icons.delete_outline,
+                    texto: 'Excluir obra',
+                    destrutivo: true,
+                  ),
                 ),
               ],
             ),
+          const SizedBox(width: Espaco.e4),
         ],
       ),
       body: ListView(
-        padding: EdgeInsets.fromLTRB(
-            16, 16, 16, MediaQuery.of(context).padding.bottom + 96),
-        children: [
-          _CabecalhoObra(obra: obra, ehDono: ehDono).aparecerSecao(0),
-          const SizedBox(height: 16),
+        padding: const EdgeInsets.only(top: Espaco.e4, bottom: Espaco.e32),
+        children: corpo,
+      ),
+      bottomNavigationBar: barra,
+    );
+  }
 
-          // Financeiro
-          _Secao(
-            titulo: 'Financeiro',
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                BarraOrcamento(gasto: gastoAprovado, orcamento: obra.orcamento),
-                const SizedBox(height: 14),
-                Row(
-                  children: [
-                    Expanded(
-                      child: CartaoResumo(
-                        rotulo: 'Aprovados',
-                        valor: '${aprovados.length}',
-                        icone: Icons.check_circle_outline,
-                        cor: AppColors.sucesso,
+  List<Widget> _corpoDono(
+    BuildContext context, {
+    required _ResumoObra resumo,
+    required _Rotas rotas,
+    required List<LancamentoModel> pendentes,
+    required double valorPendente,
+    required double gastoAprovado,
+    required PrevisaoOrcamento previsao,
+  }) {
+    return [
+      _CarimboObra(obra: obra, resumo: resumo),
+      const SizedBox(height: Espaco.e12),
+      _MaqueteComAvanco(resumo: resumo),
+      if (pendentes.isNotEmpty) ...[
+        const SizedBox(height: Espaco.e24),
+        _NaMargem(
+          _FolhaPendentes(
+            titulo: '${pendentes.length} '
+                '${pendentes.length == 1 ? 'gasto' : 'gastos'} para aprovar',
+            pendentes: pendentes,
+            total: valorPendente,
+            destaque: true,
+            aoTocar: () => context.push(rotas.fila),
+          ),
+        ),
+      ],
+      const SizedBox(height: Espaco.e24),
+      _NaMargem(
+        BarraOrcamento(
+          gasto: gastoAprovado,
+          orcamento: obra.orcamento,
+          avancoFisico: resumo.avancoFisico,
+        ),
+      ),
+      const SizedBox(height: Espaco.e24),
+      _NaMargem(_LinhaPrevisao(
+        previsao: previsao,
+        fimPrevisto: obra.previsaoTermino,
+      )),
+      _Secao(
+        titulo: 'Gastos por categoria',
+        child: GraficoCategorias(lancamentos: lancamentos),
+      ),
+      _Secao(
+        titulo: 'Gastos por semana',
+        child: GraficoSemanal(lancamentos: lancamentos),
+      ),
+      _Secao(
+        titulo: 'Módulos da obra',
+        child: _ListaModulos(resumo: resumo, rotas: rotas),
+      ),
+      _Secao(
+        titulo: 'Convites',
+        child: _Convites(obra: obra),
+      ),
+    ];
+  }
+
+  List<Widget> _corpoMestre(
+    BuildContext context, {
+    required _ResumoObra resumo,
+    required _Rotas rotas,
+    required List<LancamentoModel> meusPendentes,
+    required int aprovados,
+    required int pendentes,
+    required double valorPendente,
+    required double gastoAprovado,
+    required PrevisaoOrcamento previsao,
+  }) {
+    final meuTotal = meusPendentes.fold<double>(0, (s, l) => s + l.valor);
+    return [
+      _CarimboObra(obra: obra, resumo: resumo),
+      const SizedBox(height: Espaco.e12),
+      _MaqueteComAvanco(resumo: resumo),
+      if (meusPendentes.isNotEmpty) ...[
+        const SizedBox(height: Espaco.e24),
+        _NaMargem(
+          _FolhaPendentes(
+            rotulo: 'Lançados por você',
+            titulo: '${meusPendentes.length} esperando aprovação',
+            pendentes: meusPendentes,
+            total: meuTotal,
+            destaque: false,
+            aoTocar: () => context.push(rotas.fila),
+          ),
+        ),
+      ],
+      // Direto no papel, como o do dono: dentro de uma folha, as células de
+      // aprovados e pendentes viravam caixa dentro de caixa.
+      _Secao(
+        titulo: 'Orçamento',
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            BarraOrcamento(
+              gasto: gastoAprovado,
+              orcamento: obra.orcamento,
+              avancoFisico: resumo.avancoFisico,
+              compacta: true,
+            ),
+            const SizedBox(height: Espaco.e16),
+            IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Expanded(
+                    child: CartaoResumo(
+                      rotulo: 'Aprovados',
+                      valor: '$aprovados',
+                      simbolo: Icon(
+                        Icons.check,
+                        size: 18,
+                        color: context.cores.ok,
                       ),
                     ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: CartaoResumo(
-                        rotulo: 'Pendentes',
-                        valor: pendentes.isEmpty
-                            ? '0'
-                            : '${pendentes.length} · ${Formatters.moedaCompacta(valorPendente)}',
-                        icone: Icons.hourglass_top,
-                        cor: AppColors.alerta,
+                  ),
+                  const SizedBox(width: Espaco.e8),
+                  Expanded(
+                    child: CartaoResumo(
+                      rotulo: 'Pendentes',
+                      valor: '$pendentes',
+                      apoio: pendentes == 0
+                          ? null
+                          : Formatters.moeda(valorPendente),
+                      simbolo: const CaixaHachurada(
+                        largura: 10,
+                        altura: 14,
+                        espacamento: 3.5,
                       ),
                     ),
-                  ],
-                ),
-                if (ehDono && pendentes.isNotEmpty) ...[
-                  const SizedBox(height: 12),
-                  OutlinedButton.icon(
-                    onPressed: () =>
-                        context.push('/obras/${obra.id}/lancamentos'),
-                    icon: const Icon(Icons.rule),
-                    label: Text(
-                        'Revisar ${pendentes.length} lançamento${pendentes.length > 1 ? 's' : ''} pendente${pendentes.length > 1 ? 's' : ''}'),
                   ),
                 ],
-              ],
+              ),
             ),
-          ).aparecerSecao(1),
-          const SizedBox(height: 16),
-
-          // Previsão IA
-          _CartaoPrevisao(previsao: previsao).aparecerSecao(2),
-          const SizedBox(height: 16),
-
-          _Secao(
-            titulo: 'Gastos por categoria',
-            child: GraficoCategorias(lancamentos: lancamentos),
-          ).aparecerSecao(3),
-          const SizedBox(height: 16),
-          _Secao(
-            titulo: 'Gastos por semana',
-            child: GraficoSemanal(lancamentos: lancamentos),
-          ).aparecerSecao(4),
-          const SizedBox(height: 16),
-
-          // Módulos
-          GridView.count(
-            crossAxisCount: 3,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            padding: EdgeInsets.zero,
-            mainAxisSpacing: 10,
-            crossAxisSpacing: 10,
-            childAspectRatio: 0.95,
-            children: [
-              _Modulo(
-                icone: Icons.receipt_long,
-                rotulo: 'Lançamentos',
-                cor: AppColors.laranja,
-                onTap: () => context.push('/obras/${obra.id}/lancamentos'),
-              ),
-              _Modulo(
-                icone: Icons.inventory_2,
-                rotulo: 'Estoque',
-                cor: AppColors.info,
-                onTap: () => context.push('/obras/${obra.id}/estoque'),
-              ),
-              _Modulo(
-                icone: Icons.menu_book,
-                rotulo: 'Diário',
-                cor: AppColors.amareloCapacete,
-                onTap: () => context.push('/obras/${obra.id}/diario'),
-              ),
-              _Modulo(
-                icone: Icons.timeline,
-                rotulo: 'Cronograma',
-                cor: AppColors.catEquipamento,
-                onTap: () => context.push('/obras/${obra.id}/cronograma'),
-              ),
-              _Modulo(
-                icone: Icons.photo_library,
-                rotulo: 'Galeria',
-                cor: AppColors.sucesso,
-                onTap: () => context.push('/obras/${obra.id}/galeria'),
-              ),
-              _Modulo(
-                icone: Icons.auto_awesome,
-                rotulo: 'Relatório IA',
-                cor: const Color(0xFF2DD4BF),
-                onTap: () => context.push('/obras/${obra.id}/relatorio'),
-              ),
-            ],
-          ).aparecerSecao(5),
-          const SizedBox(height: 24),
-        ],
+            const SizedBox(height: Espaco.e16),
+            _LinhaPrevisao(
+              previsao: previsao,
+              fimPrevisto: obra.previsaoTermino,
+            ),
+          ],
+        ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.push('/obras/${obra.id}/lancamentos/novo'),
-        icon: const Icon(Icons.add),
-        label: const Text('Lançar gasto'),
+      _Secao(
+        titulo: 'Módulos da obra',
+        child: _ListaModulos(resumo: resumo, rotas: rotas),
       ),
-    );
+      _Secao(
+        titulo: 'Gastos por categoria',
+        child: GraficoCategorias(lancamentos: lancamentos),
+      ),
+      _Secao(
+        titulo: 'Gastos por semana',
+        child: GraficoSemanal(lancamentos: lancamentos),
+      ),
+    ];
   }
 
   Future<void> _executarAcao(BuildContext context, String acao) async {
@@ -245,10 +426,13 @@ class _Dashboard extends StatelessWidget {
     switch (acao) {
       case 'concluir':
         await db.atualizarObra(obra.copyWith(status: StatusObra.concluida));
+        unawaited(Tato.confirmar());
       case 'pausar':
         await db.atualizarObra(obra.copyWith(status: StatusObra.pausada));
+        unawaited(Tato.confirmar());
       case 'retomar':
         await db.atualizarObra(obra.copyWith(status: StatusObra.emAndamento));
+        unawaited(Tato.confirmar());
       case 'excluir':
         final confirmar = await showDialog<bool>(
           context: context,
@@ -264,14 +448,17 @@ class _Dashboard extends StatelessWidget {
               ),
               TextButton(
                 onPressed: () => Navigator.pop(ctx, true),
-                child: const Text('Excluir',
-                    style: TextStyle(color: AppColors.erro)),
+                style: TextButton.styleFrom(
+                  foregroundColor: ctx.cores.revisao,
+                ),
+                child: const Text('Excluir'),
               ),
             ],
           ),
         );
         if (confirmar == true && context.mounted) {
           await db.excluirObra(obra.id);
+          unawaited(Tato.confirmar());
           if (context.mounted) context.go('/obras');
         }
     }
@@ -311,314 +498,5 @@ Future<void> _convidarCliente(BuildContext context, ObraModel obra) async {
   } catch (e) {
     messenger.showSnackBar(
         SnackBar(content: Text('Não foi possível gerar o código: $e')));
-  }
-}
-
-class _Codigo extends StatelessWidget {
-  final IconData icone;
-  final String rotulo;
-  final VoidCallback aoCopiar;
-
-  const _Codigo({
-    required this.icone,
-    required this.rotulo,
-    required this.aoCopiar,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: aoCopiar,
-      borderRadius: BorderRadius.circular(10),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.18),
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.35)),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icone, size: 16, color: Colors.white),
-            const SizedBox(width: 7),
-            Text(
-              rotulo,
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w700,
-                fontSize: 13,
-                letterSpacing: 0.5,
-              ),
-            ),
-            const SizedBox(width: 7),
-            const Icon(Icons.copy, size: 13, color: Colors.white70),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _CabecalhoObra extends StatelessWidget {
-  final ObraModel obra;
-  final bool ehDono;
-
-  const _CabecalhoObra({required this.obra, required this.ehDono});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(18),
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [AppColors.laranjaEscuro, AppColors.laranja],
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.laranja.withValues(alpha: 0.30),
-            blurRadius: 18,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Stack(
-        children: [
-          const Positioned(
-            right: -12,
-            bottom: -4,
-            width: 170,
-            height: 80,
-            child: IgnorePointer(
-              child: Opacity(opacity: 0.20, child: IlustracaoSkyline()),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.22),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    obra.status.label,
-                    style: const TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    const Icon(Icons.place, size: 15, color: Colors.white70),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: Text(
-                        obra.endereco +
-                            (obra.cliente != null
-                                ? ' · ${obra.cliente}'
-                                : ''),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                if (ehDono) ...[
-                  const SizedBox(height: 12),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      _Codigo(
-                        icone: Icons.qr_code,
-                        rotulo: 'Equipe: ${obra.codigoConvite}',
-                        aoCopiar: () => _convidarEquipe(context, obra),
-                      ),
-                      _Codigo(
-                        icone: Icons.holiday_village,
-                        rotulo: obra.codigoCliente.isEmpty
-                            ? 'Convidar cliente'
-                            : 'Cliente: ${obra.codigoCliente}',
-                        aoCopiar: () => _convidarCliente(context, obra),
-                      ),
-                    ],
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _CartaoPrevisao extends StatelessWidget {
-  final PrevisaoOrcamento previsao;
-
-  const _CartaoPrevisao({required this.previsao});
-
-  @override
-  Widget build(BuildContext context) {
-    final cor = switch (previsao.risco) {
-      NivelRisco.ok => AppColors.sucesso,
-      NivelRisco.atencao => AppColors.alerta,
-      NivelRisco.alto => AppColors.erro,
-    };
-    final icone = switch (previsao.risco) {
-      NivelRisco.ok => Icons.verified,
-      NivelRisco.atencao => Icons.warning_amber,
-      NivelRisco.alto => Icons.report,
-    };
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: cor.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: cor.withValues(alpha: 0.5)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(icone, color: cor, size: 20),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  'Previsão de orçamento (IA): ${previsao.risco.label}',
-                  style: Theme.of(context)
-                      .textTheme
-                      .titleSmall
-                      ?.copyWith(color: cor, fontWeight: FontWeight.w700),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          if (previsao.dadosSuficientes) ...[
-            Text(
-              'Projeção para o fim da obra: '
-              '${Formatters.moeda(previsao.gastoProjetadoFinal)}'
-              '${previsao.dataEstouroPrevista != null ? ' · estouro estimado em ${Formatters.data(previsao.dataEstouroPrevista!)}' : ''}',
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-            const SizedBox(height: 6),
-          ],
-          Text(
-            previsao.recomendacao,
-            style: Theme.of(context)
-                .textTheme
-                .bodySmall
-                ?.copyWith(color: AppColors.textoSecundario),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _Secao extends StatelessWidget {
-  final String titulo;
-  final Widget child;
-
-  const _Secao({required this.titulo, required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.superficie,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.borda),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            titulo,
-            style: Theme.of(context)
-                .textTheme
-                .titleSmall
-                ?.copyWith(fontWeight: FontWeight.w700),
-          ),
-          const SizedBox(height: 14),
-          child,
-        ],
-      ),
-    );
-  }
-}
-
-class _Modulo extends StatelessWidget {
-  final IconData icone;
-  final String rotulo;
-  final Color cor;
-  final VoidCallback onTap;
-
-  const _Modulo({
-    required this.icone,
-    required this.rotulo,
-    required this.cor,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        decoration: BoxDecoration(
-          color: AppColors.superficie,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.borda),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 38,
-              height: 38,
-              decoration: BoxDecoration(
-                color: cor.withValues(alpha: 0.16),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(icone, color: cor, size: 22),
-            ),
-            const SizedBox(height: 8),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4),
-              child: Text(
-                rotulo,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 }
