@@ -81,39 +81,6 @@ void main() {
       }
     });
 
-    testWidgets('SeletorGrande: opções de 56 dp, 12 dp entre elas',
-        (tester) async {
-      await tester.pumpWidget(montar(SizedBox(
-        width: 360,
-        child: SeletorGrande<int>(
-          rotulo: 'Categoria',
-          opcoes: const [
-            OpcaoSeletor(valor: 1, rotulo: 'Material'),
-            OpcaoSeletor(valor: 2, rotulo: 'Mão de obra'),
-            OpcaoSeletor(valor: 3, rotulo: 'Equipamento'),
-            OpcaoSeletor(valor: 4, rotulo: 'Outros'),
-          ],
-          selecionado: 1,
-          aoMudar: (_) {},
-        ),
-      )));
-      final caixas = [
-        for (final r in ['Material', 'Mão de obra', 'Equipamento', 'Outros'])
-          tester.getRect(find.ancestor(
-            of: find.textContaining(r, findRichText: true),
-            matching: find.byType(AreaPressionavel),
-          )),
-      ];
-      for (final c in caixas) {
-        expect(c.height, greaterThanOrEqualTo(Alvo.opcao));
-      }
-      // 2 x 2: lado a lado e uma linha embaixo da outra.
-      expect(caixas[1].left - caixas[0].right,
-          greaterThanOrEqualTo(Espaco.entreAlvos));
-      expect(caixas[2].top - caixas[0].bottom,
-          greaterThanOrEqualTo(Espaco.entreAlvos));
-    });
-
     testWidgets('BarraDeAcao: 12 dp entre a ação e o botão de ícone',
         (tester) async {
       await tester.pumpWidget(montar(Builder(

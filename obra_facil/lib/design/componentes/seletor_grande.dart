@@ -159,11 +159,17 @@ class _RenderGrade extends RenderBox
       (largura - (colunas - 1) * _espaco) / colunas;
 
   /// Quantas colunas cabem: as preferidas; se cada opção ficar estreita
-  /// demais, 2; e, se nem assim, 1.
-  int _colunas(double largura, int quantas) {
-    var colunas = math.max(1, math.min(_colunasPreferidas, quantas));
+  /// demais, 2; e, se nem assim, 1. Estreita demais é menos que a largura
+  /// mínima ou menos que a palavra mais longa do rótulo: com a fonte
+  /// grande, "Equipamento" não pode quebrar no meio da palavra.
+  int _colunas(double largura, List<RenderBox> filhos) {
+    var colunas = math.max(1, math.min(_colunasPreferidas, filhos.length));
     if (!largura.isFinite) return colunas;
-    while (colunas > 1 && _larguraPor(largura, colunas) < _larguraMinima) {
+    final palavraMaisLonga = filhos
+        .map((f) => f.getMinIntrinsicWidth(double.infinity))
+        .reduce(math.max);
+    final necessaria = math.max(_larguraMinima, palavraMaisLonga);
+    while (colunas > 1 && _larguraPor(largura, colunas) < necessaria) {
       colunas = colunas > 2 ? 2 : 1;
     }
     return colunas;
@@ -173,7 +179,7 @@ class _RenderGrade extends RenderBox
   Size _distribuir(BoxConstraints limites, {required bool montar}) {
     final filhos = _filhos;
     if (filhos.isEmpty) return limites.smallest;
-    final colunas = _colunas(limites.maxWidth, filhos.length);
+    final colunas = _colunas(limites.maxWidth, filhos);
     final por = limites.maxWidth.isFinite
         ? math.max(0.0, _larguraPor(limites.maxWidth, colunas))
         : filhos

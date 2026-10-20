@@ -17,7 +17,12 @@ class LinhaEntendida {
   /// null = ainda não entendi este campo.
   final String? valor;
 
-  const LinhaEntendida(this.icone, this.rotulo, this.valor);
+  /// Valor em dinheiro: vai na fonte dos números (a Atkinson corta o zero,
+  /// e em R\$ pequeno o zero cortado parece valor riscado).
+  final bool dinheiro;
+
+  const LinhaEntendida(this.icone, this.rotulo, this.valor,
+      {this.dinheiro = false});
 }
 
 /// Abre o painel de voz do lançamento, com interpretação ao vivo.
@@ -34,7 +39,8 @@ Future<LancamentoPorVoz?> mostrarPainelVoz(
       transcricaoDe: (r) => r.transcricao,
       linhas: (r) => [
         LinhaEntendida(Icons.payments, 'Valor',
-            r.valor != null ? Formatters.moeda(r.valor!) : null),
+            r.valor != null ? Formatters.moeda(r.valor!) : null,
+            dinheiro: true),
         LinhaEntendida(
             Icons.event, 'Data', r.data != null ? _rotuloData(r.data!) : null),
         LinhaEntendida(r.categoria.icone, 'Categoria', r.categoria.label),
@@ -781,9 +787,11 @@ class _LinhaEntendida extends StatelessWidget {
     );
     final valorTexto = Text(
       texto,
-      style: entendido
-          ? Tipografia.corpoForte.copyWith(color: c.grafite)
-          : Tipografia.apoio.copyWith(color: c.grafite2, height: 1.55),
+      style: !entendido
+          ? Tipografia.apoio.copyWith(color: c.grafite2, height: 1.55)
+          : linha.dinheiro
+              ? Tipografia.subtitulo.copyWith(color: c.grafite)
+              : Tipografia.corpoForte.copyWith(color: c.grafite),
     );
     return Semantics(
       container: true,

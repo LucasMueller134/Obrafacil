@@ -36,6 +36,14 @@ Future<void> _abrirVoz(WidgetTester tester) async {
 }
 
 void main() {
+  // Estas cenas descrevem o visual antigo (o "antes" do redesenho). Com
+  // outra série (ex.: CAPTURAR=depois) elas gravariam por cima das telas
+  // novas; para refazer o antes, rode no commit abfbef5.
+  if (serieDeCaptura != null && serieDeCaptura != 'antes') {
+    test('capturas do antes', () {},
+        skip: 'só rodam com CAPTURAR=antes, no visual antigo');
+    return;
+  }
   setUpAll(() async {
     if (capturando) await prepararCapturas();
   });

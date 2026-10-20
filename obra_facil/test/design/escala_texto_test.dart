@@ -221,4 +221,69 @@ void main() {
         find.textContaining('Aprovado', findRichText: true));
     expect(selo.didExceedMaxLines, isFalse);
   });
+
+  // Medido com as fontes reais: com a fonte de teste "Equipamento" já não
+  // cabe em meia tela e o seletor vai, com razão, para uma coluna.
+  group('SeletorGrande', () {
+      testWidgets('SeletorGrande: opções de 56 dp, 12 dp entre elas',
+          (tester) async {
+        await tester.pumpWidget(montar(SizedBox(
+          width: 360,
+          child: SeletorGrande<int>(
+            rotulo: 'Categoria',
+            opcoes: const [
+              OpcaoSeletor(valor: 1, rotulo: 'Material'),
+              OpcaoSeletor(valor: 2, rotulo: 'Mão de obra'),
+              OpcaoSeletor(valor: 3, rotulo: 'Equipamento'),
+              OpcaoSeletor(valor: 4, rotulo: 'Outros'),
+            ],
+            selecionado: 1,
+            aoMudar: (_) {},
+          ),
+        )));
+        final caixas = [
+          for (final r in ['Material', 'Mão de obra', 'Equipamento', 'Outros'])
+            tester.getRect(find.ancestor(
+              of: find.textContaining(r, findRichText: true),
+              matching: find.byType(AreaPressionavel),
+            )),
+        ];
+        for (final c in caixas) {
+          expect(c.height, greaterThanOrEqualTo(Alvo.opcao));
+        }
+        // 2 x 2: lado a lado e uma linha embaixo da outra.
+        expect(caixas[1].left - caixas[0].right,
+            greaterThanOrEqualTo(Espaco.entreAlvos));
+        expect(caixas[2].top - caixas[0].bottom,
+            greaterThanOrEqualTo(Espaco.entreAlvos));
+      });
+
+
+    testWidgets('em 360 dp com fonte 130%, nenhum rótulo quebra no meio',
+        (tester) async {
+      definirTela(tester, 360);
+      // Na tela, o seletor fica dentro da margem de 16 dp (328 dp úteis).
+      await tester.pumpWidget(montar(
+        SeletorGrande<int>(
+          opcoes: const [
+            OpcaoSeletor(valor: 1, rotulo: 'Material'),
+            OpcaoSeletor(valor: 2, rotulo: 'Mão de obra'),
+            OpcaoSeletor(valor: 3, rotulo: 'Equipamento'),
+            OpcaoSeletor(valor: 4, rotulo: 'Outros'),
+          ],
+          selecionado: 3,
+          aoMudar: (_) {},
+        ),
+        escalaTexto: 1.3,
+        rolavel: true,
+      ));
+      final texto = tester.renderObject<RenderParagraph>(
+          find.textContaining('Equipamento', findRichText: true));
+      final umaLinha = texto.getFullHeightForCaret(
+              const TextPosition(offset: 0)) *
+          1.5;
+      expect(texto.size.height, lessThan(umaLinha),
+          reason: '"Equipamento" quebrou em mais de uma linha');
+    });
+  });
 }
