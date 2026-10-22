@@ -74,30 +74,86 @@ class _CenaObraTresDState extends State<CenaObraTresD>
     }
   }
 
+  /// Cena parada já rasterizada, e o que ela retrata (tamanho, densidade
+  /// de pixels e câmera): muda qualquer um, desenha de novo.
+  ui.Image? _imagemParada;
+  Object? _chaveImagemParada;
+
   @override
   void dispose() {
     _controle.dispose();
+    _imagemParada?.dispose();
     super.dispose();
   }
 
+  _PintorCena _pintor() => _PintorCena(
+        malhas: _maquete,
+        camera: Camera3D(
+          // Começa levemente de lado: o canto lê melhor o volume que
+          // a fachada de frente.
+          giro: -0.6 + _controle.value * 2 * math.pi,
+          inclinacao: widget.inclinacao,
+        ),
+      );
+
   @override
   Widget build(BuildContext context) {
+    if (!widget.animando) {
+      return RepaintBoundary(
+        child: LayoutBuilder(
+          builder: (context, limites) =>
+              _quadroParado(context, limites.biggest),
+        ),
+      );
+    }
     return RepaintBoundary(
       child: AnimatedBuilder(
         animation: _controle,
         builder: (_, __) => CustomPaint(
-          painter: _PintorCena(
-            malhas: _maquete,
-            camera: Camera3D(
-              // Começa levemente de lado: o canto lê melhor o volume que
-              // a fachada de frente.
-              giro: -0.6 + _controle.value * 2 * math.pi,
-              inclinacao: widget.inclinacao,
-            ),
-          ),
+          painter: _pintor(),
           size: Size.infinite,
         ),
       ),
+    );
+  }
+
+  /// Parada, a cena vira imagem uma vez só. No Impeller não há cache de
+  /// rasterização: sem isto, cada quadro da tela (o cursor piscando, o
+  /// teclado abrindo, cada letra digitada no login) redesenhava a maquete
+  /// inteira.
+  Widget _quadroParado(BuildContext context, Size tamanho) {
+    final pintor = _pintor();
+    if (!tamanho.isFinite || tamanho.isEmpty) {
+      return CustomPaint(painter: pintor, size: Size.infinite);
+    }
+    final densidade = MediaQuery.devicePixelRatioOf(context);
+    final chave = (
+      tamanho,
+      densidade,
+      pintor.camera.giro,
+      pintor.camera.inclinacao,
+    );
+    if (_imagemParada == null || chave != _chaveImagemParada) {
+      _imagemParada?.dispose();
+      final gravador = ui.PictureRecorder();
+      final canvas = Canvas(gravador)..scale(densidade);
+      pintor.paint(canvas, tamanho);
+      final quadro = gravador.endRecording();
+      _imagemParada = quadro.toImageSync(
+        (tamanho.width * densidade).ceil(),
+        (tamanho.height * densidade).ceil(),
+      );
+      quadro.dispose();
+      _chaveImagemParada = chave;
+    }
+    // Um pixel da imagem por pixel da tela: sem reamostrar.
+    return RawImage(
+      image: _imagemParada,
+      width: tamanho.width,
+      height: tamanho.height,
+      scale: densidade,
+      fit: BoxFit.none,
+      alignment: Alignment.topLeft,
     );
   }
 }
@@ -331,31 +387,35 @@ class _PintorCena extends CustomPainter {
         );
       }
       canvas.drawPath(caminho, tinta);
-      _pintarTextura(canvas, face, caminho);
+      _pintarTextura(canvas, face);
     }
     canvas.restore();
   }
 
-  /// Sombra: a silhueta da cena achatada no chão, borrada e sobreposta.
-  /// Várias camadas curtas empilhadas dão a borda macia sem custo de
-  /// desfoque grande.
+  /// Sombra: a silhueta da cena achatada no chão, sobreposta e borrada.
+  /// As silhuetas (umas 200) vão numa camada só, com um desfoque para a
+  /// camada inteira: desfocar uma a uma custava, no Impeller, um passe
+  /// fora da tela por silhueta a cada quadro, pesado demais para o
+  /// celular que roda o Impeller em OpenGL.
   void _pintarSombra(Canvas canvas, SombraProjetada sombra) {
-    final tinta = Paint()
-      ..color = Colors.black.withValues(alpha: 0.13)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 0.09);
+    if (sombra.silhuetas.isEmpty) return;
+    canvas.saveLayer(
+      null,
+      Paint()..imageFilter = ui.ImageFilter.blur(sigmaX: 0.09, sigmaY: 0.09),
+    );
+    final tinta = Paint()..color = Colors.black.withValues(alpha: 0.13);
     for (final silhueta in sombra.silhuetas) {
       canvas.drawPath(Path()..addPolygon(silhueta, true), tinta);
     }
+    canvas.restore();
   }
 
   /// Acabamento por cima da cor: fiada de tijolo, poro de concreto, veio
-  /// de madeira, onda de telha. Desenhado dentro do recorte da face, o
-  /// que faz a textura acompanhar a perspectiva.
-  void _pintarTextura(Canvas canvas, FaceProjetada face, Path caminho) {
+  /// de madeira, onda de telha. As linhas ligam pontos das arestas da
+  /// face, o que faz a textura acompanhar a perspectiva. Sem recorte: a
+  /// face é convexa, e linha entre dois pontos dela não sai dela.
+  void _pintarTextura(Canvas canvas, FaceProjetada face) {
     if (face.textura == Textura.lisa || face.pontos.length < 4) return;
-
-    canvas.save();
-    canvas.clipPath(caminho);
 
     final p0 = face.pontos[0];
     final p1 = face.pontos[1];
@@ -377,26 +437,31 @@ class _PintorCena extends CustomPainter {
       case Textura.lisa:
         break;
     }
-    canvas.restore();
   }
 
   /// Traça [quantidade] linhas paralelas cruzando o quadrilátero, indo do
   /// lado [a]→[b] até o lado [c]→[d]. Interpolar nos dois lados mantém as
-  /// linhas em perspectiva junto com a face.
+  /// linhas em perspectiva junto com a face. Todas num traço só: um
+  /// desenho por face em vez de um por linha.
   void _riscar(Canvas canvas, Offset a, Offset b, Offset c, Offset d,
       int quantidade, double espessura, Color cor) {
-    final tinta = Paint()
-      ..strokeWidth = espessura
-      ..color = cor
-      ..isAntiAlias = true;
+    final linhas = Path();
     for (var i = 1; i < quantidade; i++) {
       final t = i / quantidade;
-      canvas.drawLine(
-        Offset.lerp(a, d, t)!,
-        Offset.lerp(b, c, t)!,
-        tinta,
-      );
+      final inicio = Offset.lerp(a, d, t)!;
+      final fim = Offset.lerp(b, c, t)!;
+      linhas
+        ..moveTo(inicio.dx, inicio.dy)
+        ..lineTo(fim.dx, fim.dy);
     }
+    canvas.drawPath(
+      linhas,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = espessura
+        ..color = cor
+        ..isAntiAlias = true,
+    );
   }
 
   @override
