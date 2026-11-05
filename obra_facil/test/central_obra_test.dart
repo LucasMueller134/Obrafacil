@@ -166,6 +166,9 @@ class _Central {
 
     await tester.pumpWidget(AppDeCaptura(auth: auth, db: db, router: router));
     await assentar(tester);
+    // O que a lista de obras pediu antes não é da central (a lista lê o
+    // cronograma de cada obra, para a régua de avanço da folha).
+    db.chamadas.clear();
     router.go('/obras/$obraId');
     await assentar(tester);
     expect(central.rota, '/obras/$obraId');

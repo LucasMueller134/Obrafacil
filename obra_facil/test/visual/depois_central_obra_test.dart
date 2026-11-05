@@ -142,12 +142,8 @@ void main() {
         child: AppDeCaptura(auth: auth, db: db, router: router),
       ));
       await assentar(tester);
-      // O que veio antes é a lista de obras (/obras), outra tela: ela
-      // estoura em 360 dp com fonte 130% (obras_screen.dart, a linha de
-      // datas e orçamento do cartão), defeito anterior ao redesenho desta
-      // tela. Aqui só a central conta; coberta pela central, a lista não é
-      // mais pintada e não reporta de novo.
-      tester.takeException();
+      // A lista de obras (/obras) vem antes: ela também não pode dar erro.
+      expect(tester.takeException(), isNull);
       router.go(_obra);
       await assentar(tester);
       expect(router.routerDelegate.currentConfiguration.uri.toString(), _obra);

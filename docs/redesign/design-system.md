@@ -129,6 +129,7 @@ gira sozinha. `Tato` centraliza a vibração: `leve()` na seleção,
 | `BotaoIcone` | quadrado de 64 dp, contorno ou marca |
 | `BarraDeAcao` | rodapé fixo com a ação principal, respeita a área segura e o teclado |
 | `LinhaLista` | linha de lista com 72 dp ou mais: ícone, título, apoio, valor à direita |
+| `AvisoVazio` | lista vazia ou erro de carga: ícone de traço, o que aconteceu e o que fazer, numa folha |
 | `MaqueteObra` | a maquete 3D da obra (flutter_scene) com imagem de reserva |
 
 ## 7. Maquete 3D

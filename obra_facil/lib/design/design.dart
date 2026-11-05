@@ -4,6 +4,7 @@
 
 export 'componentes/area_pressionavel.dart';
 export 'componentes/aviso.dart';
+export 'componentes/aviso_vazio.dart';
 export 'componentes/barra_de_acao.dart';
 export 'componentes/botoes.dart';
 export 'componentes/carimbo.dart';

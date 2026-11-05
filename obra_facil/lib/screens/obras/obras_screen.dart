@@ -1,26 +1,44 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
-import '../../constants/app_colors.dart';
+import '../../design/design.dart';
+import '../../design/maquete/maquete.dart';
 import '../../models/models.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/firestore_service.dart';
 import '../../services/notificacoes/tarefa_segundo_plano.dart';
 import '../../utils/formatters.dart';
-import '../../widgets/animacoes.dart';
-import '../../widgets/carregando_obra.dart';
-import '../../widgets/estado_vazio.dart';
-import '../../widgets/ilustracoes.dart';
 
-class ObrasScreen extends StatefulWidget {
+/// A lista de obras, primeira tela depois do login, na linguagem da
+/// prancheta: o nome de quem entrou no topo, uma folha por obra (nome,
+/// endereço, término previsto e orçamento) e a ação principal no rodapé.
+/// O dono cadastra obra nova; o mestre entra numa obra com o código de
+/// convite.
+class ObrasScreen extends StatelessWidget {
   const ObrasScreen({super.key});
 
   @override
-  State<ObrasScreen> createState() => _ObrasScreenState();
+  Widget build(BuildContext context) =>
+      const TemaPrancheta(child: _ListaDeObras());
 }
 
-class _ObrasScreenState extends State<ObrasScreen> {
+class _ListaDeObras extends StatefulWidget {
+  const _ListaDeObras();
+
+  @override
+  State<_ListaDeObras> createState() => _ListaDeObrasState();
+}
+
+class _ListaDeObrasState extends State<_ListaDeObras> {
+  /// A leitura das obras, aberta uma vez por usuário: o StreamBuilder
+  /// reassina quando recebe uma Stream nova, e pedi-la a cada build
+  /// reabriria o listener do Firestore a cada mudança no login.
+  Stream<List<ObraModel>>? _obras;
+  String? _dono;
+
   @override
   void initState() {
     super.initState();
@@ -28,28 +46,22 @@ class _ObrasScreenState extends State<ObrasScreen> {
     NotificacaoBootstrap.aplicar();
   }
 
+  Stream<List<ObraModel>> _obrasDe(String usuarioId) {
+    if (_obras == null || _dono != usuarioId) {
+      _dono = usuarioId;
+      _obras = context.read<FirestoreService>().obrasDoUsuario(usuarioId);
+    }
+    return _obras!;
+  }
+
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
-    final db = context.read<FirestoreService>();
     final usuario = auth.usuario;
     if (usuario == null) return const SizedBox.shrink();
 
     return Scaffold(
       appBar: AppBar(
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Olá, ${usuario.nome.split(' ').first}'),
-            Text(
-              usuario.perfil.label,
-              style: Theme.of(context)
-                  .textTheme
-                  .bodySmall
-                  ?.copyWith(color: AppColors.textoSecundario),
-            ),
-          ],
-        ),
         actions: [
           IconButton(
             tooltip: 'Notificações',
@@ -59,89 +71,150 @@ class _ObrasScreenState extends State<ObrasScreen> {
           if (usuario.ehDono)
             IconButton(
               tooltip: 'Fornecedores',
-              icon: const Icon(Icons.storefront),
+              icon: const Icon(Icons.storefront_outlined),
               onPressed: () => context.push('/fornecedores'),
             ),
-          IconButton(
-            tooltip: 'Sair',
-            icon: const Icon(Icons.logout),
-            onPressed: () => _confirmarSaida(context),
+          // "Sair" no menu, longe do polegar: tocar nele sem querer
+          // derrubava a sessão no canteiro, sem sinal para entrar de novo.
+          PopupMenuButton<String>(
+            tooltip: 'Conta',
+            icon: const Icon(Icons.more_vert),
+            onSelected: (_) => _confirmarSaida(context),
+            itemBuilder: (_) => const [
+              PopupMenuItem(
+                value: 'sair',
+                child: Row(
+                  children: [
+                    Icon(Icons.logout),
+                    SizedBox(width: Espaco.e12),
+                    Text('Sair da conta'),
+                  ],
+                ),
+              ),
+            ],
           ),
+          const SizedBox(width: Espaco.e4),
         ],
       ),
-      body: Column(
-        children: [
-          // Dono e mestre não ficam presos por causa do e-mail — só são
-          // lembrados. Quem é barrado sem confirmar é o cliente, que é
-          // gente de fora e entra por cadastro aberto.
-          if (!auth.emailVerificado) const _AvisoEmailPendente(),
-          Expanded(
-            child: StreamBuilder<List<ObraModel>>(
-              stream: db.obrasDoUsuario(usuario.id),
-              // O conteúdo entra com fade em vez de substituir o
-              // "carregando" no mesmo quadro — é o pisca que parecia
-              // tela pulando.
-              builder: (context, snapshot) =>
-                  TrocaSuave(child: _conteudo(context, snapshot, usuario)),
-            ),
+      body: StreamBuilder<List<ObraModel>>(
+        stream: _obrasDe(usuario.id),
+        builder: (context, snapshot) => AnimatedSwitcher(
+          duration: context.duracao(Movimento.medio),
+          switchInCurve: Movimento.entrar,
+          switchOutCurve: Movimento.sair,
+          child: KeyedSubtree(
+            key: ValueKey(_estado(snapshot)),
+            child: _conteudo(context, snapshot, usuario, auth),
           ),
-        ],
+        ),
       ),
-      floatingActionButton: usuario.ehDono
-          ? FloatingActionButton.extended(
-              onPressed: () => context.push('/obras/nova'),
-              icon: const Icon(Icons.add),
-              label: const Text('Nova obra'),
-            )
-          : FloatingActionButton.extended(
-              onPressed: () => _entrarComCodigo(context),
-              icon: const Icon(Icons.qr_code),
-              label: const Text('Entrar com código'),
-            ),
+      bottomNavigationBar: BarraDeAcao(
+        principal: usuario.ehDono
+            ? BotaoPrincipal(
+                rotulo: 'Nova obra',
+                icone: Icons.add,
+                grande: true,
+                expandir: true,
+                aoTocar: () => context.push('/obras/nova'),
+              )
+            : BotaoPrincipal(
+                rotulo: 'Entrar com código',
+                icone: Icons.vpn_key_outlined,
+                grande: true,
+                expandir: true,
+                aoTocar: () => _entrarComCodigo(context),
+              ),
+      ),
     );
   }
 
-  Widget _conteudo(BuildContext context,
-      AsyncSnapshot<List<ObraModel>> snapshot, UsuarioModel usuario) {
-    if (snapshot.connectionState == ConnectionState.waiting) {
-      return const CarregandoObra(mensagem: 'Buscando suas obras…');
-    }
-    if (snapshot.hasError) {
-      return EstadoVazio(
-        icone: Icons.error_outline,
-        titulo: 'Erro ao carregar obras',
-        mensagem: '${snapshot.error}',
-      );
-    }
+  /// Carregando, erro ou lista: troca com fade só quando muda de estado,
+  /// não a cada obra que chega.
+  static String _estado(AsyncSnapshot<List<ObraModel>> s) {
+    if (s.connectionState == ConnectionState.waiting) return 'carregando';
+    if (s.hasError) return 'erro';
+    return 'lista';
+  }
+
+  Widget _conteudo(
+    BuildContext context,
+    AsyncSnapshot<List<ObraModel>> snapshot,
+    UsuarioModel usuario,
+    AuthProvider auth,
+  ) {
     final obras = snapshot.data ?? const <ObraModel>[];
-    if (obras.isEmpty) {
-      return usuario.ehDono
-          ? EstadoVazio(
-              icone: Icons.apartment,
-              ilustracao: const IlustracaoTrabalhador(),
-              titulo: 'Nenhuma obra ainda',
-              mensagem:
-                  'Cadastre sua primeira obra para começar a controlar '
-                  'custos, equipe e progresso.',
-              rotuloAcao: 'Criar obra',
-              onAcao: () => context.push('/obras/nova'),
-            )
-          : EstadoVazio(
-              icone: Icons.qr_code,
-              ilustracao: const IlustracaoTrabalhador(),
-              titulo: 'Você ainda não está em nenhuma obra',
-              mensagem: 'Peça ao dono da obra o código de convite e entre '
-                  'para começar a registrar os lançamentos.',
-              rotuloAcao: 'Entrar com código',
-              onAcao: () => _entrarComCodigo(context),
-            );
+    final carregando = snapshot.connectionState == ConnectionState.waiting;
+
+    final List<Widget> corpo;
+    if (carregando) {
+      corpo = const [
+        EsqueletoFolha(rotuloSemantico: 'Buscando suas obras'),
+        SizedBox(height: Espaco.e12),
+        ExcludeSemantics(child: EsqueletoFolha()),
+      ];
+    } else if (snapshot.hasError) {
+      corpo = const [
+        AvisoVazio(
+          icone: Icons.cloud_off_outlined,
+          titulo: 'As obras não carregaram',
+          texto: 'Confira a internet e abra o app de novo. O que já foi '
+              'salvo no aparelho continua guardado.',
+        ),
+      ];
+    } else if (obras.isEmpty) {
+      corpo = [
+        usuario.ehDono
+            ? const AvisoVazio(
+                icone: Icons.domain_add_outlined,
+                titulo: 'Nenhuma obra ainda',
+                texto: 'Toque em "Nova obra", aqui embaixo, para cadastrar a '
+                    'primeira e começar a controlar custos, equipe e avanço.',
+              )
+            : const AvisoVazio(
+                icone: Icons.vpn_key_outlined,
+                titulo: 'Você ainda não está em nenhuma obra',
+                texto: 'Peça ao dono da obra o código de convite e toque em '
+                    '"Entrar com código", aqui embaixo.',
+              ),
+      ];
+    } else {
+      corpo = [
+        for (var i = 0; i < obras.length; i++) ...[
+          if (i > 0) const SizedBox(height: Espaco.e12),
+          _FolhaObra(obra: obras[i]),
+        ],
+      ];
     }
-    return ListView.separated(
-      padding: EdgeInsets.fromLTRB(
-          16, 16, 16, MediaQuery.of(context).padding.bottom + 96),
-      itemCount: obras.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 12),
-      itemBuilder: (_, i) => _CartaoObra(obra: obras[i]).aparecer(i),
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(
+        Espaco.margem,
+        Espaco.e4,
+        Espaco.margem,
+        Espaco.e32,
+      ),
+      children: [
+        _Cabecalho(usuario: usuario, obras: carregando ? null : obras),
+        const SizedBox(height: Espaco.e24),
+        // Dono e mestre não ficam presos por causa do e-mail — só são
+        // lembrados. Quem é barrado sem confirmar é o cliente, que é
+        // gente de fora e entra por cadastro aberto.
+        if (!auth.emailVerificado) ...[
+          const _AvisoEmailPendente(),
+          const SizedBox(height: Espaco.e16),
+        ],
+        if (!carregando && obras.isNotEmpty) ...[
+          Semantics(
+            header: true,
+            container: true,
+            child: LinhaCota(
+              legenda: obras.length == 1 ? '1 obra' : '${obras.length} obras',
+            ),
+          ),
+          const SizedBox(height: Espaco.e16),
+        ],
+        ...corpo,
+      ],
     );
   }
 
@@ -150,6 +223,7 @@ class _ObrasScreenState extends State<ObrasScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Sair da conta?'),
+        content: const Text('Para entrar de novo, é preciso internet.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
@@ -175,36 +249,381 @@ class _ObrasScreenState extends State<ObrasScreen> {
         title: const Text('Entrar numa obra'),
         content: TextField(
           controller: ctrl,
+          autofocus: true,
           textCapitalization: TextCapitalization.characters,
           maxLength: 6,
+          style: Tipografia.codigo.copyWith(
+            fontSize: 22,
+            letterSpacing: 4,
+            color: ctx.cores.grafite,
+          ),
           decoration: const InputDecoration(
             labelText: 'Código de convite',
-            hintText: 'Ex.: A3B7XZ',
+            hintText: 'A3B7XZ',
           ),
+          onSubmitted: (v) => Navigator.pop(ctx, v),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
             child: const Text('Cancelar'),
           ),
-          ElevatedButton(
+          TextButton(
             onPressed: () => Navigator.pop(ctx, ctrl.text),
             child: const Text('Entrar'),
           ),
         ],
       ),
     );
+    // Sem dispose aqui: o campo ainda está na tela durante a animação de
+    // saída do diálogo.
     if (codigo == null || codigo.trim().isEmpty || !context.mounted) return;
 
     final db = context.read<FirestoreService>();
     final uid = context.read<AuthProvider>().usuario!.id;
     final obra = await db.entrarNaObraPorCodigo(codigo, uid);
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(obra == null
+    if (obra == null) {
+      unawaited(Tato.erro());
+    } else {
+      unawaited(Tato.confirmar());
+    }
+    mostrarAviso(
+      context,
+      obra == null
           ? 'Código não encontrado. Confira com o dono da obra.'
-          : 'Você entrou na obra "${obra.nome}"!'),
-    ));
+          : 'Você entrou na obra "${obra.nome}".',
+    );
+  }
+}
+
+/// Quem entrou e o que tem na lista. É o título da tela (o AppBar fica só
+/// com os ícones, como na central da obra).
+class _Cabecalho extends StatelessWidget {
+  const _Cabecalho({required this.usuario, required this.obras});
+
+  final UsuarioModel usuario;
+
+  /// Nulo enquanto carrega.
+  final List<ObraModel>? obras;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.cores;
+    final emAndamento =
+        obras?.where((o) => o.status == StatusObra.emAndamento).length;
+    final primeiroNome = usuario.nome.trim().split(RegExp(r'\s+')).first;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Rotulo(usuario.perfil.label),
+        const SizedBox(height: Espaco.e4),
+        Semantics(
+          header: true,
+          child: Text(
+            primeiroNome.isEmpty ? 'Suas obras' : 'Olá, $primeiroNome',
+            style: Tipografia.tituloTela.copyWith(color: c.grafite),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+        if (emAndamento != null && obras!.isNotEmpty) ...[
+          const SizedBox(height: Espaco.e4),
+          Text(
+            emAndamento == 1
+                ? '1 obra em andamento'
+                : '$emAndamento obras em andamento',
+            style: Tipografia.apoio.copyWith(color: c.grafite2),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+/// Uma obra da lista: a folha inteira é o botão que abre a central. Mostra
+/// a fase em que a obra está e o avanço físico, com a mesma conta da
+/// central (a média das fases do cronograma).
+class _FolhaObra extends StatefulWidget {
+  const _FolhaObra({required this.obra});
+
+  final ObraModel obra;
+
+  @override
+  State<_FolhaObra> createState() => _FolhaObraState();
+}
+
+class _FolhaObraState extends State<_FolhaObra> {
+  late Stream<List<CronogramaFaseModel>> _cronograma;
+
+  @override
+  void initState() {
+    super.initState();
+    _cronograma = context.read<FirestoreService>().cronograma(widget.obra.id);
+  }
+
+  @override
+  void didUpdateWidget(_FolhaObra antigo) {
+    super.didUpdateWidget(antigo);
+    if (antigo.obra.id != widget.obra.id) {
+      _cronograma =
+          context.read<FirestoreService>().cronograma(widget.obra.id);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<List<CronogramaFaseModel>>(
+      stream: _cronograma,
+      builder: (context, snap) =>
+          _folha(context, snap.hasError ? const [] : snap.data),
+    );
+  }
+
+  Widget _folha(BuildContext context, List<CronogramaFaseModel>? cronograma) {
+    final obra = widget.obra;
+    final c = context.cores;
+    final avanco = _Avanco.de(cronograma);
+    final selo = switch (obra.status) {
+      StatusObra.emAndamento => null,
+      StatusObra.pausada =>
+        const SeloStatus(StatusSelo.aviso, texto: 'Obra pausada'),
+      StatusObra.concluida =>
+        const SeloStatus(StatusSelo.aprovado, texto: 'Obra concluída'),
+    };
+    final termino = Formatters.data(obra.previsaoTermino);
+    final orcamento = Formatters.moedaCompacta(obra.orcamento);
+
+    return AreaPressionavel(
+      aoTocar: () => context.push('/obras/${obra.id}'),
+      vibrar: true,
+      rotuloSemantico: [
+        obra.nome,
+        if (selo != null) obra.status.label,
+        obra.endereco,
+        if (avanco != null) avanco.semantica,
+        'término previsto $termino',
+        'orçamento $orcamento',
+      ].join(', '),
+      construtor: (context, e) => Folha(
+        cor: e.pressionado ? c.folhaRebaixada : null,
+        preenchimento: EdgeInsets.zero,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                Espaco.e16,
+                Espaco.e16,
+                Espaco.e8,
+                Espaco.e16,
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          obra.nome,
+                          style: Tipografia.titulo.copyWith(color: c.grafite),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: Espaco.e4),
+                        Text(
+                          obra.endereco,
+                          style: Tipografia.apoio.copyWith(color: c.grafite2),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        if (selo != null) ...[
+                          const SizedBox(height: Espaco.e12),
+                          selo,
+                        ],
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: Espaco.e4),
+                  Padding(
+                    padding: const EdgeInsets.only(top: Espaco.e4),
+                    child: Icon(Icons.chevron_right, color: c.traco),
+                  ),
+                ],
+              ),
+            ),
+            _CrescerSuave(
+              child: avanco == null
+                  ? const SizedBox(width: double.infinity)
+                  : Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                        Espaco.e16,
+                        0,
+                        Espaco.e16,
+                        Espaco.e16,
+                      ),
+                      child: ExcludeSemantics(child: _LinhaAvanco(avanco)),
+                    ),
+            ),
+            // O rodapé da folha, como a faixa de baixo de um carimbo: duas
+            // células separadas por traço.
+            DecoratedBox(
+              decoration: BoxDecoration(
+                border: Border(
+                  top: BorderSide(color: c.grade, width: Traco.fino),
+                ),
+              ),
+              child: IntrinsicHeight(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Expanded(
+                      child: _Celula(
+                        rotulo: 'Término previsto',
+                        valor: termino,
+                      ),
+                    ),
+                    VerticalDivider(
+                      width: Traco.fino,
+                      thickness: Traco.fino,
+                      color: c.grade,
+                    ),
+                    Expanded(
+                      child: _Celula(rotulo: 'Orçamento', valor: orcamento),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// A linha do avanço entra crescendo quando o cronograma chega. Com
+/// "reduzir animações" entra pronta: o AnimatedSize com duração zero se
+/// remarca no próprio layout e o Flutter reclama.
+class _CrescerSuave extends StatelessWidget {
+  const _CrescerSuave({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final duracao = context.duracao(Movimento.medio);
+    if (duracao == Duration.zero) return child;
+    return AnimatedSize(
+      duration: duracao,
+      curve: Movimento.entrar,
+      alignment: Alignment.topCenter,
+      child: child,
+    );
+  }
+}
+
+/// Onde a obra está: a fase atual (a primeira começada e não terminada;
+/// se nenhuma, a primeira que falta) e o avanço físico, de 0 a 100.
+class _Avanco {
+  const _Avanco(this.fase, this.percentual);
+
+  /// Nulo: sem cronograma.
+  final String? fase;
+  final int percentual;
+
+  /// Nulo enquanto o cronograma carrega.
+  static _Avanco? de(List<CronogramaFaseModel>? cronograma) {
+    if (cronograma == null) return null;
+    if (cronograma.isEmpty) return const _Avanco(null, 0);
+    final fases = [...cronograma]..sort((a, b) => a.ordem.compareTo(b.ordem));
+    final atual = fases
+            .where(
+                (f) => f.percentualConcluido > 0 && f.percentualConcluido < 100)
+            .firstOrNull ??
+        fases.where((f) => f.percentualConcluido < 100).firstOrNull;
+    final percentual = ProgressoMaquete.doCronograma(fases).percentualObra;
+    return _Avanco(atual?.nome ?? 'Fases concluídas', percentual);
+  }
+
+  String get semantica => fase == null
+      ? 'sem cronograma'
+      : 'fase $fase, $percentual% da obra';
+}
+
+class _LinhaAvanco extends StatelessWidget {
+  const _LinhaAvanco(this.avanco);
+
+  final _Avanco avanco;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.cores;
+    final fase = avanco.fase;
+    if (fase == null) {
+      return Text(
+        'Sem cronograma',
+        style: Tipografia.apoio.copyWith(color: c.grafite2),
+      );
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        ParComValor(
+          esquerda: Text(
+            fase,
+            style: Tipografia.corpoForte.copyWith(color: c.grafite),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+          direita: Text(
+            '${avanco.percentual}%',
+            style: Tipografia.subtitulo.copyWith(
+              color: c.grafite,
+              fontFeatures: Tipografia.tabular,
+            ),
+          ),
+        ),
+        const SizedBox(height: Espaco.e8),
+        ReguaCota(valor: avanco.percentual / 100),
+      ],
+    );
+  }
+}
+
+class _Celula extends StatelessWidget {
+  const _Celula({required this.rotulo, required this.valor});
+
+  final String rotulo;
+  final String valor;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.cores;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        Espaco.e16,
+        Espaco.e12,
+        Espaco.e12,
+        Espaco.e12,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Rotulo(rotulo),
+          const SizedBox(height: Espaco.e4),
+          Text(
+            valor,
+            style: Tipografia.subtitulo.copyWith(
+              color: c.grafite,
+              fontFeatures: Tipografia.tabular,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -227,148 +646,51 @@ class _AvisoEmailPendenteState extends State<_AvisoEmailPendente> {
     await auth.atualizarVerificacao();
     if (!mounted) return;
     setState(() => _enviando = false);
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(erro ?? 'E-mail de confirmação enviado. Olhe no spam '
-          'também.'),
-    ));
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppColors.amareloCapacete.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
-        border:
-            Border.all(color: AppColors.amareloCapacete.withValues(alpha: 0.5)),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.mark_email_unread,
-              size: 18, color: AppColors.amareloCapacete),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              'Confirme seu e-mail para garantir a recuperação da conta.',
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-          ),
-          TextButton(
-            onPressed: _enviando ? null : _reenviar,
-            child: Text(_enviando ? 'Enviando…' : 'Reenviar'),
-          ),
-        ],
-      ),
+    mostrarAviso(
+      context,
+      erro ?? 'E-mail de confirmação enviado. Olhe no spam também.',
     );
   }
-}
-
-class _CartaoObra extends StatelessWidget {
-  final ObraModel obra;
-
-  const _CartaoObra({required this.obra});
 
   @override
   Widget build(BuildContext context) {
-    final corStatus = switch (obra.status) {
-      StatusObra.emAndamento => AppColors.sucesso,
-      StatusObra.pausada => AppColors.alerta,
-      StatusObra.concluida => AppColors.info,
-    };
-
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: () => context.push('/obras/${obra.id}'),
-        child: Container(
-          decoration: BoxDecoration(
-            border: Border(
-              left: BorderSide(color: corStatus, width: 5),
-            ),
-          ),
-          padding: const EdgeInsets.all(16),
-          child: Column(
+    final c = context.cores;
+    return Folha(
+      preenchimento: const EdgeInsets.fromLTRB(
+        Espaco.e16,
+        Espaco.e12,
+        Espaco.e8,
+        Espaco.e8,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      obra.nome,
-                      style: Theme.of(context)
-                          .textTheme
-                          .titleMedium
-                          ?.copyWith(fontWeight: FontWeight.w700),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: corStatus.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      obra.status.label,
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: corStatus,
-                      ),
-                    ),
-                  ),
-                ],
+              Padding(
+                padding: const EdgeInsets.only(top: 2),
+                child: Icon(Icons.mark_email_unread_outlined,
+                    color: c.grafite),
               ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  const Icon(Icons.place,
-                      size: 14, color: AppColors.textoSecundario),
-                  const SizedBox(width: 4),
-                  Expanded(
-                    child: Text(
-                      obra.endereco,
-                      style: Theme.of(context)
-                          .textTheme
-                          .bodySmall
-                          ?.copyWith(color: AppColors.textoSecundario),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  const Icon(Icons.calendar_today,
-                      size: 14, color: AppColors.textoSecundario),
-                  const SizedBox(width: 4),
-                  Text(
-                    '${Formatters.data(obra.dataInicio)} → '
-                    '${Formatters.data(obra.previsaoTermino)}',
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodySmall
-                        ?.copyWith(color: AppColors.textoSecundario),
-                  ),
-                  const Spacer(),
-                  Text(
-                    Formatters.moedaCompacta(obra.orcamento),
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          color: AppColors.laranja,
-                          fontWeight: FontWeight.w700,
-                        ),
-                  ),
-                ],
+              const SizedBox(width: Espaco.e12),
+              Expanded(
+                child: Text(
+                  'Confirme seu e-mail para conseguir recuperar a conta se '
+                  'esquecer a senha.',
+                  style: Tipografia.corpo.copyWith(color: c.grafite),
+                ),
               ),
             ],
           ),
-        ),
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton(
+              onPressed: _enviando ? null : () => unawaited(_reenviar()),
+              child: Text(_enviando ? 'Enviando…' : 'Reenviar e-mail'),
+            ),
+          ),
+        ],
       ),
     );
   }

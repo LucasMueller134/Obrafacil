@@ -47,6 +47,33 @@ antes do PNG. A exceção é o `defeitoConhecido` de uma cena (ver abaixo).
 | `08_novo_lancamento_voz_mestre` | Painel de voz aberto e ouvindo, com a interpretação ao vivo de "comprei seis metros de areia média por mil duzentos e noventa reais". |
 | `09_novo_lancamento_voz_preenchido_mestre` | O formulário depois do "Concluir": aviso da IA, material para o estoque, descrição, valor e categoria preenchidos pela fala. |
 | `10_cliente_obra` | Acompanhamento do cliente (Paulo): avanço físico, prazo, etapas e diário. |
+| `01_obras_mestre` | Lista de obras do Joaquim (mestre), com "Entrar com código". Gravada no commit 8ed2c5b. |
+| `11_cronograma_mestre` | Cronograma do Sobrado como mestre: progresso geral e uma fase por cartão, com slider. Gravada no commit 8ed2c5b. |
+| `12_login` | Login deslogado, com a maquete antiga em CPU no topo. Gravada no commit 8ed2c5b. |
+| `13_abertura` | Abertura (splash do Flutter) com a maquete antiga girando. Gravada no commit 8ed2c5b. |
+
+As cenas 01_obras_mestre, 11, 12 e 13 saem de `depois_obras_test.dart`,
+`depois_cronograma_test.dart` e `depois_entrada_test.dart` com
+`CAPTURAR=antes`, rodados no commit 8ed2c5b (antes do redesenho destas
+telas). Rodados depois do redesenho, eles gravariam o visual novo na pasta
+do antes.
+
+## Cenas do "depois"
+
+| Arquivo de teste | Cenas (claro e `_escuro`) |
+|---|---|
+| `depois_central_obra_test.dart` | `02_obra_dono`, `03_obra_mestre` e as mesmas roladas até o fim (`_fim`) |
+| `depois_lancar_gasto_test.dart` | `07_novo_lancamento_mestre` e as cenas da voz e dos erros |
+| `depois_fila_aprovacao_test.dart` | `04` a `06` (fila, pendentes, detalhe) |
+| `depois_obras_test.dart` | `01_obras_dono`, `01_obras_mestre` |
+| `depois_cronograma_test.dart` | `11_cronograma_mestre`, `11b_cronograma_fase_mestre` (folha de atualizar a fase) |
+| `depois_entrada_test.dart` | `12_login`, `13_abertura` |
+
+Login e abertura não têm ninguém logado: a `Cena` delas usa
+`situacao: SituacaoLogin.deslogado` (o login falso não devolve usuário) e
+`SituacaoLogin.abrindo` (o login falso nunca responde, e o app fica na
+abertura). Telas com imagem passam `acao: carregarImagens`, que espera o
+PNG e o webp decodificarem antes da foto.
 
 ### Defeito real nas cenas 08 e 09 (painel de voz)
 

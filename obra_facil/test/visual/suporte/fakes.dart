@@ -337,3 +337,29 @@ class AuthServiceFalso implements AuthService {
   dynamic noSuchMethod(Invocation invocation) => throw UnimplementedError(
       'AuthServiceFalso não implementa ${invocation.memberName}.');
 }
+
+/// Ninguém logado: o app abre no login. Entrar devolve o [usuario], mas o
+/// estado de login não muda (a tela de login só é fotografada).
+class AuthServiceDeslogado extends AuthServiceFalso {
+  AuthServiceDeslogado(super.usuario);
+
+  @override
+  Stream<User?> get authStateChanges => Stream<User?>.value(null);
+
+  @override
+  User? get usuarioFirebase => null;
+
+  @override
+  String? get emailAtual => null;
+}
+
+/// O Firebase nunca responde: o app fica na tela de abertura.
+class AuthServiceAbrindo extends AuthServiceFalso {
+  AuthServiceAbrindo(super.usuario);
+
+  @override
+  Stream<User?> get authStateChanges => const Stream<User?>.empty();
+
+  @override
+  User? get usuarioFirebase => null;
+}

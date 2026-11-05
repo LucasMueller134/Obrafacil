@@ -1,12 +1,14 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
-import '../../constants/app_colors.dart';
 import '../../constants/app_constants.dart';
+import '../../design/design.dart';
+import '../../design/maquete/maquete.dart';
 import '../../providers/auth_provider.dart';
 import '../../utils/validators.dart';
-import '../../widgets/tres_d/cena_obra_3d.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -38,156 +40,142 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!mounted) return;
     setState(() => _carregando = false);
     if (erro != null) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(erro)));
+      unawaited(Tato.erro());
+      mostrarAviso(context, erro);
     }
   }
 
   Future<void> _recuperarSenha() async {
     if (Validators.email(_emailCtrl.text) != null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Digite seu e-mail no campo acima primeiro.')));
+      mostrarAviso(context, 'Digite seu e-mail no campo acima primeiro.');
       return;
     }
     final erro =
         await context.read<AuthProvider>().recuperarSenha(_emailCtrl.text);
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(erro ??
-            'Enviamos um link de recuperação para ${_emailCtrl.text.trim()}.')));
+    mostrarAviso(
+      context,
+      erro ?? 'Enviamos um link de recuperação para ${_emailCtrl.text.trim()}.',
+    );
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) =>
+      TemaPrancheta(child: Builder(builder: _tela));
+
+  Widget _tela(BuildContext context) {
+    final c = context.cores;
+    final altura = MediaQuery.sizeOf(context).height;
+    // A maquete parada, em obra: alvenaria pronta e o que falta tracejado.
+    // É a ideia do app numa imagem (a mesma da central da obra), e custa
+    // uma textura só por quadro (o teclado e o cursor não a redesenham).
+    final maquete = MaqueteObra.caminhoReserva(estado: 3, escuro: c.ehEscuro);
     return Scaffold(
-      body: Stack(
-        children: [
-          // Brilho quente atrás da maquete.
-          IgnorePointer(
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: RadialGradient(
-                  center: const Alignment(0, -0.75),
-                  radius: 0.9,
-                  colors: [
-                    AppColors.laranja.withValues(alpha: 0.14),
-                    AppColors.fundo,
-                  ],
-                  stops: const [0, 1],
-                ),
-              ),
-              child: const SizedBox.expand(),
-            ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(
+            Espaco.margem,
+            Espaco.e24,
+            Espaco.margem,
+            Espaco.e24,
           ),
-          SafeArea(
-            child: Center(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // Maquete parada: na tela de login ela é identidade,
-                      // não espetáculo — girando, roubaria a atenção de
-                      // quem só quer digitar a senha.
-                      const SizedBox(
-                        height: 170,
-                        child: CenaObraTresD(animando: false),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        AppConstants.appName,
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context)
-                            .textTheme
-                            .headlineMedium
-                            ?.copyWith(
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: -0.5,
-                            ),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        'Gestão inteligente de obras na palma da mão',
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context)
-                            .textTheme
-                            .bodyMedium
-                            ?.copyWith(color: AppColors.textoSecundario),
-                      ),
-                      const SizedBox(height: 32),
-                      TextFormField(
-                        controller: _emailCtrl,
-                        keyboardType: TextInputType.emailAddress,
-                        autofillHints: const [AutofillHints.email],
-                        decoration: const InputDecoration(
-                          labelText: 'E-mail',
-                          prefixIcon: Icon(Icons.mail_outline),
-                        ),
-                        validator: Validators.email,
-                      ),
-                      const SizedBox(height: 16),
-                      TextFormField(
-                        controller: _senhaCtrl,
-                        obscureText: !_senhaVisivel,
-                        autofillHints: const [AutofillHints.password],
-                        decoration: InputDecoration(
-                          labelText: 'Senha',
-                          prefixIcon: const Icon(Icons.lock_outline),
-                          suffixIcon: IconButton(
-                            icon: Icon(_senhaVisivel
-                                ? Icons.visibility_off
-                                : Icons.visibility),
-                            onPressed: () =>
-                                setState(() => _senhaVisivel = !_senhaVisivel),
-                          ),
-                        ),
-                        validator: Validators.senha,
-                        onFieldSubmitted: (_) => _entrar(),
-                      ),
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: TextButton(
-                          onPressed: _recuperarSenha,
-                          child: const Text('Esqueci minha senha'),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      ElevatedButton(
-                        onPressed: _carregando ? null : _entrar,
-                        child: _carregando
-                            ? const SizedBox(
-                                width: 22,
-                                height: 22,
-                                child: CircularProgressIndicator(
-                                    strokeWidth: 2.5, color: Colors.white),
-                              )
-                            : const Text('Entrar'),
-                      ),
-                      const SizedBox(height: 16),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            'Ainda não tem conta?',
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodyMedium
-                                ?.copyWith(color: AppColors.textoSecundario),
-                          ),
-                          TextButton(
-                            onPressed: () => context.push('/cadastro'),
-                            child: const Text('Criar conta'),
-                          ),
-                        ],
-                      ),
-                    ],
+          child: AutofillGroup(
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const Rotulo('Gestão de obras'),
+                  const SizedBox(height: Espaco.e4),
+                  Semantics(
+                    header: true,
+                    child: Text(
+                      AppConstants.appName,
+                      style: Tipografia.tituloTela.copyWith(color: c.grafite),
+                    ),
                   ),
-                ),
+                  const SizedBox(height: Espaco.e4),
+                  Text(
+                    'Gestão inteligente de obras na palma da mão',
+                    style: Tipografia.apoio.copyWith(color: c.grafite2),
+                  ),
+                  const SizedBox(height: Espaco.e8),
+                  ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxHeight: (altura * 0.28).clamp(140.0, 240.0),
+                    ),
+                    child: AspectRatio(
+                      aspectRatio: 3 / 2,
+                      child: Image.asset(
+                        maquete,
+                        fit: BoxFit.contain,
+                        gaplessPlayback: true,
+                        excludeFromSemantics: true,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: Espaco.e16),
+                  TextFormField(
+                    controller: _emailCtrl,
+                    keyboardType: TextInputType.emailAddress,
+                    textInputAction: TextInputAction.next,
+                    autofillHints: const [AutofillHints.email],
+                    decoration: const InputDecoration(
+                      labelText: 'E-mail',
+                      prefixIcon: Icon(Icons.mail_outline),
+                    ),
+                    validator: Validators.email,
+                  ),
+                  const SizedBox(height: Espaco.e16),
+                  TextFormField(
+                    controller: _senhaCtrl,
+                    obscureText: !_senhaVisivel,
+                    textInputAction: TextInputAction.done,
+                    autofillHints: const [AutofillHints.password],
+                    decoration: InputDecoration(
+                      labelText: 'Senha',
+                      prefixIcon: const Icon(Icons.lock_outline),
+                      suffixIcon: IconButton(
+                        tooltip:
+                            _senhaVisivel ? 'Esconder senha' : 'Mostrar senha',
+                        icon: Icon(_senhaVisivel
+                            ? Icons.visibility_off_outlined
+                            : Icons.visibility_outlined),
+                        onPressed: () =>
+                            setState(() => _senhaVisivel = !_senhaVisivel),
+                      ),
+                    ),
+                    validator: Validators.senha,
+                    onFieldSubmitted: (_) => _entrar(),
+                  ),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      onPressed: _recuperarSenha,
+                      child: const Text('Esqueci minha senha'),
+                    ),
+                  ),
+                  const SizedBox(height: Espaco.e8),
+                  BotaoPrincipal(
+                    rotulo: 'Entrar',
+                    grande: true,
+                    expandir: true,
+                    carregando: _carregando,
+                    aoTocar: _carregando ? null : _entrar,
+                  ),
+                  const SizedBox(height: Espaco.e32),
+                  const LinhaCota(legenda: 'Primeira vez aqui?'),
+                  const SizedBox(height: Espaco.e16),
+                  BotaoContorno(
+                    rotulo: 'Criar conta',
+                    expandir: true,
+                    aoTocar: () => context.push('/cadastro'),
+                  ),
+                ],
               ),
             ),
           ),
-        ],
+        ),
       ),
     );
   }

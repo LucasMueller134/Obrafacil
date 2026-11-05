@@ -75,6 +75,10 @@ flutter:
     - assets/3d/maquete.json
     - assets/3d/reserva/claro/
     - assets/3d/reserva/escuro/
+    # O ícone da splash nativa, de novo na abertura do app (continua a
+    # splash sem pulo).
+    - assets/icone/splash.png
+    - assets/icone/splash_escuro.png
     - flutter_scene_generated/
     - path: flutter_scene_generated/metal_ios/
       platforms:

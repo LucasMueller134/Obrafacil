@@ -79,10 +79,8 @@ Future<_App> _abrir(
   final router = criarRouter(auth);
   await tester.pumpWidget(AppDeCaptura(auth: auth, db: db, router: router));
   await assentar(tester);
-  // A lista de obras (/obras, outra tela, ainda no visual antigo) estoura
-  // em 360 dp com fonte 130%; aqui só a fila conta. Coberta pela fila, ela
-  // não é mais montada.
-  tester.takeException();
+  // A lista de obras (/obras) vem antes: ela também não pode dar erro.
+  expect(tester.takeException(), isNull);
   router.go(rota);
   await assentar(tester);
   expect(router.routerDelegate.currentConfiguration.uri.toString(), rota);

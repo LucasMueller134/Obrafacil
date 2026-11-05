@@ -23,6 +23,7 @@ import 'package:obra_facil/constants/app_theme.dart';
 import 'package:obra_facil/models/models.dart';
 import 'package:obra_facil/providers/auth_provider.dart';
 import 'package:obra_facil/router/app_router.dart';
+import 'package:obra_facil/services/auth_service.dart';
 import 'package:obra_facil/services/firestore_service.dart';
 import 'package:provider/provider.dart';
 
@@ -89,6 +90,10 @@ class Cena {
   /// tirar daqui. Qualquer outro erro continua reprovando a captura.
   final String? defeitoConhecido;
 
+  /// Logado (o normal), deslogado (login e cadastro) ou com o login ainda
+  /// abrindo (a tela de abertura).
+  final SituacaoLogin situacao;
+
   const Cena(
     this.nome, {
     required this.usuario,
@@ -96,8 +101,28 @@ class Cena {
     this.acao,
     this.brilho = Brightness.dark,
     this.defeitoConhecido,
+    this.situacao = SituacaoLogin.logado,
   });
 }
+
+/// Em que pé está o login quando a foto é tirada.
+enum SituacaoLogin {
+  /// [Cena.usuario] logado.
+  logado,
+
+  /// Ninguém logado: o app cai no login.
+  deslogado,
+
+  /// O Firebase ainda não respondeu: o app fica na abertura.
+  abrindo,
+}
+
+/// O serviço de login falso de cada [SituacaoLogin].
+AuthService servicoDeLogin(Cena cena) => switch (cena.situacao) {
+      SituacaoLogin.logado => AuthServiceFalso(cena.usuario),
+      SituacaoLogin.deslogado => AuthServiceDeslogado(cena.usuario),
+      SituacaoLogin.abrindo => AuthServiceAbrindo(cena.usuario),
+    };
 
 /// Fontes e datas em pt_BR. Chame no setUpAll do arquivo de capturas.
 Future<void> prepararCapturas() async {
@@ -155,6 +180,25 @@ class AppDeCaptura extends StatelessWidget {
   }
 }
 
+/// Espera as imagens da tela decodificarem (no teste não há Impeller: a
+/// decodificação do PNG e do webp roda fora do tempo falso).
+Future<void> carregarImagens(WidgetTester tester) async {
+  for (var i = 0; i < 200; i++) {
+    final pendentes = tester
+        .widgetList<RawImage>(find.byType(RawImage))
+        .where((r) => r.image == null);
+    if (pendentes.isEmpty) {
+      await tester.pump();
+      return;
+    }
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 20)),
+    );
+    await tester.pump();
+  }
+  fail('uma imagem da tela não decodificou');
+}
+
 /// Deixa as animações terminarem. Não usa pumpAndSettle porque algumas
 /// telas têm animação contínua (o microfone pulsando).
 Future<void> assentar(
@@ -185,7 +229,7 @@ Future<void> _capturarCom(
   instalarPluginsFalsos();
 
   final db = FirestoreFalso(DadosExemplo.padrao());
-  final auth = AuthProvider(AuthServiceFalso(cena.usuario));
+  final auth = AuthProvider(servicoDeLogin(cena));
   final router = criarRouter(auth);
   final moldura = GlobalKey();
 
@@ -195,7 +239,8 @@ Future<void> _capturarCom(
   ));
   // Splash → área do perfil, quando o AuthProvider termina de carregar.
   await assentar(tester);
-  expect(auth.inicializando, isFalse, reason: 'o AuthProvider não carregou');
+  expect(auth.inicializando, cena.situacao == SituacaoLogin.abrindo,
+      reason: 'o AuthProvider não ficou como a cena pede');
 
   router.go(cena.rota);
   await assentar(tester);
