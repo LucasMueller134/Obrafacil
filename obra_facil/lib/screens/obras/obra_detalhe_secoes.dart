@@ -21,6 +21,7 @@ class _Rotas {
   String get estoque => '$_base/estoque';
   String get galeria => '$_base/galeria';
   String get relatorio => '$_base/relatorio';
+  String get planta => '$_base/planta';
 }
 
 /// O que a tela mostra, calculado uma vez por build.
@@ -333,9 +334,12 @@ class _CarimboObra extends StatelessWidget {
 /// A maquete com o avanço vindo do cronograma e, embaixo, a legenda do
 /// tracejado e o avanço físico.
 class _MaqueteComAvanco extends StatelessWidget {
-  const _MaqueteComAvanco({required this.resumo});
+  const _MaqueteComAvanco({required this.resumo, required this.planta});
 
   final _ResumoObra resumo;
+
+  /// Com planta, a maquete é a casa da obra, gerada no aparelho.
+  final PlantaObra? planta;
 
   /// Proporção das imagens de reserva (largura / altura).
   static const double _proporcaoImagem = 1.5;
@@ -395,6 +399,9 @@ class _MaqueteComAvanco extends StatelessWidget {
                       progresso: progresso,
                       altura: medidas.imagem,
                       legenda: false,
+                      fonte: planta == null
+                          ? FonteMaquete.padrao
+                          : FontePlanta(planta!),
                     ),
                   ),
           ),
@@ -644,10 +651,15 @@ class _LinhaPrevisao extends StatelessWidget {
 
 /// Os módulos da obra como lista, cada um com um resumo do que tem dentro.
 class _ListaModulos extends StatelessWidget {
-  const _ListaModulos({required this.resumo, required this.rotas});
+  const _ListaModulos({
+    required this.resumo,
+    required this.rotas,
+    required this.planta,
+  });
 
   final _ResumoObra resumo;
   final _Rotas rotas;
+  final PlantaObra? planta;
 
   @override
   Widget build(BuildContext context) {
@@ -684,6 +696,15 @@ class _ListaModulos extends StatelessWidget {
         'Relatório da semana',
         'Resumo e perguntas sobre a obra',
         rotas.relatorio,
+      ),
+      (
+        Icons.architecture_outlined,
+        'Planta da obra',
+        planta == null
+            ? 'Envie a planta: a maquete fica igual à obra'
+            : '${planta!.comodos.length} cômodos · '
+                '${planta!.areaConstruida.toStringAsFixed(0)} m² construídos',
+        rotas.planta,
       ),
     ];
     return Folha(

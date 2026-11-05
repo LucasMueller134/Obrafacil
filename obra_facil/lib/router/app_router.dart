@@ -8,6 +8,8 @@ import '../screens/auth/verificar_email_screen.dart';
 import '../screens/cliente/cliente_obra_screen.dart';
 import '../screens/cliente/cliente_obras_screen.dart';
 import '../screens/cronograma/cronograma_screen.dart';
+import '../screens/planta/planta_obra_screen.dart';
+import '../screens/planta/vista_360_screen.dart';
 import '../screens/diario/diario_screen.dart';
 import '../screens/estoque/estoque_screen.dart';
 import '../screens/fornecedores/fornecedores_screen.dart';
@@ -160,6 +162,25 @@ GoRouter criarRouter(AuthProvider auth) {
                   state,
                   RelatorioScreen(obraId: state.pathParameters['obraId']!),
                 ),
+              ),
+              GoRoute(
+                path: 'planta',
+                pageBuilder: (_, state) => _pagina(
+                  state,
+                  PlantaObraScreen(obraId: state.pathParameters['obraId']!),
+                ),
+                routes: [
+                  GoRoute(
+                    path: ':comodoId/360',
+                    pageBuilder: (_, state) => _pagina(
+                      state,
+                      Vista360Screen(
+                        obraId: state.pathParameters['obraId']!,
+                        comodoId: state.pathParameters['comodoId']!,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),

@@ -9,6 +9,8 @@ import 'package:flutter/semantics.dart';
 
 import 'cena_maquete.dart';
 import 'diagnostico_maquete.dart';
+import 'fonte_maquete.dart';
+import 'planta_desenhada.dart';
 import 'medidor_quadros.dart';
 import 'plano_maquete.dart';
 import 'progresso_maquete.dart';
@@ -16,6 +18,12 @@ import 'progresso_maquete.dart';
 /// Carrega a cena 3D; troca-se nos testes para simular o carregamento.
 typedef CarregadorCenaMaquete = Future<Cena3dMaquete> Function({
   required TemaMaquete tema,
+});
+
+/// Carrega a cena da maquete gerada por uma planta; troca-se nos testes.
+typedef CarregadorCenaPlanta = Future<Cena3dMaquete> Function({
+  required TemaMaquete tema,
+  required FontePlanta fonte,
 });
 
 /// A maquete 3D da obra (design system Prancheta, seção 7): o que já foi
@@ -63,10 +71,15 @@ class MaqueteObra extends StatefulWidget {
     this.painelDepuracao,
     this.cortarPorDesempenho,
     this.diagnostico,
+    this.fonte = FonteMaquete.padrao,
   });
 
   /// Avanço por fase (veja [ProgressoMaquete.doCronograma]).
   final ProgressoMaquete progresso;
+
+  /// A casa-padrão (com as imagens de reserva) ou a gerada pela planta da
+  /// obra (com a planta desenhada de reserva).
+  final FonteMaquete fonte;
 
   /// Altura da maquete em pontos lógicos.
   final double altura;
@@ -144,9 +157,20 @@ class MaqueteObra extends StatefulWidget {
   /// cada maquete aberta.
   static Object? _falhaGpu;
 
+  /// O Flutter GPU (ou a cena) já falhou neste processo: outras vistas 3D
+  /// (a 360° do cômodo) vão direto para a reserva.
+  static bool get semSuporteGpu => _falhaGpu != null;
+
+  /// Anota a falha do Flutter GPU vista em outra vista 3D.
+  static void anotarFalhaGpu(Object erro) => _falhaGpu ??= erro;
+
   /// Troca o carregamento da cena (testes).
   @visibleForTesting
   static CarregadorCenaMaquete carregadorDeCena = CenaMaquete.carregar;
+
+  /// Troca o carregamento da maquete gerada pela planta (testes).
+  @visibleForTesting
+  static CarregadorCenaPlanta carregadorDePlanta = CenaMaquete.carregarDaPlanta;
 
   /// Número do quadro em andamento, o mesmo de [ui.FrameTiming.frameNumber]
   /// (-1 se o motor não numera, como no `flutter test`). Troca-se nos testes.
@@ -161,6 +185,7 @@ class MaqueteObra extends StatefulWidget {
   static void reiniciarParaTeste() {
     _falhaGpu = null;
     carregadorDeCena = CenaMaquete.carregar;
+    carregadorDePlanta = CenaMaquete.carregarDaPlanta;
     numeroDoQuadro = _numeroDoQuadroDoMotor;
     diagnosticoGlobal.value = const DiagnosticoMaquete();
   }
@@ -288,6 +313,17 @@ class _MaqueteObraState extends State<MaqueteObra>
     super.didUpdateWidget(antigo);
     if (widget.progresso != antigo.progresso) _mudarProgresso();
     if (widget.forcarReserva != antigo.forcarReserva) _atualizarFonte();
+    if (widget.fonte != antigo.fonte) {
+      // Outra casa: solta a cena desta e carrega a nova (a decisão de
+      // desempenho do aparelho continua valendo).
+      if (_motivoFixo == MotivoMaquete.semSuporte &&
+          MaqueteObra._falhaGpu == null) {
+        _motivoFixo = null;
+        _detalhe = null;
+      }
+      _soltarCena();
+      _atualizarFonte();
+    }
     _publicar();
   }
 
@@ -348,12 +384,29 @@ class _MaqueteObraState extends State<MaqueteObra>
         _fixarImagem(MotivoMaquete.semSuporte, _resumo(falha));
         return;
       }
+      final fonte = widget.fonte;
+      if (fonte is FontePlanta) {
+        // Gerar a maquete não depende do Flutter GPU: uma planta que não
+        // gera fica na planta desenhada, sem marcar o aparelho.
+        try {
+          await fonte.preparar();
+        } catch (erro) {
+          if (_vale(geracao)) {
+            _fixarImagem(MotivoMaquete.semSuporte, 'planta: ${_resumo(erro)}');
+          }
+          return;
+        }
+        if (!_vale(geracao)) return;
+      }
       final Cena3dMaquete cena;
       Future<Cena3dMaquete>? carga;
       try {
-        carga = MaqueteObra.carregadorDeCena(
-          tema: TemaMaquete.de(escuro: _escuro),
-        );
+        final tema = TemaMaquete.de(escuro: _escuro);
+        carga = switch (fonte) {
+          FontePadrao() => MaqueteObra.carregadorDeCena(tema: tema),
+          final FontePlanta f =>
+            MaqueteObra.carregadorDePlanta(tema: tema, fonte: f),
+        };
         cena = await carga.timeout(MaqueteObra.tempoMaximoDeCarga);
       } catch (erro) {
         if (erro is TimeoutException && carga != null) {
@@ -679,13 +732,22 @@ class _MaqueteObraState extends State<MaqueteObra>
         if (mostrarImagem)
           ExcludeSemantics(
             key: const ValueKey('maquete-imagem'),
-            child: _ImagemReserva(
-              caminho: MaqueteObra.caminhoReserva(
-                estado: widget.progresso.estadoReserva,
-                escuro: _escuro,
-              ),
-              duracao: _reduzir ? Duration.zero : MaqueteObra.duracaoTroca,
-            ),
+            child: switch (widget.fonte) {
+              FontePadrao() => _ImagemReserva(
+                  caminho: MaqueteObra.caminhoReserva(
+                    estado: widget.progresso.estadoReserva,
+                    escuro: _escuro,
+                  ),
+                  duracao: _reduzir ? Duration.zero : MaqueteObra.duracaoTroca,
+                ),
+              // Casa gerada pela planta: não há foto pronta dela; a reserva
+              // é a planta desenhada, com as paredes conforme o avanço.
+              final FontePlanta f => PlantaDesenhada(
+                  key: const ValueKey('maquete-planta'),
+                  planta: f.planta,
+                  progresso: widget.progresso,
+                ),
+            },
           ),
         if (cena != null)
           ExcludeSemantics(

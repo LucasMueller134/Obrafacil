@@ -7,4 +7,5 @@ export 'item_material_model.dart';
 export 'lancamento_model.dart';
 export 'movimento_estoque_model.dart';
 export 'obra_model.dart';
+export 'planta_obra.dart';
 export 'usuario_model.dart';

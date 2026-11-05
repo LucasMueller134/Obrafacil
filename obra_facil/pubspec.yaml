@@ -79,6 +79,8 @@ flutter:
     # splash sem pulo).
     - assets/icone/splash.png
     - assets/icone/splash_escuro.png
+    # Planta de exemplo (casa 7 x 20 do casa-3d, MIT): ver assets/plantas/LEIA-ME.md.
+    - assets/plantas/
     - flutter_scene_generated/
     - path: flutter_scene_generated/metal_ios/
       platforms:

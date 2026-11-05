@@ -7,6 +7,9 @@
 // Datas fixas em 2026 (a obra está em outubro de 2026). Algumas telas
 // comparam com o relógio real (DateTime.now) — ver LEIA-ME-capturas.md.
 
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:obra_facil/models/models.dart';
 
 /// Ids estáveis, usados nas rotas (`/obras/<id>`).
@@ -63,6 +66,9 @@ class DadosExemplo {
   final Map<String, List<FotoObraModel>> fotos;
   final List<FornecedorModel> fornecedores;
 
+  /// Plantas por obra (a central sem planta mostra a casa-padrão).
+  final Map<String, PlantaObra> plantas;
+
   const DadosExemplo({
     required this.obras,
     required this.lancamentos,
@@ -72,7 +78,26 @@ class DadosExemplo {
     required this.movimentos,
     required this.fotos,
     required this.fornecedores,
+    this.plantas = const {},
   });
+
+  /// A planta de exemplo do app (a casa 7 x 20, assets/plantas/).
+  static PlantaObra plantaExemplo() => PlantaObra.fromMap(jsonDecode(
+          File('assets/plantas/casa_7x20.json').readAsStringSync())
+      as Map<String, dynamic>);
+
+  /// Os mesmos dados, com a planta de exemplo na obra principal.
+  DadosExemplo comPlanta() => DadosExemplo(
+        obras: obras,
+        lancamentos: lancamentos,
+        cronograma: cronograma,
+        diario: diario,
+        estoque: estoque,
+        movimentos: movimentos,
+        fotos: fotos,
+        fornecedores: fornecedores,
+        plantas: {...plantas, IdsExemplo.obra: plantaExemplo()},
+      );
 
   /// A obra principal das capturas.
   ObraModel get sobrado => obras.firstWhere((o) => o.id == IdsExemplo.obra);

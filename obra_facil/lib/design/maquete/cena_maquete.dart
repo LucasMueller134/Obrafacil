@@ -8,6 +8,7 @@ import 'package:flutter_scene/scene.dart' as fs;
 // ignore: depend_on_referenced_packages
 import 'package:vector_math/vector_math.dart' as vm;
 
+import 'fonte_maquete.dart';
 import 'plano_maquete.dart';
 
 /// O que a `MaqueteObra` usa da cena 3D. A implementação é a [CenaMaquete];
@@ -225,7 +226,11 @@ final class _CenaProtegida extends fs.Scene {
 /// testes) ou se o modelo não tem algum nó que o plano usa: quem chama cai
 /// na imagem de reserva.
 class CenaMaquete implements Cena3dMaquete {
-  CenaMaquete._(this._cena, this.pecas);
+  CenaMaquete._(this._cena, this.pecas, this.enquadramento);
+
+  /// Onde a câmera fica (a da maquete-padrão, ou a enquadrada para a casa
+  /// gerada pela planta).
+  final EnquadramentoMaquete enquadramento;
 
   /// Caminho de origem do modelo (o hook gera o `.fsceneb` a partir dele).
   static const String caminhoGlb = 'assets/3d/maquete.glb';
@@ -256,6 +261,26 @@ class CenaMaquete implements Cena3dMaquete {
     // ("Flutter GPU requires the Impeller rendering backend..." nos testes).
     await fs.Scene.initializeStaticResources();
     final modelo = await fs.loadScene(caminhoGlb);
+    return _montar(modelo, tema, EnquadramentoMaquete.padrao);
+  }
+
+  /// A maquete gerada pela planta da obra: o glb sai do gerador (num
+  /// isolate, ver [FontePlanta.preparar]) e é importado em memória.
+  static Future<CenaMaquete> carregarDaPlanta({
+    required TemaMaquete tema,
+    required FontePlanta fonte,
+  }) async {
+    final pronta = await fonte.preparar();
+    await fs.Scene.initializeStaticResources();
+    final modelo = await fs.Node.fromGlbBytes(pronta.glb);
+    return _montar(modelo, tema, pronta.enquadramento);
+  }
+
+  static CenaMaquete _montar(
+    fs.Node modelo,
+    TemaMaquete tema,
+    EnquadramentoMaquete enquadramento,
+  ) {
     final pecas = PecasMaquete.doModelo(modelo, tema: tema);
 
     final cena = _CenaProtegida();
@@ -284,7 +309,7 @@ class CenaMaquete implements Cena3dMaquete {
       cena.dispose();
       rethrow;
     }
-    return CenaMaquete._(cena, pecas);
+    return CenaMaquete._(cena, pecas, enquadramento);
   }
 
   @override
@@ -299,14 +324,14 @@ class CenaMaquete implements Cena3dMaquete {
   /// Câmera da imagem de reserva, girada [giro] radianos em volta do eixo
   /// vertical, com o campo de visão casado com a imagem para uma caixa com
   /// essa [proporcao] (largura / altura).
-  static fs.PerspectiveCamera camera({
+  fs.PerspectiveCamera camera({
     required double proporcao,
     double giro = 0,
   }) {
-    final p = CameraMaquete.girar(CameraMaquete.posicao, giro);
-    final a = CameraMaquete.girar(CameraMaquete.alvo, giro);
+    final p = CameraMaquete.girar(enquadramento.posicao, giro);
+    final a = CameraMaquete.girar(enquadramento.alvo, giro);
     return fs.PerspectiveCamera(
-      fovRadiansY: CameraMaquete.fovVerticalPara(proporcao),
+      fovRadiansY: enquadramento.fovVerticalPara(proporcao),
       position: vm.Vector3(p[0], p[1], p[2]),
       target: vm.Vector3(a[0], a[1], a[2]),
       up: vm.Vector3(0, 1, 0),

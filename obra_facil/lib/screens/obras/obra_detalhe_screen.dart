@@ -50,13 +50,15 @@ class ObraDetalheScreen extends StatelessWidget {
               // Só leitura: o avanço da maquete e o resumo dos módulos.
               return _LeiturasDoAndamento(
                 obraId: obraId,
-                construtor: (context, cronograma, cronogramaFalhou, diario) =>
-                    _Dashboard(
+                construtor:
+                    (context, cronograma, cronogramaFalhou, diario, planta) =>
+                        _Dashboard(
                   obra: obra,
                   lancamentos: lancamentos,
                   cronograma: cronograma,
                   cronogramaFalhou: cronogramaFalhou,
                   diario: diario,
+                  planta: planta,
                   ehDono: auth.ehDono,
                   usuarioId: auth.usuario?.id,
                 ),
@@ -85,6 +87,7 @@ class _LeiturasDoAndamento extends StatefulWidget {
     List<CronogramaFaseModel>? cronograma,
     bool cronogramaFalhou,
     List<DiarioEntradaModel>? diario,
+    PlantaObra? planta,
   ) construtor;
 
   @override
@@ -94,6 +97,7 @@ class _LeiturasDoAndamento extends StatefulWidget {
 class _LeiturasDoAndamentoState extends State<_LeiturasDoAndamento> {
   late Stream<List<CronogramaFaseModel>> _cronograma;
   late Stream<List<DiarioEntradaModel>> _diario;
+  late Stream<PlantaObra?> _planta;
 
   @override
   void initState() {
@@ -111,6 +115,7 @@ class _LeiturasDoAndamentoState extends State<_LeiturasDoAndamento> {
     final db = context.read<FirestoreService>();
     _cronograma = db.cronograma(widget.obraId);
     _diario = db.diario(widget.obraId);
+    _planta = db.planta(widget.obraId);
   }
 
   @override
@@ -119,11 +124,15 @@ class _LeiturasDoAndamentoState extends State<_LeiturasDoAndamento> {
       stream: _cronograma,
       builder: (context, cronoSnap) => StreamBuilder<List<DiarioEntradaModel>>(
         stream: _diario,
-        builder: (context, diarioSnap) => widget.construtor(
-          context,
-          cronoSnap.data,
-          cronoSnap.hasError,
-          diarioSnap.data,
+        builder: (context, diarioSnap) => StreamBuilder<PlantaObra?>(
+          stream: _planta,
+          builder: (context, plantaSnap) => widget.construtor(
+            context,
+            cronoSnap.data,
+            cronoSnap.hasError,
+            diarioSnap.data,
+            plantaSnap.data,
+          ),
         ),
       ),
     );
@@ -140,6 +149,9 @@ class _Dashboard extends StatelessWidget {
   /// A leitura do cronograma deu erro (o cronograma não vai chegar).
   final bool cronogramaFalhou;
   final List<DiarioEntradaModel>? diario;
+
+  /// A planta da obra (nula: a maquete é a casa-padrão).
+  final PlantaObra? planta;
   final bool ehDono;
   final String? usuarioId;
 
@@ -149,6 +161,7 @@ class _Dashboard extends StatelessWidget {
     required this.cronograma,
     required this.cronogramaFalhou,
     required this.diario,
+    required this.planta,
     required this.ehDono,
     required this.usuarioId,
   });
@@ -276,7 +289,7 @@ class _Dashboard extends StatelessWidget {
     return [
       _CarimboObra(obra: obra, resumo: resumo),
       const SizedBox(height: Espaco.e12),
-      _MaqueteComAvanco(resumo: resumo),
+      _MaqueteComAvanco(resumo: resumo, planta: planta),
       if (pendentes.isNotEmpty) ...[
         const SizedBox(height: Espaco.e24),
         _NaMargem(
@@ -313,7 +326,7 @@ class _Dashboard extends StatelessWidget {
       ),
       _Secao(
         titulo: 'Módulos da obra',
-        child: _ListaModulos(resumo: resumo, rotas: rotas),
+        child: _ListaModulos(resumo: resumo, rotas: rotas, planta: planta),
       ),
       _Secao(
         titulo: 'Convites',
@@ -337,7 +350,7 @@ class _Dashboard extends StatelessWidget {
     return [
       _CarimboObra(obra: obra, resumo: resumo),
       const SizedBox(height: Espaco.e12),
-      _MaqueteComAvanco(resumo: resumo),
+      _MaqueteComAvanco(resumo: resumo, planta: planta),
       if (meusPendentes.isNotEmpty) ...[
         const SizedBox(height: Espaco.e24),
         _NaMargem(
@@ -408,7 +421,7 @@ class _Dashboard extends StatelessWidget {
       ),
       _Secao(
         titulo: 'Módulos da obra',
-        child: _ListaModulos(resumo: resumo, rotas: rotas),
+        child: _ListaModulos(resumo: resumo, rotas: rotas, planta: planta),
       ),
       _Secao(
         titulo: 'Gastos por categoria',

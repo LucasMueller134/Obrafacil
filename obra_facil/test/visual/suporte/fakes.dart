@@ -191,6 +191,18 @@ class FirestoreFalso implements FirestoreService {
   // ------------------------------------------------------------ Cronograma
 
   @override
+  Stream<PlantaObra?> planta(String obraId) =>
+      _mesma('planta/$obraId', () => dados.plantas[obraId]);
+
+  @override
+  Future<void> salvarPlanta(String obraId, PlantaObra planta) =>
+      _escrita('salvarPlanta $obraId ${planta.nome}');
+
+  @override
+  Future<void> excluirPlanta(String obraId) =>
+      _escrita('excluirPlanta $obraId');
+
+  @override
   Stream<List<CronogramaFaseModel>> cronograma(String obraId) =>
       _mesma('cronograma/$obraId', () {
         return _de(dados.cronograma, obraId)

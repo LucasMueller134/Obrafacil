@@ -92,12 +92,14 @@ Finder get _alvenaria => find.text('Alvenaria').last;
 
 Future<void> _abrirAlvenaria(WidgetTester tester) async {
   await tester.ensureVisible(_alvenaria);
+  await tester.pump();
   await tester.tap(_alvenaria);
   await assentar(tester);
 }
 
 Future<void> _tocar(WidgetTester tester, Finder alvo) async {
   await tester.ensureVisible(alvo);
+  await tester.pump();
   await tester.tap(alvo);
   await assentar(tester);
 }

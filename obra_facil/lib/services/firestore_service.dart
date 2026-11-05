@@ -8,7 +8,8 @@ import '../models/models.dart';
 ///
 /// Estrutura de dados:
 /// - usuarios/{uid}
-/// - obras/{obraId} (subcoleções: lancamentos, estoque, diario, cronograma, fotos)
+/// - obras/{obraId} (subcoleções: lancamentos, estoque, diario, cronograma,
+///   fotos e planta, com o documento `atual`: a planta baixa como dados)
 /// - convites/{codigo} (aponta para a obra, sem carregar dado financeiro)
 /// - fornecedores/{id} (campo donoId — compartilhados entre as obras do dono)
 ///
@@ -311,6 +312,22 @@ class FirestoreService {
 
   Future<void> excluirEntradaDiario(String obraId, String id) =>
       _sub(obraId, 'diario').doc(id).delete();
+
+  // ---------------------------------------------------------------- Planta
+
+  /// A planta baixa da obra (nula enquanto não foi enviada). É dela que a
+  /// maquete 3D, a planta tocável e a vista 360° saem.
+  Stream<PlantaObra?> planta(String obraId) =>
+      _sub(obraId, 'planta').doc('atual').snapshots().map((d) {
+        final dados = d.data();
+        return dados == null ? null : PlantaObra.fromMap(dados);
+      });
+
+  Future<void> salvarPlanta(String obraId, PlantaObra planta) =>
+      _sub(obraId, 'planta').doc('atual').set(planta.toMap());
+
+  Future<void> excluirPlanta(String obraId) =>
+      _sub(obraId, 'planta').doc('atual').delete();
 
   // ------------------------------------------------------------ Cronograma
 

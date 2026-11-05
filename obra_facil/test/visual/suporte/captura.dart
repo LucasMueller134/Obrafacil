@@ -94,6 +94,9 @@ class Cena {
   /// abrindo (a tela de abertura).
   final SituacaoLogin situacao;
 
+  /// Outros dados de exemplo (ex.: com a planta); nulo: os de sempre.
+  final DadosExemplo Function()? dados;
+
   const Cena(
     this.nome, {
     required this.usuario,
@@ -102,6 +105,7 @@ class Cena {
     this.brilho = Brightness.dark,
     this.defeitoConhecido,
     this.situacao = SituacaoLogin.logado,
+    this.dados,
   });
 }
 
@@ -228,7 +232,7 @@ Future<void> _capturarCom(
   _configurarTela(tester, tamanho, cena.brilho);
   instalarPluginsFalsos();
 
-  final db = FirestoreFalso(DadosExemplo.padrao());
+  final db = FirestoreFalso(cena.dados?.call() ?? DadosExemplo.padrao());
   final auth = AuthProvider(servicoDeLogin(cena));
   final router = criarRouter(auth);
   final moldura = GlobalKey();

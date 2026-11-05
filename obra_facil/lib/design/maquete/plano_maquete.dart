@@ -227,6 +227,11 @@ abstract final class NosMaquete {
   static const String cotas = 'cotas';
   static const int totalFiadas = 15;
 
+  /// Fiadas da parede, do piso ao fundo da viga (as outras 3 são a
+  /// platibanda, em cima da laje).
+  static const int totalFiadasParede = 12;
+  static const int totalFiadasPlatibanda = totalFiadas - totalFiadasParede;
+
   static String fiada(int k) => 'alvenaria_fiada_${_dois(k)}';
   static String fantasma(int fase) => 'fantasma_fase_${_dois(fase)}';
   static String _dois(int n) => n.toString().padLeft(2, '0');
