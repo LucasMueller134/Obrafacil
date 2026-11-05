@@ -93,6 +93,18 @@ GoRouter criarRouter(AuthProvider auth) {
               state,
               ClienteObraScreen(obraId: state.pathParameters['obraId']!),
             ),
+            routes: [
+              GoRoute(
+                path: 'planta/:comodoId/360',
+                pageBuilder: (_, state) => _pagina(
+                  state,
+                  Vista360Screen(
+                    obraId: state.pathParameters['obraId']!,
+                    comodoId: state.pathParameters['comodoId']!,
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),

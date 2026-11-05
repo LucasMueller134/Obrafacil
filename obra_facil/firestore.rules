@@ -31,11 +31,24 @@ service cloud.firestore {
       return ehClienteDaObra(get(/databases/$(database)/documents/obras/$(obraId)));
     }
 
+    function donoDaObra(obraId) {
+      return ehDonoDaObra(get(/databases/$(database)/documents/obras/$(obraId)));
+    }
+
     // O que o cliente pode acompanhar. Fora desta lista — lançamentos,
     // estoque, movimentos — nem chega no aparelho dele: a regra barra
     // antes, então nenhum erro de tela vira vazamento de custo.
     function subcolecaoLiberadaAoCliente(subcolecao) {
-      return subcolecao in ['diario', 'fotos', 'cronograma'];
+      return subcolecao in ['diario', 'fotos', 'cronograma', 'planta', 'imagens'];
+    }
+
+    // Quem grava cada subcoleção. A planta (de onde sai a maquete) só o
+    // dono troca. As imagens "como vai ficar" só a Cloud Function grava
+    // (com o Admin SDK, que não passa por estas regras): pelo app, ninguém.
+    function podeGravar(obraId, subcolecao) {
+      return subcolecao == 'planta' ? donoDaObra(obraId)
+           : subcolecao == 'imagens' ? false
+           : membroDaObra(obraId);
     }
 
     // Perfil do usuário: cada um lê/escreve apenas o próprio.
@@ -83,7 +96,7 @@ service cloud.firestore {
           membroDaObra(obraId) ||
           (subcolecaoLiberadaAoCliente(subcolecao) && clienteDaObra(obraId))
         );
-        allow write: if logado() && membroDaObra(obraId);
+        allow write: if logado() && podeGravar(obraId, subcolecao);
       }
     }
 
