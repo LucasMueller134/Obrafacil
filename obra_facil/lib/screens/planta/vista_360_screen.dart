@@ -16,7 +16,9 @@ import '../../design/maquete/gerador/gerador_maquete.dart';
 import '../../design/maquete/maquete.dart';
 import '../../design/maquete/plano_maquete.dart';
 import '../../models/models.dart';
+import '../../providers/auth_provider.dart';
 import '../../services/firestore_service.dart';
+import 'como_vai_ficar.dart';
 import 'ficha_comodo.dart';
 
 /// A vista 360° de um cômodo: a câmera dentro da casa pronta (gerada pela
@@ -51,18 +53,70 @@ class _Vista360 extends StatefulWidget {
 class _Vista360State extends State<_Vista360> {
   late final Stream<PlantaObra?> _planta =
       context.read<FirestoreService>().planta(widget.obraId);
+  late final Stream<List<ImagemIaModel>> _imagens =
+      context.read<FirestoreService>().imagens(widget.obraId);
+  final _chaveVista = GlobalKey();
+  bool _capturando = false;
+
+  /// Fotografa o ângulo que o dono escolheu e abre a geração da imagem.
+  Future<void> _gerarFoto(PlantaObra planta, ComodoPlanta comodo) async {
+    setState(() => _capturando = true);
+    final guia = await capturarVista(_chaveVista);
+    if (!mounted) return;
+    setState(() => _capturando = false);
+    if (guia == null) {
+      unawaited(Tato.erro());
+      mostrarAviso(context,
+          'Não deu para fotografar o 3D neste aparelho. Espere a vista abrir e tente de novo.');
+      return;
+    }
+    await Navigator.of(context).push(MaterialPageRoute<void>(
+      builder: (_) => TemaPrancheta(
+        child: GerarImagemScreen(
+          obraId: widget.obraId,
+          pedido: PedidoImagem.comodo(
+            vista: comodo.id,
+            nomeComodo: comodo.nome,
+            guia: guia,
+            medidas: '${medidasDoComodo(comodo)}, pé-direito '
+                '${planta.alturas.peDireito.toStringAsFixed(2).replaceAll('.', ',')} m',
+            piso: comodo.piso.rotulo,
+          ),
+        ),
+      ),
+    ));
+  }
 
   @override
   Widget build(BuildContext context) {
     final c = context.cores;
+    final ehDono = context.watch<AuthProvider>().ehDono;
     return StreamBuilder<PlantaObra?>(
       stream: _planta,
       builder: (context, snap) {
         final planta = snap.data;
         final comodo =
             planta?.comodos.where((x) => x.id == widget.comodoId).firstOrNull;
+        final podeGerar = ehDono &&
+            planta != null &&
+            comodo != null &&
+            comodo.coberto &&
+            !MaqueteObra.semSuporteGpu;
         return Scaffold(
           appBar: AppBar(),
+          bottomNavigationBar: podeGerar
+              ? BarraDeAcao(
+                  principal: BotaoContorno(
+                    rotulo: 'Gerar foto deste ângulo',
+                    icone: Icons.auto_awesome_outlined,
+                    expandir: true,
+                    carregando: _capturando,
+                    aoTocar: _capturando
+                        ? null
+                        : () => unawaited(_gerarFoto(planta, comodo)),
+                  ),
+                )
+              : null,
           body: planta == null || comodo == null
               ? Padding(
                   padding: const EdgeInsets.all(Espaco.margem),
@@ -102,7 +156,31 @@ class _Vista360State extends State<_Vista360> {
                     SizedBox(
                       height: math.min(
                           MediaQuery.sizeOf(context).height * 0.55, 460),
-                      child: Interior360(planta: planta, comodo: comodo),
+                      child: RepaintBoundary(
+                        key: _chaveVista,
+                        child: Interior360(planta: planta, comodo: comodo),
+                      ),
+                    ),
+                    StreamBuilder<List<ImagemIaModel>>(
+                      stream: _imagens,
+                      builder: (context, snap) {
+                        final daqui = (snap.data ?? const <ImagemIaModel>[])
+                            .where((i) => i.vista == comodo.id)
+                            .toList();
+                        if (daqui.isEmpty) return const SizedBox.shrink();
+                        return Padding(
+                          padding: const EdgeInsets.fromLTRB(Espaco.margem,
+                              Espaco.e16, Espaco.margem, 0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              const LinhaCota(legenda: 'Como vai ficar'),
+                              const SizedBox(height: Espaco.e12),
+                              GaleriaComoVaiFicar(imagens: daqui),
+                            ],
+                          ),
+                        );
+                      },
                     ),
                     const SizedBox(height: Espaco.e16),
                     Padding(

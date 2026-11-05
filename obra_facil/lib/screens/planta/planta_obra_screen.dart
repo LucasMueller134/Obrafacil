@@ -11,6 +11,8 @@ import '../../design/maquete/maquete.dart';
 import '../../models/models.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/firestore_service.dart';
+import 'como_vai_ficar.dart';
+import 'enviar_planta.dart';
 import 'ficha_comodo.dart';
 
 /// A planta de exemplo que vem no app (uma casa térrea de 7 x 20 m, do
@@ -50,6 +52,8 @@ class _PlantaDaObraState extends State<_PlantaDaObra> {
       context.read<FirestoreService>().planta(widget.obraId);
   late final Stream<ObraModel?> _obra =
       context.read<FirestoreService>().obra(widget.obraId);
+  late final Stream<List<ImagemIaModel>> _imagens =
+      context.read<FirestoreService>().imagens(widget.obraId);
   String? _selecionado;
   bool _salvando = false;
   final _chaveFicha = GlobalKey();
@@ -87,8 +91,12 @@ class _PlantaDaObraState extends State<_PlantaDaObra> {
                   PopupMenuButton<String>(
                     tooltip: 'Ações da planta',
                     icon: const Icon(Icons.more_vert),
-                    onSelected: (_) => _remover(context, planta),
+                    onSelected: (acao) => acao == 'enviar'
+                        ? unawaited(enviarPlanta(context, widget.obraId))
+                        : _remover(context, planta),
                     itemBuilder: (_) => const [
+                      PopupMenuItem(
+                          value: 'enviar', child: Text('Enviar outra planta')),
                       PopupMenuItem(
                           value: 'remover', child: Text('Remover a planta')),
                     ],
@@ -112,7 +120,7 @@ class _PlantaDaObraState extends State<_PlantaDaObra> {
                       icone: Icons.upload_file_outlined,
                       grande: true,
                       expandir: true,
-                      aoTocar: () => _enviar(context),
+                      aoTocar: () => unawaited(enviarPlanta(context, widget.obraId)),
                     ),
                   )
                 : null,
@@ -231,6 +239,12 @@ class _PlantaDaObraState extends State<_PlantaDaObra> {
             ),
           ),
         ],
+        _ComoVaiFicar(
+          obraId: widget.obraId,
+          planta: planta,
+          imagens: _imagens,
+          ehDono: ehDono,
+        ),
         const SizedBox(height: Espaco.e24),
         Semantics(
           header: true,
@@ -331,48 +345,89 @@ class _PlantaDaObraState extends State<_PlantaDaObra> {
       aoDesfazer: () => unawaited(db.salvarPlanta(widget.obraId, planta)),
     );
   }
+}
 
-  /// Enviar a planta da obra: a leitura pela IA (Gemini, numa Cloud
-  /// Function) entra na próxima etapa; até lá, a folha explica.
-  void _enviar(BuildContext context) {
-    unawaited(showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      builder: (ctx) {
-        final c = ctx.cores;
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(
-                Espaco.margem, Espaco.e8, Espaco.margem, Espaco.e16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const Rotulo('Enviar a planta'),
-                const SizedBox(height: Espaco.e4),
-                Text('A leitura da planta ainda não está ligada',
-                    style: Tipografia.titulo.copyWith(color: c.grafite)),
-                const SizedBox(height: Espaco.e8),
-                Text(
-                  'A IA que lê a planta (Gemini) roda numa função do '
-                  'Firebase, que precisa ser publicada no projeto. Enquanto '
-                  'isso, use a casa de exemplo para ver como fica.',
-                  style: Tipografia.corpo.copyWith(color: c.grafite2),
-                ),
-                const SizedBox(height: Espaco.e16),
-                BotaoContorno(
-                  rotulo: 'Usar a casa de exemplo',
-                  expandir: true,
-                  aoTocar: () {
-                    Navigator.pop(ctx);
-                    unawaited(_usarExemplo(context));
-                  },
-                ),
-              ],
+/// As imagens "como vai ficar" (Nano Banana Pro, numa Cloud Function) e,
+/// para o dono, o botão de gerar a da fachada. Cômodos: pela vista 360°.
+class _ComoVaiFicar extends StatelessWidget {
+  const _ComoVaiFicar({
+    required this.obraId,
+    required this.planta,
+    required this.imagens,
+    required this.ehDono,
+  });
+
+  final String obraId;
+  final PlantaObra planta;
+  final Stream<List<ImagemIaModel>> imagens;
+  final bool ehDono;
+
+  void _gerarFachada(BuildContext context) {
+    unawaited(Navigator.of(context).push(MaterialPageRoute<void>(
+      builder: (_) => TemaPrancheta(
+        child: GerarImagemScreen(
+          obraId: obraId,
+          pedido: const PedidoImagem.fachada(),
+          maquete: LayoutBuilder(
+            builder: (context, caixa) => MaqueteObra(
+              progresso: ProgressoMaquete.fases(
+                  List<double>.filled(ProgressoMaquete.totalFases, 1)),
+              fonte: FontePlanta(planta),
+              altura: caixa.maxHeight,
+              legenda: false,
             ),
+          ),
+        ),
+      ),
+    )));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.cores;
+    return StreamBuilder<List<ImagemIaModel>>(
+      stream: imagens,
+      builder: (context, snap) {
+        final lista = snap.data ?? const <ImagemIaModel>[];
+        if (lista.isEmpty && !ehDono) return const SizedBox.shrink();
+        final temFachada = lista.any((i) => i.ehFachada);
+        return Padding(
+          padding: const EdgeInsets.only(top: Espaco.e24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Semantics(
+                header: true,
+                container: true,
+                child: const LinhaCota(legenda: 'Como vai ficar'),
+              ),
+              const SizedBox(height: Espaco.e12),
+              if (lista.isNotEmpty) ...[
+                GaleriaComoVaiFicar(imagens: lista),
+                const SizedBox(height: Espaco.e12),
+              ] else
+                Padding(
+                  padding: const EdgeInsets.only(bottom: Espaco.e12),
+                  child: Text(
+                    'Uma foto realista da casa pronta, pintada pela IA por '
+                    'cima da maquete, com as medidas da planta. Os cômodos '
+                    'se geram pela vista 360°.',
+                    style: Tipografia.corpo.copyWith(color: c.grafite2),
+                  ),
+                ),
+              if (ehDono)
+                BotaoContorno(
+                  rotulo: temFachada
+                      ? 'Gerar a fachada de novo'
+                      : 'Gerar a fachada',
+                  icone: Icons.auto_awesome_outlined,
+                  expandir: true,
+                  aoTocar: () => _gerarFachada(context),
+                ),
+            ],
           ),
         );
       },
-    ));
+    );
   }
 }

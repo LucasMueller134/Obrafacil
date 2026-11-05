@@ -1,0 +1,17 @@
+rules_version = '2';
+
+// Storage do ObraFácil. Só as imagens "como vai ficar" moram aqui (as
+// fotos do canteiro continuam no Firestore). Quem grava é a Cloud Function
+// gerarImagem, com o Admin SDK, que não passa por estas regras: pelo app,
+// ninguém grava. O app lê pela URL de download que a função devolve.
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /obras/{obraId}/imagens/{arquivo} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+    match /{caminho=**} {
+      allow read, write: if false;
+    }
+  }
+}

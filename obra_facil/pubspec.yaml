@@ -55,6 +55,8 @@ dependencies:
   intl: any # versão gerenciada pelo flutter_localizations
   uuid: ^4.5.1
   share_plus: ^10.1.0
+  cloud_functions: ^5.6.0
+  file_picker: ^10.0.0
 
 dev_dependencies:
   flutter_test:

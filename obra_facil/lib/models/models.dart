@@ -3,6 +3,7 @@ export 'diario_entrada_model.dart';
 export 'estoque_item_model.dart';
 export 'fornecedor_model.dart';
 export 'foto_obra_model.dart';
+export 'imagem_ia_model.dart';
 export 'item_material_model.dart';
 export 'lancamento_model.dart';
 export 'movimento_estoque_model.dart';

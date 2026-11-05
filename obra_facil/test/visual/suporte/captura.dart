@@ -25,6 +25,7 @@ import 'package:obra_facil/providers/auth_provider.dart';
 import 'package:obra_facil/router/app_router.dart';
 import 'package:obra_facil/services/auth_service.dart';
 import 'package:obra_facil/services/firestore_service.dart';
+import 'package:obra_facil/services/ia/planta_ia_service.dart';
 import 'package:provider/provider.dart';
 
 import 'dados_exemplo.dart';
@@ -97,6 +98,9 @@ class Cena {
   /// Outros dados de exemplo (ex.: com a planta); nulo: os de sempre.
   final DadosExemplo Function()? dados;
 
+  /// A IA da planta da cena; nula: a falsa padrão.
+  final PlantaIaService Function()? ia;
+
   const Cena(
     this.nome, {
     required this.usuario,
@@ -106,6 +110,7 @@ class Cena {
     this.defeitoConhecido,
     this.situacao = SituacaoLogin.logado,
     this.dados,
+    this.ia,
   });
 }
 
@@ -158,7 +163,11 @@ class AppDeCaptura extends StatelessWidget {
     required this.auth,
     required this.db,
     required this.router,
+    this.ia,
   });
+
+  /// A IA da planta (falsa por padrão: nada sai para a rede).
+  final PlantaIaService? ia;
 
   @override
   Widget build(BuildContext context) {
@@ -166,6 +175,7 @@ class AppDeCaptura extends StatelessWidget {
       providers: [
         ChangeNotifierProvider<AuthProvider>.value(value: auth),
         Provider<FirestoreService>.value(value: db),
+        Provider<PlantaIaService>.value(value: ia ?? PlantaIaFalsa()),
       ],
       child: MaterialApp.router(
         title: 'ObraFácil',
@@ -239,7 +249,7 @@ Future<void> _capturarCom(
 
   await tester.pumpWidget(RepaintBoundary(
     key: moldura,
-    child: AppDeCaptura(auth: auth, db: db, router: router),
+    child: AppDeCaptura(auth: auth, db: db, router: router, ia: cena.ia?.call()),
   ));
   // Splash → área do perfil, quando o AuthProvider termina de carregar.
   await assentar(tester);

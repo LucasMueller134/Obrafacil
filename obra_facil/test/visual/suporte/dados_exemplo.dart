@@ -69,6 +69,9 @@ class DadosExemplo {
   /// Plantas por obra (a central sem planta mostra a casa-padrão).
   final Map<String, PlantaObra> plantas;
 
+  /// Imagens "como vai ficar" por obra.
+  final Map<String, List<ImagemIaModel>> imagens;
+
   const DadosExemplo({
     required this.obras,
     required this.lancamentos,
@@ -79,6 +82,7 @@ class DadosExemplo {
     required this.fotos,
     required this.fornecedores,
     this.plantas = const {},
+    this.imagens = const {},
   });
 
   /// A planta de exemplo do app (a casa 7 x 20, assets/plantas/).
@@ -97,7 +101,39 @@ class DadosExemplo {
         fotos: fotos,
         fornecedores: fornecedores,
         plantas: {...plantas, IdsExemplo.obra: plantaExemplo()},
+        imagens: imagens,
       );
+
+  /// Com a planta e duas imagens "como vai ficar" (a fachada e a sala).
+  DadosExemplo comImagens() {
+    final p = comPlanta();
+    final sala = p.plantas[IdsExemplo.obra]!.comodos.first;
+    return DadosExemplo(
+      obras: obras,
+      lancamentos: lancamentos,
+      cronograma: cronograma,
+      diario: diario,
+      estoque: estoque,
+      movimentos: movimentos,
+      fotos: fotos,
+      fornecedores: fornecedores,
+      plantas: p.plantas,
+      imagens: {
+        IdsExemplo.obra: [
+          const ImagemIaModel(
+            vista: 'fachada',
+            nome: 'Fachada',
+            url: 'https://exemplo/fachada.png',
+          ),
+          ImagemIaModel(
+            vista: sala.id,
+            nome: sala.nome,
+            url: 'https://exemplo/${sala.id}.png',
+          ),
+        ],
+      },
+    );
+  }
 
   /// A obra principal das capturas.
   ObraModel get sobrado => obras.firstWhere((o) => o.id == IdsExemplo.obra);

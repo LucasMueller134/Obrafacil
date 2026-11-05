@@ -329,6 +329,17 @@ class FirestoreService {
   Future<void> excluirPlanta(String obraId) =>
       _sub(obraId, 'planta').doc('atual').delete();
 
+  /// As imagens "como vai ficar" (fachada primeiro). Só a Cloud Function
+  /// grava; o app só lê.
+  Stream<List<ImagemIaModel>> imagens(String obraId) =>
+      _sub(obraId, 'imagens').snapshots().map((s) => s.docs
+          .map((d) => ImagemIaModel.fromMap(d.id, d.data()))
+          .where((i) => i.url.isNotEmpty)
+          .toList()
+        ..sort((a, b) => a.ehFachada == b.ehFachada
+            ? a.nome.compareTo(b.nome)
+            : (a.ehFachada ? -1 : 1)));
+
   // ------------------------------------------------------------ Cronograma
 
   Stream<List<CronogramaFaseModel>> cronograma(String obraId) =>

@@ -1,0 +1,24 @@
+{
+  "name": "obrafacil-functions",
+  "private": true,
+  "description": "Cloud Functions do ObraFácil: leitura da planta (Gemini) e imagens \"como vai ficar\" (Nano Banana Pro). A chave do Gemini fica no Secret Manager, nunca no app.",
+  "main": "lib/index.js",
+  "engines": {
+    "node": "22"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "tsc && node --test lib/test/*.test.js",
+    "deploy": "npm run build && firebase deploy --only functions"
+  },
+  "dependencies": {
+    "@google/genai": "2.32.0",
+    "dxf-parser": "1.1.2",
+    "firebase-admin": "14.5.0",
+    "firebase-functions": "7.4.0"
+  },
+  "devDependencies": {
+    "@types/node": "22.13.10",
+    "typescript": "5.8.3"
+  }
+}

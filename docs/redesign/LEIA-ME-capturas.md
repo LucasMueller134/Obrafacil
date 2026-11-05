@@ -68,6 +68,9 @@ do antes.
 | `depois_obras_test.dart` | `01_obras_dono`, `01_obras_mestre` |
 | `depois_cronograma_test.dart` | `11_cronograma_mestre`, `11b_cronograma_fase_mestre` (folha de atualizar a fase) |
 | `depois_entrada_test.dart` | `12_login`, `13_abertura` |
+| `depois_planta_test.dart` | `02c_obra_dono_planta` (central com a maquete da planta), `14_planta_dono`, `14b_planta_comodo_dono` (ficha do cômodo), `14c_planta_vazia_dono`, `15_vista360_quarto` (no teste, as paredes desdobradas) |
+| `depois_cliente_test.dart` | `10_cliente_obra`, `10b_cliente_obra_pronta`, `10c_cliente_comodo` |
+| `depois_planta_ia_test.dart` | `16_planta_lendo`, `16b_planta_nao_publicada`, `16c_planta_revisao`, `17_gerar_fachada` (IA falsa; no teste a maquete aparece como a planta desenhada, no celular é o 3D) |
 
 Login e abertura não têm ninguém logado: a `Cena` delas usa
 `situacao: SituacaoLogin.deslogado` (o login falso não devolve usuário) e

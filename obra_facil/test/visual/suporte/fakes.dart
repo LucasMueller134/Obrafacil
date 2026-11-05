@@ -8,10 +8,13 @@
 // [FirestoreFalso.escritas]). Um método novo que ainda não esteja aqui cai
 // no noSuchMethod com uma mensagem que diz o que acrescentar.
 
+import 'dart:typed_data';
+
 import 'package:firebase_auth/firebase_auth.dart' show User;
 import 'package:obra_facil/models/models.dart';
 import 'package:obra_facil/services/auth_service.dart';
 import 'package:obra_facil/services/firestore_service.dart';
+import 'package:obra_facil/services/ia/planta_ia_service.dart';
 
 import 'dados_exemplo.dart';
 
@@ -203,6 +206,10 @@ class FirestoreFalso implements FirestoreService {
       _escrita('excluirPlanta $obraId');
 
   @override
+  Stream<List<ImagemIaModel>> imagens(String obraId) =>
+      _mesma('imagens/$obraId', () => dados.imagens[obraId] ?? const []);
+
+  @override
   Stream<List<CronogramaFaseModel>> cronograma(String obraId) =>
       _mesma('cronograma/$obraId', () {
         return _de(dados.cronograma, obraId)
@@ -374,4 +381,45 @@ class AuthServiceAbrindo extends AuthServiceFalso {
 
   @override
   User? get usuarioFirebase => null;
+}
+
+
+/// A IA da planta sem rede: devolve a [leitura] (ou lança [falha]) e anota
+/// o que foi pedido.
+class PlantaIaFalsa implements PlantaIaService {
+  PlantaIaFalsa({this.leitura, this.falha, this.urlImagem = 'https://exemplo/imagem.png'});
+
+  LeituraPlanta? leitura;
+  FalhaIaPlanta? falha;
+  final String urlImagem;
+  final pedidos = <String>[];
+
+  @override
+  Future<LeituraPlanta> lerPlanta({
+    required String obraId,
+    required Uint8List bytes,
+    required String nome,
+    String? tipo,
+  }) async {
+    pedidos.add('lerPlanta $obraId $nome ${bytes.length}');
+    if (falha != null) throw falha!;
+    return leitura!;
+  }
+
+  @override
+  Future<ImagemGerada> gerarImagem({
+    required String obraId,
+    required String vista,
+    required Uint8List guia,
+    Uint8List? referencia,
+    String? referenciaTipo,
+    String? nomeComodo,
+    String? medidas,
+    String? piso,
+    String? detalhes,
+  }) async {
+    pedidos.add('gerarImagem $obraId $vista ${guia.isNotEmpty}');
+    if (falha != null) throw falha!;
+    return ImagemGerada(url: urlImagem, vista: vista, restantes: 2, custoUsd: 0.24);
+  }
 }

@@ -13,6 +13,7 @@ import '../../services/ia/perguntas_obra_service.dart';
 import '../../utils/formatters.dart';
 import '../../widgets/chat_obra.dart';
 import '../../widgets/imagem_obra.dart';
+import '../planta/como_vai_ficar.dart';
 import '../planta/ficha_comodo.dart';
 
 /// Acompanhamento da obra para quem a contratou, na linguagem da
@@ -132,6 +133,10 @@ class _Acompanhamento extends StatefulWidget {
 class _AcompanhamentoState extends State<_Acompanhamento> {
   /// A maquete mostra a obra hoje (false) ou pronta (true).
   bool _pronta = false;
+
+  /// As imagens "como vai ficar" que o dono gerou.
+  late final Stream<List<ImagemIaModel>> _imagens =
+      context.read<FirestoreService>().imagens(widget.obra.id);
 
   List<CronogramaFaseModel> get _fases =>
       [...?widget.cronograma]..sort((a, b) => a.ordem.compareTo(b.ordem));
@@ -260,6 +265,19 @@ class _AcompanhamentoState extends State<_Acompanhamento> {
                         '${atual == null ? '' : ' · ${atual.nome} em ${atual.percentualConcluido}%'}.',
             style: Tipografia.apoio.copyWith(color: c.grafite2),
           )),
+          StreamBuilder<List<ImagemIaModel>>(
+            stream: _imagens,
+            builder: (context, snap) {
+              final lista = snap.hasError ? null : snap.data;
+              if (lista == null || lista.isEmpty) {
+                return const SizedBox.shrink();
+              }
+              return _Secao(
+                titulo: 'Como vai ficar',
+                child: GaleriaComoVaiFicar(imagens: lista),
+              );
+            },
+          ),
           if (planta != null) ...[
             _Secao(
               titulo: 'A casa por dentro',

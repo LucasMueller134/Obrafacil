@@ -43,11 +43,12 @@ service cloud.firestore {
     }
 
     // Quem grava cada subcoleção. A planta (de onde sai a maquete) só o
-    // dono troca. As imagens "como vai ficar" só a Cloud Function grava
-    // (com o Admin SDK, que não passa por estas regras): pelo app, ninguém.
+    // dono troca. As imagens "como vai ficar" e o uso da IA (o limite e o
+    // custo do mês) só a Cloud Function grava, com o Admin SDK, que não
+    // passa por estas regras: pelo app, ninguém (nem para zerar o limite).
     function podeGravar(obraId, subcolecao) {
       return subcolecao == 'planta' ? donoDaObra(obraId)
-           : subcolecao == 'imagens' ? false
+           : subcolecao in ['imagens', 'uso_ia'] ? false
            : membroDaObra(obraId);
     }
 

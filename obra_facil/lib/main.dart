@@ -12,6 +12,7 @@ import 'router/app_router.dart';
 import 'screens/configuracao_pendente_screen.dart';
 import 'services/auth_service.dart';
 import 'services/firestore_service.dart';
+import 'services/ia/planta_ia_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -52,6 +53,9 @@ class _ObraFacilAppState extends State<ObraFacilApp> {
       providers: [
         ChangeNotifierProvider.value(value: _auth),
         Provider(create: (_) => FirestoreService()),
+        // Ler a planta e gerar as imagens "como vai ficar" (Cloud
+        // Functions; a chave do Gemini fica lá, nunca no app).
+        Provider<PlantaIaService>(create: (_) => PlantaIaFirebase()),
       ],
       child: MaterialApp.router(
         title: 'ObraFácil',
