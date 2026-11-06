@@ -197,14 +197,26 @@ class GeradorMaquete {
         ]
       : planta.paredes;
 
-  /// Parede com a laje de um lado só (a de fora).
+  /// Parede com um cômodo fechado de um lado só (a de fora). A sacada
+  /// conta como fora: a parede da sala com a porta de vidro fica.
   bool _ehExterna(ParedePlanta w) {
     final (mx, my) = w.pontoEm(w.comprimento / 2);
     final (dx, dy) = w.direcao;
     final d = w.espessura / 2 + 0.15;
-    return !(_coberta.contem(mx - dy * d, my + dx * d) &&
-        _coberta.contem(mx + dy * d, my - dx * d));
+    return !(_fechada.contem(mx - dy * d, my + dx * d) &&
+        _fechada.contem(mx + dy * d, my - dx * d));
   }
+
+  late final AreaCoberta _fechada = AreaCoberta.dos(
+    [
+      for (final c in planta.comodosCobertos)
+        if (c.tipo != 'varanda' && c.tipo != 'gourmet' && c.tipo != 'garagem')
+          ...c.retangulos,
+    ],
+    largura: planta.largura,
+    profundidade: planta.profundidade,
+    expandir: 0.065,
+  );
 
   /// O ponto da planta que vira a origem da cena: o meio do tabuleiro (que
   /// tem mais margem na frente, para a calçada e a cota).
@@ -616,8 +628,92 @@ class GeradorMaquete {
     if (topo) _hidraulica(pecas);
     _rebocoEPintura(pecas);
     _revestimentos(pecas);
+    _fachada(pecas);
     _acabamento(pecas);
     _fantasmas(fantasmas);
+  }
+
+  /// O lado de fora do cômodo na frente ou no fundo: +1 (y alto), -1 (y
+  /// baixo) ou nulo (os dois têm laje).
+  int? _ladoDeFora(RetanguloPlanta r) {
+    final cx = (r.x + r.x1) / 2;
+    if (!_coberta.contem(cx, r.y1 + 0.35)) return 1;
+    if (!_coberta.contem(cx, r.y - 0.35)) return -1;
+    return null;
+  }
+
+  /// O estilo de referência na fachada: ripado de madeira, moldura de
+  /// concreto em volta da sacada e da garagem, e a churrasqueira da área
+  /// gourmet.
+  void _fachada(Map<String, NoGerado> pecas) {
+    final ripado = pecas['revestimentos_ripado']!;
+    final moldura = pecas['revestimentos_pingadeira']!.malha;
+    final gourmet = pecas['revestimentos_peitoris']!.malha;
+    final madeira = MateriaisMaquete.madeira.nome;
+    final concreto = MateriaisMaquete.concreto.nome;
+    // No último pavimento o ripado e a moldura vão até o topo da
+    // platibanda; nos outros, até o topo da laje.
+    final topo = this.topo ? niveis.platibandaTopo : niveis.lajeTopo;
+    var temRipado = false;
+    for (final c in planta.comodos) {
+      final r = c.principal;
+      switch (c.fachada) {
+        case 'ripado':
+          final lado = _ladoDeFora(r);
+          if (lado == null) break;
+          // Linha de centro da parede e a face de fora.
+          final yc = lado > 0 ? r.y1 + 0.06 : r.y - 0.06;
+          final face = yc + lado * 0.1;
+          for (var x = r.x - 0.03; x < r.x1 + 0.06; x += 0.11) {
+            final (ax, az) = _xz(x, face + lado * 0.03);
+            final (bx, bz) = _xz(x + 0.045, face + lado * 0.075);
+            ripado.malha.caixa(
+                madeira,
+                (math.min(ax, bx), NiveisMaquete.piso, math.min(az, bz)),
+                (math.max(ax, bx), topo, math.max(az, bz)));
+          }
+          temRipado = true;
+        case 'moldura':
+          final lado = _ladoDeFora(r);
+          if (lado == null) break;
+          final yc = lado > 0 ? r.y1 + 0.06 : r.y - 0.06;
+          final y0 = yc - lado * 0.05, y1 = yc + lado * 0.4;
+          void bloco(double x0, double x1, double h0, double h1) {
+            final (ax, az) = _xz(x0, math.min(y0, y1));
+            final (bx, bz) = _xz(x1, math.max(y0, y1));
+            moldura.caixa(concreto, (ax, h0, az), (bx, h1, bz));
+          }
+
+          // As duas abas dos lados e a viga em cima.
+          bloco(r.x - 0.16, r.x + 0.04, NiveisMaquete.piso, topo);
+          bloco(r.x1 - 0.04, r.x1 + 0.16, NiveisMaquete.piso, topo);
+          bloco(r.x - 0.16, r.x1 + 0.16, niveis.lajeFundo, topo);
+        default:
+          break;
+      }
+      if (c.tipo == 'gourmet') {
+        // Bancada com a churrasqueira encostada na parede da casa.
+        final lado = _ladoDeFora(r);
+        final yParede = lado == 1 ? r.y : r.y1;
+        final dentro = lado == 1 ? 1.0 : -1.0;
+        final ya = yParede + dentro * 0.05, yb = yParede + dentro * 0.65;
+        final xa = math.max(r.x + 0.1, r.x1 - 2.4), xb = r.x1 - 0.1;
+        final (ax, az) = _xz(xa, math.min(ya, yb));
+        final (bx, bz) = _xz(xb, math.max(ya, yb));
+        final p = NiveisMaquete.piso;
+        gourmet.caixa(
+            MateriaisMaquete.tinta.nome, (ax, p, az), (bx, p + 0.86, bz));
+        gourmet.caixa(MateriaisMaquete.granito.nome, (ax, p + 0.86, az),
+            (bx, p + 0.9, bz));
+        // A churrasqueira e a coifa até a laje.
+        final (cx0, _) = _xz(xb - 0.8, 0);
+        gourmet.caixa(
+            MateriaisMaquete.tinta.nome, (cx0, p + 0.9, az), (bx, p + 1.6, bz));
+        gourmet.caixa(concreto, (cx0 + 0.15, p + 1.6, az),
+            (bx - 0.15, niveis.lajeFundo, bz));
+      }
+    }
+    if (temRipado) ripado.translacao = (0, NiveisMaquete.piso, 0);
   }
 
   /// Escada em U dentro de cada cômodo "escada": dois lances de concreto,

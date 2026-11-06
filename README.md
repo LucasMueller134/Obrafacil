@@ -73,6 +73,7 @@ Um aplicativo **Android** com **três perfis de acesso** e **fluxo de aprovaçã
 **Maquete e planta**
 - **Maquete 3D** da obra que se constrói conforme o cronograma: fundação, estrutura, alvenaria fiada a fiada, cobertura, instalações, reboco, revestimentos, pintura e acabamento. O que falta aparece tracejado.
 - **Modelos prontos:** sem o projeto em mãos, o dono escolhe **casa** (m², quartos, térrea ou sobrado), **geminado** (2, 3 ou 4 casas iguais) ou **prédio** (apartamentos, andares e m² de cada um) e o app monta a planta na hora, com cômodos, portas, janelas, escada, quintal, garagem e muros
+- Todos os modelos seguem o mesmo estilo de casa moderna: garagem coberta (1 ou 2 carros, conforme a largura), sala e cozinha integradas, suíte com closet e sacada de vidro, lavabo, lavanderia, área gourmet com churrasqueira quando a área passa de uns 90 m², fachada com ripado de madeira, molduras de concreto e platibanda
 - **Planta da obra:** quem quer a casa exata envia o projeto real (foto, PDF, imagem ou DXF), a IA lê paredes, portas, janelas e cômodos e o dono confere numa tela de revisão antes de confirmar
 - A maquete passa a ser **gerada no próprio aparelho a partir da planta**, igual à casa de verdade, com quantos pavimentos ela tiver (sobrado e prédio sobem andar por andar)
 - Planta tocável com a ficha de cada cômodo (medidas, área, piso, pé-direito, portas e janelas) e **vista 360°** por dentro

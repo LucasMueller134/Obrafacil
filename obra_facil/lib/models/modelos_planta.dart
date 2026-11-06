@@ -86,10 +86,10 @@ class PedidoModelo {
     if (quartos < 1 || quartos > maxQuartos) {
       return 'De 1 a $maxQuartos quartos.';
     }
-    // Cada quarto pede uns 9 m² e o resto da casa uns 22.
-    final porPavimento = sobrado ? area / 2 : area;
-    final precisa = sobrado ? quartos * 9.0 + 6 : quartos * 9.0 + 22;
-    if (porPavimento < precisa) {
+    // Cada quarto pede uns 10 m² e o resto da casa uns 24; o sobrado, com
+    // garagem, hall, escada e suíte, começa nuns 80.
+    final precisa = sobrado ? 80.0 + quartos * 15 : quartos * 10.0 + 24;
+    if (area < precisa) {
       return 'Pouca área para $quartos quartos: aumente os m² ou tire um '
           'quarto.';
     }
@@ -164,20 +164,43 @@ abstract final class ModelosPlanta {
   }
 
   // ------------------------------------------------------------ casas
+  //
+  // O estilo de referência (sobrado geminado moderno): garagem coberta na
+  // frente, embaixo do andar de cima; hall de entrada com ripado ao lado,
+  // de onde sai a escada; sala, jantar e cozinha integrados; lavabo e
+  // lavanderia; área gourmet aberta para o quintal nos fundos. Em cima, a
+  // suíte com closet e sacada de vidro na frente, os quartos, o banheiro e
+  // a circulação. A térrea segue o mesmo jeito, num pavimento só.
 
   static const double _lateral = 1.0;
   static const double _fundos = 3.0;
-  static const double _frente = 5.5;
+
+  /// Profundidade da garagem coberta (um carro de 4,6 m e folga).
+  static const double _garagem = 5.0;
+
+  /// Faixa do hall e da escada, ao lado da garagem.
+  static const double _faixa = 2.5;
+
+  /// Fundo da área gourmet.
+  static const double _gourmet = 3.0;
 
   static PlantaObra _casas(PedidoModelo p, int n) {
     final unidades = [
       for (var i = 0; i < n; i++)
-        _unidadeCasa('u${i + 1}-', p.area, p.quartos, p.sobrado,
-            n == 1 ? null : 'Casa ${i + 1}'),
+        p.sobrado
+            ? _sobrado('u${i + 1}-', p.area, p.quartos,
+                n == 1 ? null : 'Casa ${i + 1}')
+            : _terrea('u${i + 1}-', p.area, p.quartos,
+                n == 1 ? null : 'Casa ${i + 1}',
+                portaDaFrente: true),
     ];
-    final wu = unidades.first.largura, du = unidades.first.profundidade;
+    final modelo = unidades.first;
+    final wu = modelo.largura, du = modelo.profundidade;
+    // Com garagem coberta, na frente só o acesso e um jardim; sem ela, a
+    // garagem descoberta.
+    final frente = modelo.garagemCoberta ? 2.0 : 5.5;
     final largura = _lateral * 2 + n * wu;
-    final profundidade = _fundos + du + _frente;
+    final profundidade = _fundos + du + frente;
 
     final terreo = _Pavimento();
     final superior = _Pavimento();
@@ -189,19 +212,52 @@ abstract final class ModelosPlanta {
       final nomeUnidade = n == 1 ? null : 'Casa ${i + 1}';
       final x0 = i == 0 ? 0.0 : ox, x1 = i == n - 1 ? largura : ox + wu;
       final prefixo = 'u${i + 1}-';
+      final yf = _fundos + du;
       terreo.cels.addAll([
-        _Cel('${prefixo}garagem', 'Garagem', 'garagem', x0, _fundos + du, x1,
-            profundidade,
-            coberto: false, piso: PisoComodo.garagem, unidade: nomeUnidade),
+        if (u.garagemCoberta) ...[
+          // O acesso dos carros fica aberto para a rua (sem muro); o
+          // jardim, na frente do hall, tem o portão de pedestre.
+          _Cel('${prefixo}acesso', 'Acesso da garagem', 'garagem', x0, yf,
+              ox + u.garagemAte, profundidade,
+              coberto: false,
+              piso: PisoComodo.garagem,
+              unidade: nomeUnidade,
+              aberto: true),
+          _Cel(
+              '${prefixo}jardim',
+              'Jardim',
+              'jardim',
+              ox + u.garagemAte,
+              yf,
+              u.frenteAte == null || u.frenteAte! >= wu - 0.01
+                  ? x1
+                  : ox + u.frenteAte!,
+              profundidade,
+              coberto: false,
+              piso: PisoComodo.grama,
+              unidade: nomeUnidade,
+              portao: 1.0),
+          // O jardim do lado da garagem e do hall (térrea larga).
+          if (u.frenteAte != null && u.frenteAte! < wu - 0.01)
+            _Cel('${prefixo}jardim-2', 'Jardim', 'jardim', ox + u.frenteAte!,
+                _fundos + u.corpoAte!, x1, profundidade,
+                coberto: false, piso: PisoComodo.grama, unidade: nomeUnidade),
+        ] else
+          _Cel('${prefixo}garagem', 'Garagem', 'garagem', x0, yf, x1,
+              profundidade,
+              coberto: false,
+              piso: PisoComodo.garagem,
+              unidade: nomeUnidade,
+              portao: 2.8),
         _Cel('${prefixo}quintal', 'Quintal', 'quintal', x0, 0, x1, _fundos,
             coberto: false, piso: PisoComodo.grama, unidade: nomeUnidade),
         if (i == 0)
           _Cel('${prefixo}lateral-e', 'Corredor lateral', 'circulacao', 0,
-              _fundos, _lateral, _fundos + du,
+              _fundos, _lateral, yf,
               coberto: false, piso: PisoComodo.cimento, unidade: nomeUnidade),
         if (i == n - 1)
           _Cel('${prefixo}lateral-d', 'Corredor lateral', 'circulacao',
-              largura - _lateral, _fundos, largura, _fundos + du,
+              largura - _lateral, _fundos, largura, yf,
               coberto: false, piso: PisoComodo.cimento, unidade: nomeUnidade),
       ]);
     }
@@ -220,33 +276,42 @@ abstract final class ModelosPlanta {
     );
   }
 
-  /// Uma casa (térrea ou sobrado) em coordenadas locais, com a frente em y
-  /// alto e o fundo em y = 0.
-  static _Casa _unidadeCasa(
-      String pre, double area, int q, bool sobrado, String? unidade) {
-    return sobrado
-        ? _sobrado(pre, area, q, unidade)
-        : _terrea(pre, area, q, unidade, portaDaFrente: true);
-  }
-
   static const double _corredor = 1.1;
 
-  /// Térrea: na frente a sala e a cozinha; atrás, os quartos e o banheiro
-  /// em duas colunas, com o corredor no meio.
+  /// Térrea: na frente a garagem coberta e o hall de entrada; depois a
+  /// cozinha (ao lado da garagem) e a sala integradas; atrás os quartos e
+  /// os banheiros em duas colunas com o corredor no meio; nos fundos a
+  /// área gourmet. Casa pequena fica sem garagem coberta e sem gourmet.
+  ///
+  /// [apartamento]: sem garagem, hall e gourmet; a sala ganha uma sacada
+  /// de vidro na frente (o apartamento do prédio).
   static _Casa _terrea(String pre, double area, int q, String? unidade,
-      {required bool portaDaFrente}) {
+      {required bool portaDaFrente, bool apartamento = false}) {
     final nb = q >= 3 ? 2 : 1;
-    // Abaixo de 50 m², a área de serviço fica junto da cozinha.
-    final temLavanderia = area >= 50;
-    var aq = (area * 0.14).clamp(7.5, 14.0);
     final largura = (math.sqrt(area) * 0.95).clamp(6.0, 14.0);
     final cw = (largura - _corredor) / 2;
+    // O que entra além do corpo da casa, se couber. A garagem vai até 2
+    // carros (5,4 m); do lado dela, o hall e um jardim.
+    var garagem = !apartamento && area >= 60;
+    var gourmet = !apartamento && area >= 90;
+    final hw = math.min(2.2, largura - 2.8);
+    final gw = math.min(largura - hw, 5.4);
+    double extras() =>
+        (garagem ? (gw + hw) * _garagem : 0) +
+        (gourmet ? largura * _gourmet : 0);
+    // A garagem e o gourmet só entram se a casa continuar folgada.
+    if (area - extras() < q * 18.0 + 40) gourmet = false;
+    if (area - extras() < q * 13.0 + 32) garagem = false;
+    final corpo = area - extras();
+    final temLavanderia = corpo >= 45;
+    var aq = (corpo * 0.14).clamp(7.5, 14.0);
     late _Colunas col;
     late double social;
     for (var tentativa = 0; tentativa < 16; tentativa++) {
       col = _Colunas(cw);
+      // A lavanderia encosta na cozinha (coluna da esquerda, em cima).
       if (temLavanderia) {
-        col.direita.add(_Item(
+        col.esquerda.add(_Item(
             'lavanderia', 'Lavanderia', 'lavanderia', 3.0, 1.5,
             piso: PisoComodo.ceramica));
       }
@@ -256,10 +321,16 @@ abstract final class ModelosPlanta {
             piso: PisoComodo.ceramica));
       }
       for (var k = 0; k < q; k++) {
-        col.naMaisCurta(_Item('quarto-${k + 1}',
-            q == 1 ? 'Quarto' : 'Quarto ${k + 1}', 'quarto', aq, 2.6));
+        col.naMaisCurta(_Item(
+            'quarto-${k + 1}',
+            k == 0 && q >= 2
+                ? 'Suíte'
+                : (q == 1 ? 'Quarto' : 'Quarto ${k + 1}'),
+            'quarto',
+            k == 0 && q >= 2 ? aq * 1.25 : aq,
+            2.6));
       }
-      social = (area - largura * col.profundidade) / largura;
+      social = (corpo - largura * col.profundidade) / largura;
       if (social < 3.0 && aq > 7.0) {
         aq = math.max(7.0, aq * 0.93);
         continue;
@@ -272,32 +343,40 @@ abstract final class ModelosPlanta {
     }
     social = math.max(3.0, social);
     final db = col.profundidade;
-    final d = db + social;
+    final y0 = gourmet ? _gourmet : 0.0;
+    final ySocial = y0 + db;
+    final d0 = ySocial + social;
+    // No apartamento, a sacada sai 1,3 m na frente da sala.
+    final d = d0 + (garagem ? _garagem : 0) + (apartamento ? 1.3 : 0);
     final casa = _Casa(largura, d);
     final t = casa.terreo;
     // Fundos: as duas colunas e o corredor.
-    col.colocar(t, pre, unidade, 0, db);
-    final corredor = _Cel(
-        '${pre}corredor', 'Corredor', 'circulacao', cw, 0, cw + _corredor, db,
+    col.colocar(t, pre, unidade, y0, ySocial);
+    final corredor = _Cel('${pre}corredor', 'Corredor', 'circulacao', cw, y0,
+        cw + _corredor, ySocial,
         unidade: unidade);
     t.cels.add(corredor);
-    // Frente: sala e cozinha (a cozinha fica em cima da coluna da direita,
-    // ao lado da lavanderia).
+    // A cozinha à esquerda (ao lado da garagem e da lavanderia) e a sala à
+    // direita, embaixo do hall; o corredor abre na sala.
     final wk = math.min(math.max(largura * 0.36, 2.6), cw - 0.1);
-    final sala = _Cel('${pre}sala', 'Sala', 'sala', 0, db, largura - wk, d,
-        unidade: unidade);
     final cozinha = _Cel(
         '${pre}cozinha',
         temLavanderia ? 'Cozinha' : 'Cozinha e serviço',
         'cozinha',
-        largura - wk,
-        db,
-        largura,
-        d,
+        0,
+        ySocial,
+        wk,
+        d0,
         piso: PisoComodo.ceramica,
         unidade: unidade);
+    final sacada = apartamento;
+    final sala = _Cel('${pre}sala', 'Sala de estar e jantar', 'sala', wk,
+        ySocial, largura, d0,
+        unidade: unidade);
     t.cels.addAll([sala, cozinha]);
-    t.ligar(sala.id, cozinha.id, TipoAbertura.passagem, 1.2);
+    // Cozinha integrada: a passagem é larga.
+    t.ligar(sala.id, cozinha.id, TipoAbertura.passagem,
+        math.max(1.2, social - 0.6));
     t.ligar(sala.id, corredor.id, TipoAbertura.passagem, 0.9);
     if (temLavanderia) {
       t.ligar(cozinha.id, '${pre}lavanderia', TipoAbertura.porta, 0.8);
@@ -306,88 +385,219 @@ abstract final class ModelosPlanta {
       t.ligar('$pre${item.id}', corredor.id, TipoAbertura.porta,
           item.tipo == 'banheiro' ? 0.7 : 0.8);
     }
-    if (portaDaFrente) t.porFora(sala.id, _Lado.frente, 0.9);
+    if (sacada) {
+      final c = _Cel(
+          '${pre}sacada', 'Sacada', 'varanda', wk, d0, largura, d0 + 1.3,
+          piso: PisoComodo.ceramica,
+          unidade: unidade,
+          guardaCorpo: true,
+          fachada: 'moldura');
+      t.cels.add(c);
+      t.ligar(sala.id, c.id, TipoAbertura.portaCorrer, 2.0);
+    }
+    if (garagem) {
+      // Frente: a garagem coberta (sem paredes, só pilares) e o hall.
+      final g = _Cel('${pre}garagem', 'Garagem', 'garagem', 0, d0, gw, d,
+          piso: PisoComodo.garagem,
+          unidade: unidade,
+          aberto: true,
+          fachada: 'moldura');
+      final hall = _Cel(
+          '${pre}hall', 'Hall de entrada', 'hall', gw, d0, gw + hw, d,
+          piso: PisoComodo.porcelanato, unidade: unidade, fachada: 'ripado');
+      t.cels.addAll([g, hall]);
+      t.ligar(hall.id, sala.id, TipoAbertura.passagem, 1.0);
+      t.ligar(g.id, hall.id, TipoAbertura.porta, 0.8);
+      t.ligar(g.id, cozinha.id, TipoAbertura.porta, 0.8);
+      if (portaDaFrente) t.porFora(hall.id, _Lado.frente, 0.9);
+      casa
+        ..garagemCoberta = true
+        ..garagemAte = gw
+        ..frenteAte = gw + hw
+        ..corpoAte = d0;
+    } else if (portaDaFrente) {
+      t.porFora(sala.id, _Lado.frente, 0.9);
+    }
+    if (gourmet) {
+      final g = _Cel(
+          '${pre}gourmet', 'Área gourmet', 'gourmet', 0, 0, largura, _gourmet,
+          piso: PisoComodo.ceramica, unidade: unidade, aberto: true);
+      t.cels.add(g);
+      t.ligar(g.id, corredor.id, TipoAbertura.passagem, 0.9);
+    }
     casa.entrada = corredor.id;
     return casa;
   }
 
-  /// Sobrado: embaixo a sala, a cozinha, o lavabo, a lavanderia e a escada;
-  /// em cima os quartos e os banheiros. A escada fica no mesmo lugar nos
-  /// dois pavimentos (fundo da coluna da direita).
+  /// Sobrado em duas faixas: a da esquerda (garagem, sala e jantar,
+  /// cozinha; em cima a sacada, a suíte, os quartos e o banheiro) e a da
+  /// direita (hall de entrada, escada, lavabo, lavanderia; em cima o
+  /// banheiro e o closet da suíte, a escada e a circulação). A escada fica
+  /// no mesmo lugar nos dois pavimentos. A área gourmet, nos fundos, é só
+  /// do térreo.
   static _Casa _sobrado(String pre, double area, int q, String? unidade) {
-    const escada = 2.6;
-    final porPavimento = area / 2;
-    final nb = q >= 2 ? 2 : 1;
-    var aq = (porPavimento * 0.24).clamp(8.0, 24.0);
-    late double largura, cw, d, dbTerreo;
-    late _Colunas cima, baixo;
-    for (var tentativa = 0; tentativa < 12; tentativa++) {
-      largura = (math.sqrt(porPavimento) * 0.95).clamp(6.2, 14.0);
-      cw = (largura - _corredor) / 2;
-      cima = _Colunas(cw)..escadaNoFundo = escada;
-      for (var b = 0; b < nb; b++) {
-        cima.direita.add(_Item('banheiro-${b + 1}',
-            nb == 1 ? 'Banheiro' : 'Banheiro ${b + 1}', 'banheiro', 3.6, 1.7,
-            piso: PisoComodo.ceramica));
+    const r = _faixa;
+    // Faixa da direita, de frente para trás (iguais nos dois pavimentos
+    // até a escada).
+    const hall = 3.4, escada = 2.7, lavabo = 1.6;
+    const banhoSuite = 2.0, closet = 1.4, sacada = 1.3;
+    // Mínimos da faixa da esquerda.
+    const sala0 = 2.8, cozinha0 = 2.4, suite0 = 3.2, quarto0 = 2.6;
+    final temGourmet = area >= 150;
+    final dMin = [
+      _garagem + sala0 + cozinha0,
+      hall + escada + lavabo + 1.6,
+      sacada + suite0 + (q - 1) * quarto0 + 1.7,
+      banhoSuite + closet + escada + 1.0,
+    ].reduce(math.max);
+    // Largura e fundo do corpo para a área pedida (os dois pavimentos e o
+    // gourmet): lote estreito e fundo, como o de referência.
+    var largura = 6.0, d = dMin;
+    for (var i = 0; i < 6; i++) {
+      final corpo = (area - (temGourmet ? largura * _gourmet : 0)) / 2;
+      d = math.max(dMin, math.sqrt(corpo) * 1.35);
+      largura = math.max(5.5, corpo / d);
+      if (largura > 12) {
+        largura = 12;
+        d = math.max(dMin, corpo / largura);
       }
-      for (var k = 0; k < q; k++) {
-        cima.naMaisCurta(_Item('quarto-${k + 1}',
-            q == 1 ? 'Quarto' : 'Quarto ${k + 1}', 'quarto', aq, 2.6));
-      }
-      baixo = _Colunas(cw)..escadaNoFundo = escada;
-      baixo.esquerda.add(_Item('cozinha', 'Cozinha', 'cozinha',
-          math.max(porPavimento * 0.16, 8), 2.8,
-          piso: PisoComodo.ceramica));
-      baixo.direita.addAll([
-        _Item('lavabo', 'Lavabo', 'banheiro', 2.2, 1.3,
-            piso: PisoComodo.ceramica),
-        _Item('lavanderia', 'Lavanderia', 'lavanderia', 3.0, 1.4,
-            piso: PisoComodo.ceramica),
-      ]);
-      dbTerreo = baixo.profundidade;
-      // A sala fica com o que sobra da área pedida (no mínimo 3,2 m).
-      d = math.max(
-          math.max(cima.profundidade, dbTerreo + 3.2), porPavimento / largura);
-      final real = largura * d;
-      if (real > porPavimento * 1.1 && aq > 7.5) {
-        aq = math.max(7.5, aq * 0.93);
-        continue;
-      }
-      if (cima.profundidade < d * 0.85 && aq < 24) {
-        aq = math.min(24, aq * 1.08);
-        continue;
-      }
-      break;
     }
-    final casa = _Casa(largura, d)..superior = _Pavimento();
-    // Térreo.
+    final l = largura - r;
+    final db = math.max(1.7, 3.6 / l);
+    // A sobra vai para a sala (60%) e a cozinha embaixo; em cima, para a
+    // suíte e os quartos.
+    final sobraBaixo = d - (_garagem + sala0 + cozinha0);
+    final dk = cozinha0 + sobraBaixo * 0.4;
+    final sobraCima = d - (sacada + suite0 + (q - 1) * quarto0 + db);
+    final dSuite = suite0 + (q == 1 ? sobraCima : sobraCima * 0.4);
+    final dq = q == 1 ? 0.0 : quarto0 + sobraCima * 0.6 / (q - 1);
+    final m = (dk: dk, dSuite: dSuite, dq: dq, db: db);
+    final y0 = temGourmet ? _gourmet : 0.0;
+    final dTotal = y0 + d;
+    final casa = _Casa(largura, dTotal)
+      ..superior = _Pavimento()
+      ..garagemCoberta = true
+      ..garagemAte = l;
+
+    /// Empilha [itens] (nome, tipo, profundidade) de cima (y = dTotal)
+    /// para baixo na faixa x0..x1; o último estica até o fundo y0.
+    List<_Cel> empilhar(String prefixo, double x0, double x1,
+        List<(String, String, String, double, Map<String, Object?>)> itens) {
+      final saida = <_Cel>[];
+      var y = dTotal;
+      for (var i = 0; i < itens.length; i++) {
+        final (id, nome, tipo, h, op) = itens[i];
+        final fundo = i == itens.length - 1 ? y0 : y - h;
+        saida.add(_Cel('$prefixo$id', nome, tipo, x0, fundo, x1, y,
+            piso: op['piso'] as PisoComodo? ?? PisoComodo.porcelanato,
+            unidade: unidade,
+            aberto: op['aberto'] as bool? ?? false,
+            guardaCorpo: op['guarda'] as bool? ?? false,
+            fachada: op['fachada'] as String?));
+        y = fundo;
+      }
+      return saida;
+    }
+
+    // Térreo. A sala fica com a sobra da faixa da esquerda.
     final t = casa.terreo;
-    baixo.colocar(t, pre, unidade, 0, dbTerreo);
-    final corredor = _Cel('${pre}corredor', 'Corredor', 'circulacao', cw, 0,
-        cw + _corredor, dbTerreo,
-        unidade: unidade);
-    final sala = _Cel('${pre}sala', 'Sala', 'sala', 0, dbTerreo, largura, d,
-        unidade: unidade);
-    t.cels.addAll([corredor, sala]);
-    t.ligar(sala.id, corredor.id, TipoAbertura.passagem, 0.9);
-    t.ligar(sala.id, '${pre}cozinha', TipoAbertura.passagem, 1.5);
-    t.ligar('${pre}lavabo', corredor.id, TipoAbertura.porta, 0.7);
-    t.ligar('${pre}lavanderia', corredor.id, TipoAbertura.porta, 0.8);
-    t.ligar('${pre}escada', corredor.id, TipoAbertura.passagem, 0.9);
-    t.porFora(sala.id, _Lado.frente, 0.9);
-    // Superior.
-    final s = casa.superior!;
-    cima.colocar(s, '${pre}s-', unidade, 0, d);
-    final circ = _Cel('${pre}s-circulacao', 'Circulação', 'circulacao', cw, 0,
-        cw + _corredor, d,
-        unidade: unidade);
-    s.cels.add(circ);
-    for (final item in [...cima.esquerda, ...cima.direita]) {
-      s.ligar('${pre}s-${item.id}', circ.id, TipoAbertura.porta,
-          item.tipo == 'banheiro' ? 0.7 : 0.8);
+    final dsReal = d - _garagem - m.dk;
+    t.cels
+      ..addAll(empilhar(pre, 0, l, [
+        (
+          'garagem',
+          'Garagem',
+          'garagem',
+          _garagem,
+          {'piso': PisoComodo.garagem, 'aberto': true, 'fachada': 'moldura'}
+        ),
+        ('sala', 'Sala de estar e jantar', 'sala', dsReal, {}),
+        ('cozinha', 'Cozinha', 'cozinha', m.dk, {'piso': PisoComodo.ceramica}),
+      ]))
+      ..addAll(empilhar(pre, l, largura, [
+        ('hall', 'Hall de entrada', 'hall', hall, {'fachada': 'ripado'}),
+        ('escada', 'Escada', 'escada', escada, {'piso': PisoComodo.cimento}),
+        ('lavabo', 'Lavabo', 'banheiro', lavabo, {'piso': PisoComodo.ceramica}),
+        (
+          'lavanderia',
+          'Lavanderia',
+          'lavanderia',
+          0,
+          {'piso': PisoComodo.ceramica}
+        ),
+      ]));
+    t.porFora('${pre}hall', _Lado.frente, 0.9);
+    t.ligar('${pre}hall', '${pre}garagem', TipoAbertura.porta, 0.8);
+    t.ligar('${pre}hall', '${pre}escada', TipoAbertura.passagem, 1.2);
+    t.ligar('${pre}escada', '${pre}sala', TipoAbertura.passagem, 0.9);
+    t.ligar('${pre}sala', '${pre}cozinha', TipoAbertura.passagem,
+        math.max(1.2, l - 0.6));
+    t.ligarAoMelhor('${pre}lavabo', ['${pre}sala', '${pre}cozinha'],
+        TipoAbertura.porta, 0.7);
+    t.ligarAoMelhor('${pre}lavanderia', ['${pre}cozinha', '${pre}sala'],
+        TipoAbertura.porta, 0.8);
+    if (temGourmet) {
+      t.cels.add(_Cel(
+          '${pre}gourmet', 'Área gourmet', 'gourmet', 0, 0, largura, _gourmet,
+          piso: PisoComodo.ceramica, unidade: unidade, aberto: true));
+      t.ligar('${pre}gourmet', '${pre}cozinha', TipoAbertura.portaCorrer,
+          math.min(2.4, l - 0.6));
     }
-    s.ligar('${pre}s-escada', circ.id, TipoAbertura.passagem, 0.9);
-    casa.entrada = corredor.id;
+
+    // Superior: os quartos esticam para preencher a faixa da esquerda.
+    final s = casa.superior!;
+    final ps = '${pre}s-';
+    s.cels
+      ..addAll(empilhar(ps, 0, l, [
+        (
+          'sacada',
+          'Sacada',
+          'varanda',
+          sacada,
+          {
+            'piso': PisoComodo.ceramica,
+            'guarda': true,
+            'fachada': 'moldura',
+          }
+        ),
+        ('suite', 'Suíte', 'quarto', m.dSuite, {}),
+        (
+          'banheiro',
+          'Banheiro',
+          'banheiro',
+          m.db,
+          {'piso': PisoComodo.ceramica}
+        ),
+        for (var k = 2; k <= q; k++)
+          ('quarto-$k', 'Quarto $k', 'quarto', m.dq, {}),
+      ]))
+      ..addAll(empilhar(ps, l, largura, [
+        (
+          'banho-suite',
+          'Banheiro da suíte',
+          'banheiro',
+          banhoSuite,
+          {'piso': PisoComodo.ceramica, 'fachada': 'ripado'}
+        ),
+        ('closet', 'Closet', 'closet', closet, {}),
+        ('escada', 'Escada', 'escada', escada, {'piso': PisoComodo.cimento}),
+        ('circulacao', 'Circulação', 'circulacao', 0, {}),
+      ]));
+    s.ligar('${ps}suite', '${ps}sacada', TipoAbertura.portaCorrer,
+        math.min(2.4, l - 0.6));
+    // Suíte → closet → banheiro.
+    s.ligar('${ps}closet', '${ps}banho-suite', TipoAbertura.porta, 0.7);
+    s.ligar('${ps}suite', '${ps}closet', TipoAbertura.passagem, 0.8);
+    s.ligarAoMelhor('${ps}suite', ['${ps}escada', '${ps}circulacao'],
+        TipoAbertura.porta, 0.8);
+    s.ligar('${ps}escada', '${ps}circulacao', TipoAbertura.passagem, 1.2);
+    for (var k = 2; k <= q; k++) {
+      s.ligarAoMelhor('${ps}quarto-$k', ['${ps}circulacao', '${ps}escada'],
+          TipoAbertura.porta, 0.8);
+    }
+    s.ligarAoMelhor('${ps}banheiro', ['${ps}circulacao', '${ps}escada'],
+        TipoAbertura.porta, 0.7);
+    casa.entrada = '${pre}hall';
     return casa;
   }
 
@@ -402,7 +612,8 @@ abstract final class ModelosPlanta {
   static PlantaObra _predio(PedidoModelo p) {
     final k = p.aptosPorAndar;
     final frente = (k / 2).ceil(), fundos = k ~/ 2;
-    final modelo = _terrea('', p.area, p.quartos, null, portaDaFrente: false);
+    final modelo = _terrea('', p.area, p.quartos, null,
+        portaDaFrente: false, apartamento: true);
     final wu = modelo.largura, du = modelo.profundidade;
     final yCorredor = fundos > 0 ? du : 0.0;
     final yFrente = yCorredor + _corredorPredio;
@@ -419,15 +630,15 @@ abstract final class ModelosPlanta {
       var n = 0;
       for (var i = 0; i < frente; i++) {
         n++;
-        final apto =
-            _terrea('a$n-', p.area, p.quartos, 'Apto $n', portaDaFrente: false);
+        final apto = _terrea('a$n-', p.area, p.quartos, 'Apto $n',
+            portaDaFrente: false, apartamento: true);
         pav.juntar(apto.terreo, ox + i * wu, oy + yFrente);
         pav.ligar(apto.entrada, 'corredor', TipoAbertura.porta, 0.9);
       }
       for (var i = 0; i < fundos; i++) {
         n++;
-        final apto =
-            _terrea('a$n-', p.area, p.quartos, 'Apto $n', portaDaFrente: false);
+        final apto = _terrea('a$n-', p.area, p.quartos, 'Apto $n',
+            portaDaFrente: false, apartamento: true);
         // Fila dos fundos: espelhada, com a sala para o fundo do terreno.
         pav.juntar(apto.terreo, ox + i * wu, oy, espelharY: du);
         pav.ligar(apto.entrada, 'corredor', TipoAbertura.porta, 0.9);
@@ -477,7 +688,7 @@ abstract final class ModelosPlanta {
         if (temEntrada)
           _Cel('entrada', terreo ? 'Entrada' : 'Circulação', 'hall', xn,
               oy + math.max(h1, e1), xn + _nucleo, oy + dPredio,
-              piso: PisoComodo.ceramica),
+              piso: PisoComodo.ceramica, fachada: 'ripado'),
         if (temDeposito)
           _Cel('deposito', 'Depósito', 'despensa', xn, oy, xn + _nucleo,
               oy + fundo,
@@ -499,7 +710,7 @@ abstract final class ModelosPlanta {
         pav.cels.addAll([
           _Cel('frente', 'Frente', 'jardim', 0, atras + dPredio, largura,
               profundidade,
-              coberto: false, piso: PisoComodo.cimento),
+              coberto: false, piso: PisoComodo.cimento, portao: 3.0),
           _Cel('fundos', 'Fundos', 'quintal', 0, 0, largura, atras,
               coberto: false, piso: PisoComodo.grama),
           _Cel('lateral-e', 'Lateral', 'circulacao', 0, atras, lat,
@@ -553,6 +764,7 @@ abstract final class ModelosPlanta {
       profundidade: _r(profundidade),
       alturas: const AlturasPlanta(peDireito: 2.6, porta: 2.1, muro: 2.0),
       paredes: t.paredes,
+      pilares: t.pilares,
       comodos: t.comodos,
       nomeTerreo: 'Térreo',
       andares: [
@@ -562,6 +774,7 @@ abstract final class ModelosPlanta {
             return AndarPlanta(
               nome: nomeAndar,
               paredes: c.paredes,
+              pilares: c.pilares,
               comodos: c.comodos,
               repeticoes: rep,
             );
@@ -581,7 +794,13 @@ enum _Lado { frente, fundos, esquerda, direita }
 /// Um cômodo como retângulo pelas linhas de centro das paredes.
 class _Cel {
   _Cel(this.id, this.nome, this.tipo, this.x0, this.y0, this.x1, this.y1,
-      {this.coberto = true, this.piso = PisoComodo.porcelanato, this.unidade});
+      {this.coberto = true,
+      this.piso = PisoComodo.porcelanato,
+      this.unidade,
+      this.aberto = false,
+      this.guardaCorpo = false,
+      this.fachada,
+      this.portao});
 
   String id;
   final String nome;
@@ -591,6 +810,19 @@ class _Cel {
   final PisoComodo piso;
   final String? unidade;
 
+  /// Sem paredes para fora: a garagem coberta e a área gourmet ficam só nos
+  /// pilares; o acesso da garagem fica sem muro para a rua.
+  final bool aberto;
+
+  /// A parede de fora é mureta com vidro (a sacada).
+  final bool guardaCorpo;
+
+  /// Acabamento da fachada na maquete ("ripado", "moldura").
+  final String? fachada;
+
+  /// Largura do portão no muro da frente deste quintal.
+  final double? portao;
+
   _Cel mover(double dx, double dy, {double? espelharY, String prefixo = ''}) {
     var a = y0, b = y1;
     if (espelharY != null) {
@@ -598,20 +830,29 @@ class _Cel {
       b = espelharY - y0;
     }
     return _Cel('$prefixo$id', nome, tipo, x0 + dx, a + dy, x1 + dx, b + dy,
-        coberto: coberto, piso: piso, unidade: unidade);
+        coberto: coberto,
+        piso: piso,
+        unidade: unidade,
+        aberto: aberto,
+        guardaCorpo: guardaCorpo,
+        fachada: fachada,
+        portao: portao);
   }
 }
 
 /// Porta, passagem ou janela pedida entre dois cômodos ([b]) ou para fora
 /// ([lado]).
 class _Lig {
-  _Lig(this.a, this.b, this.lado, this.tipo, this.largura);
+  _Lig(this.a, this.b, this.lado, this.tipo, this.largura, {this.candidatos});
 
   final String a;
   final String? b;
   final _Lado? lado;
   final TipoAbertura tipo;
   final double largura;
+
+  /// Ligar ao vizinho, entre estes, com quem a parede comum é maior.
+  final List<String>? candidatos;
 }
 
 class _Pavimento {
@@ -623,6 +864,11 @@ class _Pavimento {
 
   void porFora(String a, _Lado lado, double largura) =>
       ligs.add(_Lig(a, null, lado, TipoAbertura.porta, largura));
+
+  /// Porta para o vizinho (entre [candidatos]) com a maior parede comum.
+  void ligarAoMelhor(String a, List<String> candidatos, TipoAbertura tipo,
+          double largura) =>
+      ligs.add(_Lig(a, null, null, tipo, largura, candidatos: candidatos));
 
   /// Junta [outro] deslocado (e espelhado em y, na fila dos fundos do
   /// prédio: um espelho troca frente e fundo, mas não as ligações).
@@ -639,7 +885,8 @@ class _Pavimento {
           _ => lado,
         };
       }
-      ligs.add(_Lig(l.a, l.b, lado, l.tipo, l.largura));
+      ligs.add(
+          _Lig(l.a, l.b, lado, l.tipo, l.largura, candidatos: l.candidatos));
     }
   }
 }
@@ -655,6 +902,15 @@ class _Casa {
 
   /// O cômodo por onde se entra (o corredor), já com o prefixo.
   String entrada = '';
+
+  /// Tem garagem coberta na frente, de x = 0 até [garagemAte].
+  bool garagemCoberta = false;
+  double garagemAte = 0;
+
+  /// A frente coberta (garagem e hall) vai até x = [frenteAte]; do lado,
+  /// até a frente, o corpo da casa termina em y = [corpoAte] (o jardim).
+  double? frenteAte;
+  double? corpoAte;
 }
 
 /// Um cômodo a pôr numa coluna: área desejada e profundidade mínima.
@@ -804,6 +1060,18 @@ class _Construtor {
         if (cobertas.isNotEmpty) {
           final divisa = cobertas.length == 2 &&
               cobertas[0].unidade != cobertas[1].unidade;
+          if (cobertas.length == 1) {
+            final c = cobertas.first;
+            // Garagem e gourmet: abertos para fora (só os pilares).
+            if (c.aberto) continue;
+            if (c.guardaCorpo) {
+              pecas.add(_Peca(
+                  h, linha, a, b, TipoParede.muretaVidro, _interna, {c.id}));
+              continue;
+            }
+          } else if (!divisa && cobertas.every((c) => c.aberto)) {
+            continue;
+          }
           pecas.add(_Peca(
               h,
               linha,
@@ -815,9 +1083,10 @@ class _Construtor {
           continue;
         }
         // Só descobertos: muro no limite do terreno e entre quintais de
-        // unidades diferentes.
-        final muro = (terreo && noLimite && dono.length == 1) ||
-            (dono.length == 2 && dono[0].unidade != dono[1].unidade);
+        // unidades diferentes (o acesso da garagem fica aberto para a rua).
+        final muro =
+            (terreo && noLimite && dono.length == 1 && !dono.first.aberto) ||
+                (dono.length == 2 && dono[0].unidade != dono[1].unidade);
         if (muro) {
           pecas.add(_Peca(h, linha, a, b, TipoParede.muro, _interna,
               {for (final c in dono) c.id}));
@@ -913,11 +1182,28 @@ class _Construtor {
 
   void _abrir() {
     // Portas e passagens pedidas.
+    // A sacada: vidro em toda a mureta.
+    for (final w in _paredes.where((w) => w.tipo == TipoParede.muretaVidro)) {
+      w.vaos.add(AberturaPlanta(
+        id: '$prefixo-v${++_contaVaos}',
+        tipo: TipoAbertura.janela,
+        inicio: 0,
+        largura: _r(w.b - w.a),
+        peitoril: 0.15,
+        altura: 0.95,
+      ));
+    }
     for (final l in pav.ligs) {
       final a = _porId[l.a];
       if (a == null) continue;
       final List<(_Parede, double, double)> trechos;
-      if (l.b != null) {
+      if (l.candidatos != null) {
+        trechos = [
+          for (final c in l.candidatos!)
+            ..._trechos(
+                (w, p) => p.cels.length == 2 && p.cels.containsAll({l.a, c})),
+        ];
+      } else if (l.b != null) {
         final par = {l.a, l.b!};
         trechos =
             _trechos((w, p) => p.cels.length == 2 && p.cels.containsAll(par));
@@ -961,10 +1247,9 @@ class _Construtor {
         }
       }
     }
-    // Portão: no muro da frente de cada garagem (ou da frente do prédio).
+    // Portão: no muro da frente dos quintais que pedem um.
     if (terreo) {
-      for (final c in pav.cels.where(
-          (c) => !c.coberto && (c.tipo == 'garagem' || c.id == 'frente'))) {
+      for (final c in pav.cels.where((c) => !c.coberto && c.portao != null)) {
         final trechos = _trechos((w, p) =>
             p.tipo == TipoParede.muro &&
             p.cels.contains(c.id) &&
@@ -973,8 +1258,7 @@ class _Construtor {
         if (trechos.isEmpty) continue;
         trechos.sort((p, q) => (q.$3 - q.$2).compareTo(p.$3 - p.$2));
         final (w, x, y) = trechos.first;
-        _por(w, x, y, c.tipo == 'garagem' ? 2.8 : 3.0, TipoAbertura.portao,
-            altura: 2.0, minimo: 1.0);
+        _por(w, x, y, c.portao!, TipoAbertura.portao, altura: 2.0, minimo: 0.8);
       }
     }
   }
@@ -987,10 +1271,31 @@ class _Construtor {
             ate: w.horizontal ? (_r(w.b), _r(w.linha)) : (_r(w.linha), _r(w.b)),
             espessura: w.espessura,
             tipo: w.tipo,
+            altura: w.tipo == TipoParede.muretaVidro ? 1.1 : null,
             aberturas: [...w.vaos]
               ..sort((p, q) => p.inicio.compareTo(q.inicio)),
           ),
       ];
+
+  /// Pilares soltos: nos cantos da garagem coberta e da área gourmet (as
+  /// paredes não seguram a laje ali).
+  List<PilarPlanta> get pilares {
+    final saida = <PilarPlanta>[];
+    for (final c in pav.cels.where((c) => c.coberto && c.aberto)) {
+      for (final (x, y) in [
+        (c.x0, c.y0),
+        (c.x1, c.y0),
+        (c.x0, c.y1),
+        (c.x1, c.y1)
+      ]) {
+        if (saida.any((p) => (p.x - x).abs() < 0.3 && (p.y - y).abs() < 0.3)) {
+          continue;
+        }
+        saida.add(PilarPlanta(x: _r(x), y: _r(y)));
+      }
+    }
+    return saida;
+  }
 
   List<ComodoPlanta> get comodos => [
         for (final c in pav.cels)
@@ -1001,6 +1306,7 @@ class _Construtor {
             coberto: c.coberto,
             piso: c.piso,
             unidade: c.unidade,
+            fachada: c.fachada,
             retangulos: [
               () {
                 // Meia parede interna: os cômodos vizinhos se encostam por

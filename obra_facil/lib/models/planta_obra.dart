@@ -654,6 +654,7 @@ class ComodoPlanta {
     this.piso = PisoComodo.porcelanato,
     required this.retangulos,
     this.unidade,
+    this.fachada,
   });
 
   final String id;
@@ -661,6 +662,10 @@ class ComodoPlanta {
 
   /// A unidade do cômodo no geminado ou no prédio ("Casa 2", "Apto 3").
   final String? unidade;
+
+  /// Acabamento da fachada na frente do cômodo, na maquete: "ripado"
+  /// (ripas de madeira) ou "moldura" (quadro de concreto).
+  final String? fachada;
 
   /// quarto, sala, cozinha, banheiro, garagem, varanda, quintal...
   final String tipo;
@@ -686,6 +691,7 @@ class ComodoPlanta {
         'piso': piso.chave,
         'retangulos': [for (final r in retangulos) r.toMap()],
         if (unidade != null) 'unidade': unidade,
+        if (fachada != null) 'fachada': fachada,
       };
 
   /// Uma cópia com outro nome, cobertura ou piso (a revisão da planta).
@@ -698,6 +704,7 @@ class ComodoPlanta {
         piso: piso ?? this.piso,
         retangulos: retangulos,
         unidade: unidade,
+        fachada: fachada,
       );
 
   factory ComodoPlanta.fromMap(Map<String, dynamic> m, {int indice = 0}) =>
@@ -712,6 +719,7 @@ class ComodoPlanta {
             RetanguloPlanta.fromMap(_mapa(r)),
         ],
         unidade: m['unidade'] as String?,
+        fachada: m['fachada'] as String?,
       );
 }
 
