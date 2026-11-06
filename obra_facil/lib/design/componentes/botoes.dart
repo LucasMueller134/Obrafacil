@@ -106,6 +106,7 @@ class BotaoContorno extends StatelessWidget {
     required this.rotulo,
     required this.aoTocar,
     this.icone,
+    this.simbolo,
     this.grande = false,
     this.carregando = false,
     this.expandir = false,
@@ -116,6 +117,10 @@ class BotaoContorno extends StatelessWidget {
   final String rotulo;
   final VoidCallback? aoTocar;
   final IconData? icone;
+
+  /// Um desenho no lugar do [icone] (o "G" do Google, por exemplo), em
+  /// cores próprias.
+  final Widget? simbolo;
   final bool grande;
   final bool carregando;
   final bool expandir;
@@ -128,6 +133,7 @@ class BotaoContorno extends StatelessWidget {
         rotulo: rotulo,
         aoTocar: aoTocar,
         icone: icone,
+        simbolo: simbolo,
         grande: grande,
         carregando: carregando,
         expandir: expandir,
@@ -320,12 +326,14 @@ class _Botao extends StatelessWidget {
     required this.expandir,
     required this.vibrar,
     required this.dicaSemantica,
+    this.simbolo,
   });
 
   final _EstiloBotao estilo;
   final String rotulo;
   final VoidCallback? aoTocar;
   final IconData? icone;
+  final Widget? simbolo;
   final bool grande;
   final bool carregando;
   final bool expandir;
@@ -345,7 +353,8 @@ class _Botao extends StatelessWidget {
         final frente = aparencia.frente;
         final Widget? marca = carregando
             ? IndicadorCarregando(cor: frente)
-            : (icone == null ? null : Icon(icone, size: 24, color: frente));
+            : simbolo ??
+                (icone == null ? null : Icon(icone, size: 24, color: frente));
         return _Moldura(
           aparencia: aparencia,
           focado: e.focado,

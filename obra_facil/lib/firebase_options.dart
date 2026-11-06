@@ -20,6 +20,12 @@ class DefaultFirebaseOptions {
   /// True quando as chaves reais do projeto já estão configuradas.
   static bool get configurado => !android.apiKey.contains('PLACEHOLDER');
 
+  /// ID do cliente "web" do login com Google (no Firebase: Authentication →
+  /// Sign-in method → Google → Configuração do SDK da Web). Não é segredo:
+  /// vai dentro de todo app que usa o login do Google. Vazio, o botão
+  /// "Entrar com o Google" não aparece.
+  static const googleWebClientId = '';
+
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyCCi0msI8deseumFQeMIV82DnA4b6yzaNQ',
     appId: '1:1038297734342:android:dddea9d24f4515c47d8bc7',

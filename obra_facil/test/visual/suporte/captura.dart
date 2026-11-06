@@ -128,6 +128,9 @@ enum SituacaoLogin {
   /// Logado, com o e-mail ainda não confirmado (o cliente para na tela de
   /// confirmar o e-mail).
   emailPendente,
+
+  /// Entrou pelo Google com uma conta nova no app: falta o perfil.
+  contaNova,
 }
 
 /// O serviço de login falso de cada [SituacaoLogin].
@@ -137,6 +140,7 @@ AuthService servicoDeLogin(Cena cena) => switch (cena.situacao) {
       SituacaoLogin.abrindo => AuthServiceAbrindo(cena.usuario),
       SituacaoLogin.emailPendente =>
         AuthServiceFalso(cena.usuario, emailConfirmado: false),
+      SituacaoLogin.contaNova => AuthServiceContaNova(cena.usuario),
     };
 
 /// Fontes e datas em pt_BR. Chame no setUpAll do arquivo de capturas.

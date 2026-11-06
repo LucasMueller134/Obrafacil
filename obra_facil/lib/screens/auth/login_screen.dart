@@ -22,6 +22,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailCtrl = TextEditingController();
   final _senhaCtrl = TextEditingController();
   bool _carregando = false;
+  bool _carregandoGoogle = false;
   bool _senhaVisivel = false;
 
   @override
@@ -39,6 +40,19 @@ class _LoginScreenState extends State<LoginScreen> {
         .entrar(_emailCtrl.text, _senhaCtrl.text);
     if (!mounted) return;
     setState(() => _carregando = false);
+    if (erro != null) {
+      unawaited(Tato.erro());
+      mostrarAviso(context, erro);
+    }
+  }
+
+  /// Entra com a conta Google do celular. Conta nova no app segue para a
+  /// escolha do perfil (o router leva).
+  Future<void> _entrarComGoogle() async {
+    setState(() => _carregandoGoogle = true);
+    final erro = await context.read<AuthProvider>().entrarComGoogle();
+    if (!mounted) return;
+    setState(() => _carregandoGoogle = false);
     if (erro != null) {
       unawaited(Tato.erro());
       mostrarAviso(context, erro);
@@ -161,8 +175,22 @@ class _LoginScreenState extends State<LoginScreen> {
                     grande: true,
                     expandir: true,
                     carregando: _carregando,
-                    aoTocar: _carregando ? null : _entrar,
+                    aoTocar: _carregando || _carregandoGoogle ? null : _entrar,
                   ),
+                  if (context.read<AuthProvider>().googleDisponivel) ...[
+                    const SizedBox(height: Espaco.e24),
+                    const LinhaCota(legenda: 'Ou'),
+                    const SizedBox(height: Espaco.e16),
+                    BotaoContorno(
+                      rotulo: 'Entrar com o Google',
+                      simbolo: const LogoGoogle(),
+                      expandir: true,
+                      carregando: _carregandoGoogle,
+                      aoTocar: _carregando || _carregandoGoogle
+                          ? null
+                          : () => unawaited(_entrarComGoogle()),
+                    ),
+                  ],
                   const SizedBox(height: Espaco.e32),
                   const LinhaCota(legenda: 'Primeira vez aqui?'),
                   const SizedBox(height: Espaco.e16),

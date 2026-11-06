@@ -47,6 +47,10 @@ GoRouter criarRouter(AuthProvider auth) {
       final rotaPublica = local == '/login' || local == '/cadastro';
 
       if (auth.inicializando) return local == '/splash' ? null : '/splash';
+      // Entrou pelo Google com uma conta nova: escolhe o perfil antes.
+      if (auth.semPerfil) {
+        return local == '/completar-perfil' ? null : '/completar-perfil';
+      }
       if (!auth.logado) return rotaPublica ? null : '/login';
 
       // Cliente é gente de fora: só entra com o e-mail confirmado.
@@ -60,7 +64,9 @@ GoRouter criarRouter(AuthProvider auth) {
       if (auth.ehCliente && !local.startsWith('/cliente')) return '/cliente';
       if (!auth.ehCliente && local.startsWith('/cliente')) return '/obras';
 
-      if (rotaPublica || local == '/splash') return inicio;
+      if (rotaPublica || local == '/splash' || local == '/completar-perfil') {
+        return inicio;
+      }
       return null;
     },
     routes: [
@@ -77,15 +83,18 @@ GoRouter criarRouter(AuthProvider auth) {
         pageBuilder: (_, state) => _pagina(state, const CadastroScreen()),
       ),
       GoRoute(
-        path: '/verificar-email',
+        path: '/completar-perfil',
         pageBuilder: (_, state) =>
-            _raiz(state, const VerificarEmailScreen()),
+            _raiz(state, const CadastroScreen(completarConta: true)),
+      ),
+      GoRoute(
+        path: '/verificar-email',
+        pageBuilder: (_, state) => _raiz(state, const VerificarEmailScreen()),
       ),
       // Área do cliente: acompanha a obra, sem nenhuma tela de dinheiro.
       GoRoute(
         path: '/cliente',
-        pageBuilder: (_, state) =>
-            _raiz(state, const ClienteObrasScreen()),
+        pageBuilder: (_, state) => _raiz(state, const ClienteObrasScreen()),
         routes: [
           GoRoute(
             path: ':obraId',
@@ -200,13 +209,11 @@ GoRouter criarRouter(AuthProvider auth) {
       ),
       GoRoute(
         path: '/fornecedores',
-        pageBuilder: (_, state) =>
-            _pagina(state, const FornecedoresScreen()),
+        pageBuilder: (_, state) => _pagina(state, const FornecedoresScreen()),
       ),
       GoRoute(
         path: '/notificacoes',
-        pageBuilder: (_, state) =>
-            _pagina(state, const NotificacoesScreen()),
+        pageBuilder: (_, state) => _pagina(state, const NotificacoesScreen()),
       ),
     ],
     errorBuilder: (_, state) => Scaffold(

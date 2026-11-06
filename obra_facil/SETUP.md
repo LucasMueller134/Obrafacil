@@ -66,6 +66,35 @@ regras. Passo a passo, custos e limites:
 [docs/ia/gemini-planta.md](../docs/ia/gemini-planta.md). Sem isso o app
 funciona igual e, na planta, oferece a casa de exemplo.
 
+## 4b. Entrar com o Google (opcional)
+
+O login e o cadastro mostram **Entrar com o Google** quando
+`DefaultFirebaseOptions.googleWebClientId` (em `lib/firebase_options.dart`)
+não está vazio. Conta Google nova no app escolhe o perfil (dono, mestre ou
+cliente) e confirma o nome; quem cria a conta pelo cadastro já sai com o
+perfil escolhido. O e-mail do Google já vem confirmado.
+
+1. **Chave fixa do APK.** O Google só aceita o app assinado sempre com a
+   mesma chave. O CI assina com ela quando o repositório tem os segredos
+   `ANDROID_KEYSTORE_BASE64` (o arquivo `.jks` em base64) e
+   `ANDROID_KEYSTORE_SENHA` (**Settings → Secrets and variables → Actions**,
+   alias `obranamao`). A chave nunca entra no código (o `.gitignore`
+   bloqueia `*.jks`). Guarde uma cópia do `.jks` e da senha: sem eles, as
+   próximas versões não instalam por cima.
+2. **Impressões da chave no Firebase.** Em **Configurações do projeto →
+   Seus apps → Android** (`br.com.obrafacil.obra_facil`), **Adicionar
+   impressão digital** com o SHA-1 e o SHA-256 da chave
+   (`keytool -list -v -keystore obra-na-mao.jks -alias obranamao`).
+3. **Ligar o Google.** **Authentication → Sign-in method → Adicionar novo
+   provedor → Google → Ativar**, com o e-mail de suporte.
+4. **ID do cliente web.** Em **Google → Configuração do SDK da Web**, copie
+   o "ID do cliente da Web" (termina em `.apps.googleusercontent.com`) para
+   `googleWebClientId`. Não é segredo: vai dentro de todo app com o login do
+   Google.
+
+Para rodar localmente com o Google, assine o build de debug com a mesma
+chave ou cadastre também o SHA-1 da sua chave de debug.
+
 ## 5. Roteiro de demonstração (pitch/banca)
 
 1. Crie uma conta **Dono/Gestor** e uma obra (o cronograma padrão é gerado sozinho).

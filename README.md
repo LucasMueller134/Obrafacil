@@ -84,6 +84,7 @@ Um aplicativo **Android** com **três perfis de acesso** e **fluxo de aprovaçã
 - Relatório semanal e perguntas sobre a obra
 - Notificações: lembrete do diário, resumo da manhã, aprovações e alertas
 - Cadastro com confirmação de e-mail e CEP conferido nos Correios
+- Entrar e criar conta com o **Google** (a conta do celular, sem senha); conta nova escolhe o perfil na hora
 - Sincronização em tempo real e **modo offline**
 - Tema claro e escuro, seguindo o celular
 

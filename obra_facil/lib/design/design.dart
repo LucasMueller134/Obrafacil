@@ -14,6 +14,7 @@ export 'componentes/folha.dart';
 export 'componentes/hachura.dart';
 export 'componentes/linha_cota.dart';
 export 'componentes/linha_lista.dart';
+export 'componentes/logo_google.dart';
 export 'componentes/nota_revisao.dart';
 export 'componentes/par_com_valor.dart';
 export 'componentes/regua_cota.dart';

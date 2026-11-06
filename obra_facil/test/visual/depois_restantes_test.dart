@@ -57,6 +57,22 @@ void main() {
       situacao: SituacaoLogin.deslogado,
       acao: (t) => _tocar(t, PerfilUsuario.mestre.label),
     ));
+    // Entrou pelo Google com uma conta nova: escolhe o perfil e o nome.
+    capturarCena(Cena(
+      '19c_completar_conta_google$sufixo',
+      usuario: UsuariosExemplo.dono,
+      rota: '/completar-perfil',
+      brilho: brilho,
+      situacao: SituacaoLogin.contaNova,
+    ));
+    capturarCena(Cena(
+      '19d_completar_conta_google_nome$sufixo',
+      usuario: UsuariosExemplo.dono,
+      rota: '/completar-perfil',
+      brilho: brilho,
+      situacao: SituacaoLogin.contaNova,
+      acao: (t) => _tocar(t, PerfilUsuario.dono.label),
+    ));
     capturarCena(Cena(
       '20_verificar_email_cliente$sufixo',
       usuario: UsuariosExemplo.cliente,

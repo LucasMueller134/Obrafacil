@@ -352,9 +352,36 @@ class AuthServiceFalso implements AuthService {
   @override
   Future<void> recuperarSenha(String email) async {}
 
+  // O botão do Google aparece nas capturas como no app configurado.
+  @override
+  bool get googleDisponivel => true;
+
+  @override
+  String? get nomeDaConta => usuario.nome;
+
+  @override
+  Future<EntradaGoogle?> entrarComGoogle() async =>
+      EntradaGoogle(perfil: usuario, nome: usuario.nome, email: usuario.email);
+
+  @override
+  Future<UsuarioModel> criarPerfil({
+    required String nome,
+    required PerfilUsuario perfil,
+  }) async =>
+      usuario;
+
   @override
   dynamic noSuchMethod(Invocation invocation) => throw UnimplementedError(
       'AuthServiceFalso não implementa ${invocation.memberName}.');
+}
+
+/// Entrou pelo Google com uma conta nova: logado no Firebase, sem perfil
+/// no app (cai na escolha do perfil).
+class AuthServiceContaNova extends AuthServiceFalso {
+  AuthServiceContaNova(super.usuario);
+
+  @override
+  Future<UsuarioModel?> carregarPerfil(String uid) async => null;
 }
 
 /// Ninguém logado: o app abre no login. Entrar devolve o [usuario], mas o

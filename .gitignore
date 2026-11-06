@@ -7,3 +7,8 @@
 # para obra_facil/assets/modelos/ à mão.
 /fotos/
 /saida/
+
+# Chave de assinatura do APK: só nos segredos do GitHub, nunca no código.
+*.jks
+*.keystore
+key.properties
