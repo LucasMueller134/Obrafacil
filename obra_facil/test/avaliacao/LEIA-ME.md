@@ -16,6 +16,10 @@ campo e a lista de cada caso que falhou (esperado × obtido).
 
 - `resultados/antes.json`: o código original das IAs (commit `014dd1a`).
 - `resultados/depois.json`: o código depois da revisão das IAs.
+- `resultados/notas-v2.json`: a leitura da nota com os itens (preço e
+  quantidade, cupom, DANFE e nota sem unidade), o total conferido pela soma
+  dos itens (desconto, frete, troco, foto inclinada) e as notas de teste de
+  `docs/notas-de-teste/` (21 notas: 20 perfeitas, contra 12 de 18 antes).
 - `resultados/piso.json`: o acerto mínimo de cada campo. Se uma mudança
   derrubar algum campo abaixo do piso, o teste falha — é a trava contra
   regressão. Ao melhorar uma IA de propósito, grave de novo e suba o piso.

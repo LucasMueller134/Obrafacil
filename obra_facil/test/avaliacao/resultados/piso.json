@@ -13,10 +13,11 @@
     "data": 0.9
   },
   "ocr_notas": {
-    "fornecedor": 0.8235,
-    "cnpj": 0.9444,
-    "total": 0.8333,
-    "data": 0.9444
+    "fornecedor": 0.95,
+    "cnpj": 1.0,
+    "total": 1.0,
+    "data": 0.9524,
+    "itens": 1.0
   },
   "foto_diario": {
     "fase": 0.7083,

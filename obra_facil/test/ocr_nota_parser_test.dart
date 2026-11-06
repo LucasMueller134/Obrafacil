@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:obra_facil/models/item_material_model.dart';
 import 'package:obra_facil/services/ia/ocr_nota_service.dart';
 
 void main() {
@@ -239,6 +240,65 @@ TOTAL 50,00
 ''';
       expect(OcrNotaService.parsearTexto(texto).fornecedorNome,
           'Deposito Central Materiais');
+    });
+  });
+
+  group('Total conferido pela soma dos itens', () {
+    const itens = [
+      ItemMaterialModel(
+          material: 'Cimento', quantidade: 10, unidade: 'sc', valorTotal: 389),
+      ItemMaterialModel(
+          material: 'Areia', quantidade: 2, unidade: 'm3', valorTotal: 290),
+      ItemMaterialModel(
+          material: 'Tijolo', quantidade: 500, unidade: 'un', valorTotal: 625),
+    ];
+    // soma dos itens: 1.304,00
+
+    NotaFiscalExtraida nota(double? lido, String texto) =>
+        NotaFiscalExtraida(valorTotal: lido, textoCompleto: texto);
+
+    test('o total certo fica como está', () {
+      final r = OcrNotaService.conferirTotal(
+          nota(1304, 'VALOR TOTAL R\$ 1.304,00'), itens);
+      expect(r, (total: 1304.0, trocado: false));
+    });
+
+    test('leu o subtotal: o desconto impresso sai do total', () {
+      final r = OcrNotaService.conferirTotal(
+          nota(
+              1304,
+              'VALOR TOTAL R\$ 1.304,00\nDESCONTO R\$ 54,00\n'
+              'VALOR A PAGAR R\$ 1.250,00'),
+          itens);
+      expect(r, (total: 1250.0, trocado: true));
+    });
+
+    test('leu o subtotal: o frete impresso entra no total', () {
+      final r = OcrNotaService.conferirTotal(
+          nota(
+              1304,
+              'VALOR DOS PRODUTOS 1.304,00\nVALOR DO FRETE 80,00\n'
+              'VALOR TOTAL DA NOTA 1.384,00'),
+          itens);
+      expect(r, (total: 1384.0, trocado: true));
+    });
+
+    test('leu o dinheiro entregue: com troco, o total é a soma', () {
+      final r = OcrNotaService.conferirTotal(
+          nota(1400, 'TOTAL 1.304,00\nDINHEIRO 1.400,00\nTROCO 96,00'), itens);
+      expect(r, (total: 1304.0, trocado: true));
+    });
+
+    test('total fora do lugar: acha o valor que se repete e bate', () {
+      final r = OcrNotaService.conferirTotal(
+          nota(38.9, 'VALOR TOTAL R\$ 1.304,00\nPIX 1.304,00'), itens);
+      expect(r, (total: 1304.0, trocado: true));
+    });
+
+    test('com um item só não dá para conferir', () {
+      final r = OcrNotaService.conferirTotal(
+          nota(38.9, 'TOTAL 389,00'), itens.take(1).toList());
+      expect(r, (total: 38.9, trocado: false));
     });
   });
 }

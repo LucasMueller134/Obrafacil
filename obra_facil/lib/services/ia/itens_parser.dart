@@ -55,6 +55,8 @@ abstract class ItensParser {
   /// sem acento e por palavra inteira, então "cano" casa com "canos" mas
   /// "cal" não casa com "calçada".
   static const Map<String, String> _apelidos = {
+    'bloco ceramico': 'Tijolo',
+    'bloco ceramica': 'Tijolo',
     'ferro': 'Vergalhão de aço',
     'ferragem': 'Vergalhão de aço',
     'vergalhao': 'Vergalhão de aço',
@@ -67,6 +69,7 @@ abstract class ItensParser {
     'massa': 'Argamassa',
     'argamassa': 'Argamassa',
     'rejunte': 'Argamassa',
+    // (o bloco cerâmico, lá em cima, é tijolo; "bloco" sozinho, concreto)
     'bloco': 'Bloco de concreto',
     'blocos': 'Bloco de concreto',
     'fio': 'Fio elétrico',
@@ -545,99 +548,377 @@ abstract class ItensParser {
   }
 
   // ------------------------------------------------- Linhas de nota fiscal
+  //
+  // Três jeitos de a nota trazer o item, e o OCR ainda pode quebrar a
+  // linha em duas ou três (o nome numa, a quantidade noutra, o total
+  // sozinho na de baixo):
+  //
+  // - cupom (NFC-e): "001 7891000100103 CIMENTO CP II 50KG" e, embaixo ou
+  //   na mesma linha, "10 SC X 38,90  389,00";
+  // - DANFE (NF-e): a linha da tabela, "1001 TUBO PVC 25MM 39172300 000
+  //   5102 BR 20,0000 18,50 370,00" (NCM, CST, CFOP, unidade, quantidade,
+  //   unitário e total);
+  // - nota de balcão: "10 SC CIMENTO CP-II 32,50 325,00".
+  //
+  // Quantidade × unitário tem de bater com o total quando os dois foram
+  // lidos: é o que separa uma linha de item de uma linha de impostos.
 
-  static const String _unidadesNota = 'SC|UN|KG|LT|BR|PC|CX|MT|M2|M3|M|L';
+  /// Siglas de unidade das notas, da mais comprida para a mais curta.
+  static const String _unidadesNota = 'M2|M²|M3|M³|UNID|UND|UN|SACO|SAC|SC|'
+      'KG|LT|BARRA|BR|PCT|PC|PÇ|CX|ROLO|ROL|RL|CJ|KIT|PAR|GAL|GL|BD|FD|DZ|'
+      'JG|TB|TON|MIL|CT|FL|CH|MT|M|L';
 
-  /// "10 SC CIMENTO CP-II 32,50 325,00" — quantidade antes do nome.
-  static final RegExp _linhaQtdAntes = RegExp(
-      '^\\s*(?:\\d{1,3}\\s+)?(\\d+(?:[.,]\\d+)?)\\s*($_unidadesNota)'
-      r'\b[\s.:x-]*(.+?)\s+\d+[.,]\d{2}\b',
+  /// Sigla da nota → unidade do estoque (e o fator, quando a sigla é um
+  /// pacote de unidades: milheiro, cento, dúzia, tonelada).
+  static const Map<String, (String, double)> _siglas = {
+    'M2': ('m²', 1),
+    'M²': ('m²', 1),
+    'M3': ('m³', 1),
+    'M³': ('m³', 1),
+    'UNID': ('un', 1),
+    'UND': ('un', 1),
+    'UN': ('un', 1),
+    'SACO': ('sc', 1),
+    'SAC': ('sc', 1),
+    'SC': ('sc', 1),
+    'KG': ('kg', 1),
+    'LT': ('lt', 1),
+    'L': ('L', 1),
+    'BARRA': ('br', 1),
+    'BR': ('br', 1),
+    'PCT': ('pc', 1),
+    'PC': ('pc', 1),
+    'PÇ': ('un', 1),
+    'CX': ('pc', 1),
+    'ROLO': ('rl', 1),
+    'ROL': ('rl', 1),
+    'RL': ('rl', 1),
+    'CJ': ('cj', 1),
+    'KIT': ('kit', 1),
+    'PAR': ('par', 1),
+    'GAL': ('gl', 1),
+    'GL': ('gl', 1),
+    'BD': ('bd', 1),
+    'FD': ('fd', 1),
+    'JG': ('jg', 1),
+    'TB': ('tb', 1),
+    'FL': ('fl', 1),
+    'CH': ('ch', 1),
+    'DZ': ('un', 12),
+    'MIL': ('un', 1000),
+    'CT': ('un', 100),
+    'TON': ('kg', 1000),
+    'MT': ('m', 1),
+    'M': ('m', 1),
+  };
+
+  /// Dinheiro: "1.852,60", "389,00", "18,5000" (unitário do DANFE) ou,
+  /// do OCR, "389.00".
+  static const String _dinheiro =
+      r'\d{1,3}(?:\.\d{3})+,\d{2,4}|\d+,\d{2,4}|\d+\.\d{2}(?![\d,])';
+
+  /// Quantidade: "10", "2,5", "20,0000", "1.000,00".
+  static const String _qtd =
+      r'\d{1,3}(?:\.\d{3})+(?:,\d{1,4})?|\d+(?:[.,]\d{1,4})?';
+
+  /// Cupom: "10 SC X 38,90 389,00" (o total pode faltar ou vir embaixo).
+  static final RegExp _qtdVezesPreco = RegExp(
+      '(?<![\\d.,])($_qtd)\\s*($_unidadesNota)\\.?\\s*[xX×*]\\s*($_dinheiro)'
+      '(?:\\s+($_dinheiro))?',
       caseSensitive: false);
 
-  /// "001 7891234 CIMENTO CP-II 10 SC X 32,50 325,00" — nome antes,
-  /// layout mais comum da NFC-e.
-  static final RegExp _linhaNomeAntes = RegExp(
-      r'^\s*(?:\d{1,4}\s+)?(?:\d{6,14}\s+)?(.+?)\s+'
-      '(\\d+(?:[.,]\\d+)?)\\s*($_unidadesNota)'
-      r'\b\s*[x*]\s*\d+[.,]\d{2}',
+  /// DANFE: "BR 20,0000 18,50 370,00" — unidade, quantidade, unitário e
+  /// total (depois podem vir as colunas de ICMS e IPI).
+  static final RegExp _tabelaDanfe = RegExp(
+      '(?<=\\s)($_unidadesNota)\\s+($_qtd)\\s+($_dinheiro)\\s+'
+      '($_dinheiro)(?![\\d])',
       caseSensitive: false);
 
-  /// "10 SC x 32,50    325,00" — o nome do produto ficou na linha de cima.
-  static final RegExp _linhaSoQtd = RegExp(
-      '^\\s*(\\d+(?:[.,]\\d+)?)\\s*($_unidadesNota)'
-      r'\b\s*[x*]\s*\d+[.,]\d{2}',
+  /// Balcão: "10 SC CIMENTO CP-II 32,50 325,00" — quantidade antes do nome.
+  static final RegExp _qtdAntesDoNome = RegExp(
+      '^\\s*(?:\\d{1,3}\\s+)?($_qtd)\\s*($_unidadesNota)\\b[\\s.:x-]*'
+      '(.*?[A-Za-zÀ-ÿ]{3}.*?)\\s+($_dinheiro)(?:\\s+($_dinheiro))?\\s*\$',
       caseSensitive: false);
+
+  /// Sem coluna de unidade: "01 CIMENTO 50KG 2 38,00 76,00" (número do
+  /// item ou código, nome, quantidade, unitário e total).
+  static final RegExp _semUnidade = RegExp(
+      '^\\s*\\d{1,6}\\s+(.*?[A-Za-zÀ-ÿ]{3}.*?)\\s+($_qtd)\\s+($_dinheiro)\\s+'
+      '($_dinheiro)\\s*\$',
+      caseSensitive: false);
+
+  /// Palavras de linha que não é produto (parcelas, pagamento, impostos).
+  static final RegExp _naoEProduto = RegExp(
+      r'\b(parcela|venc|boleto|cheque|icms|ipi|base|total|subtotal|troco)',
+      caseSensitive: false);
+
+  static final RegExp _soDinheiro =
+      RegExp('^\\s*(?:R\\\$\\s*)?($_dinheiro)\\s*\$');
 
   /// Linhas de fechamento do cupom nunca são item.
   static final RegExp _linhaDeFechamento = RegExp(
       r'\b(total|subtotal|troco|desconto|acr[eé]scimo|tributo|imposto|'
-      r'forma de pagamento|dinheiro|cart[aã]o|pix)\b',
+      r'forma de pagamento|dinheiro|cart[aã]o|pix|base de c[aá]lc|frete)\b',
       caseSensitive: false);
 
-  /// Interpreta o texto cru do OCR da nota, linha a linha.
+  /// Cabeçalho da tabela de itens ("# CODIGO DESCRICAO QTD UN VL UNIT").
+  static final RegExp _cabecalhoDeItens = RegExp(
+      r'\b(descri[cç][aã]o|c[oó]d(igo)?\.?\s*prod|qtd\.?\s*un|vl\.?\s*unit|'
+      r'valor\s+unit)',
+      caseSensitive: false);
+
+  /// Interpreta o texto do OCR da nota (de preferência o remontado pela
+  /// posição: nome e preço na mesma linha, como no papel).
   static List<ItemMaterialModel> deNotaOcr(String textoOcr) {
-    final linhas = textoOcr
-        .split('\n')
-        .map((l) => l.trim())
-        .where((l) => l.isNotEmpty)
-        .toList();
-
+    final linhas = [
+      for (final l in textoOcr.split('\n'))
+        if (l.trim().isNotEmpty) _numerosDoOcr(l.trim()),
+    ];
+    final usadas = <int>{};
     final itens = <ItemMaterialModel>[];
+
+    bool podeSerNome(int j) =>
+        j >= 0 &&
+        !usadas.contains(j) &&
+        !_linhaDeFechamento.hasMatch(linhas[j]) &&
+        !_cabecalhoDeItens.hasMatch(linhas[j]) &&
+        !_ehLinhaDeItem(linhas[j]) &&
+        _letras(_limparDescricao(linhas[j])) >= 3;
+
     for (var i = 0; i < linhas.length; i++) {
+      if (usadas.contains(i)) continue;
       final linha = linhas[i];
-      if (_linhaDeFechamento.hasMatch(linha)) continue;
+      if (_linhaDeFechamento.hasMatch(linha) ||
+          _cabecalhoDeItens.hasMatch(linha)) {
+        continue;
+      }
 
-      final qtdAntes = _linhaQtdAntes.firstMatch(linha);
-      if (qtdAntes != null) {
+      // Cupom: "... 10 SC X 38,90 389,00".
+      final cupom = _qtdVezesPreco.firstMatch(linha);
+      if (cupom != null) {
+        final q = _numero(cupom.group(1)!, quantidade: true),
+            vu = _numero(cupom.group(3)!);
+        // O total sozinho numa linha vizinha (a coluna da direita: embaixo
+        // ou, com a foto inclinada, em cima) — só se bater com qtd × preço.
+        var total = cupom.group(4);
+        final vizinhas = <int>[];
+        if (total == null && q != null && vu != null) {
+          for (final j in [i + 1, i - 1]) {
+            if (j < 0 || j >= linhas.length || usadas.contains(j)) continue;
+            final so = _soDinheiro.firstMatch(linhas[j]);
+            final vt = so == null ? null : _numero(so.group(1)!);
+            if (vt != null && _bate(q, vu, vt)) {
+              total = so!.group(1);
+              vizinhas.add(j);
+              break;
+            }
+          }
+        }
+        // O nome: antes da quantidade na mesma linha ou numa das duas de
+        // cima (pulando o total que ficou entre elas).
+        var descricao = _limparDescricao(linha.substring(0, cupom.start));
+        var linhaDoNome = i;
+        if (_letras(descricao) < 3) {
+          for (final j in [i - 1, i - 2]) {
+            if (j < 0) break;
+            if (j == i - 2 &&
+                !(vizinhas.contains(i - 1) ||
+                    _soDinheiro.hasMatch(linhas[i - 1]))) {
+              break;
+            }
+            if (podeSerNome(j)) {
+              linhaDoNome = j;
+              descricao = _limparDescricao(linhas[j]);
+              break;
+            }
+          }
+        }
         final item = _itemDaNota(
-            qtdAntes.group(1)!, qtdAntes.group(2)!, qtdAntes.group(3)!);
+            descricao, cupom.group(1)!, cupom.group(2)!, cupom.group(3), total);
         if (item != null) {
           itens.add(item);
-          continue;
+          usadas
+            ..add(i)
+            ..add(linhaDoNome)
+            ..addAll(vizinhas);
+        }
+        continue;
+      }
+
+      // DANFE: a linha da tabela inteira.
+      final danfe = _tabelaDanfe.firstMatch(linha);
+      if (danfe != null) {
+        final q = _numero(danfe.group(2)!),
+            vu = _numero(danfe.group(3)!),
+            vt = _numero(danfe.group(4)!);
+        final descricao = _limparDescricao(linha.substring(0, danfe.start),
+            tirarColunasDoDanfe: true);
+        if (q != null && vu != null && vt != null && _bate(q, vu, vt)) {
+          final item = _itemDaNota(descricao, danfe.group(2)!, danfe.group(1)!,
+              danfe.group(3), danfe.group(4));
+          if (item != null) {
+            itens.add(item);
+            usadas.add(i);
+            continue;
+          }
         }
       }
 
-      final nomeAntes = _linhaNomeAntes.firstMatch(linha);
-      if (nomeAntes != null) {
-        final item = _itemDaNota(
-            nomeAntes.group(2)!, nomeAntes.group(3)!, nomeAntes.group(1)!);
-        if (item != null) {
-          itens.add(item);
-          continue;
+      // Sem unidade: "01 CIMENTO 50KG 2 38,00 76,00" (a conta tem de bater).
+      final semUnidade = _semUnidade.firstMatch(linha);
+      if (semUnidade != null && !_naoEProduto.hasMatch(semUnidade.group(1)!)) {
+        final q = _numero(semUnidade.group(2)!, quantidade: true),
+            vu = _numero(semUnidade.group(3)!),
+            vt = _numero(semUnidade.group(4)!);
+        if (q != null && vu != null && vt != null && _bate(q, vu, vt)) {
+          final descricao = _limparDescricao(semUnidade.group(1)!);
+          // a unidade no fim do nome ("AREIA MEDIA SC"), senão unidade
+          final sigla =
+              RegExp('\\b($_unidadesNota)\\s*\$', caseSensitive: false)
+                  .firstMatch(descricao);
+          final item = _itemDaNota(
+              sigla == null
+                  ? descricao
+                  : descricao.substring(0, sigla.start).trim(),
+              semUnidade.group(2)!,
+              sigla?.group(1) ?? 'UN',
+              semUnidade.group(3),
+              semUnidade.group(4));
+          if (item != null) {
+            itens.add(item);
+            usadas.add(i);
+            continue;
+          }
         }
       }
 
-      // Quantidade e preço numa linha, nome do produto na linha anterior.
-      final soQtd = _linhaSoQtd.firstMatch(linha);
-      if (soQtd != null &&
-          i > 0 &&
-          !_linhaDeFechamento.hasMatch(linhas[i - 1])) {
-        final item =
-            _itemDaNota(soQtd.group(1)!, soQtd.group(2)!, linhas[i - 1]);
-        if (item != null) itens.add(item);
+      // Balcão: "10 SC CIMENTO 32,50 325,00".
+      final balcao = _qtdAntesDoNome.firstMatch(linha);
+      if (balcao != null) {
+        final dois = balcao.group(5) != null;
+        final item = _itemDaNota(
+            _limparDescricao(balcao.group(3)!),
+            balcao.group(1)!,
+            balcao.group(2)!,
+            dois ? balcao.group(4) : null,
+            dois ? balcao.group(5) : balcao.group(4));
+        if (item != null) {
+          itens.add(item);
+          usadas.add(i);
+        }
       }
     }
-    return _semDuplicados(itens);
+    return _semRepetidos(itens);
   }
 
-  static ItemMaterialModel? _itemDaNota(
-      String quantidadeBruta, String unidade, String nomeBruto) {
-    final quantidade =
-        double.tryParse(quantidadeBruta.replaceAll(',', '.')) ?? 0;
-    if (quantidade <= 0 || quantidade > 100000) return null;
+  static bool _ehLinhaDeItem(String linha) =>
+      _qtdVezesPreco.hasMatch(linha) ||
+      _soDinheiro.hasMatch(linha) ||
+      (_tabelaDanfe.firstMatch(linha) != null &&
+          _letras(_limparDescricao(
+                  linha.substring(0, _tabelaDanfe.firstMatch(linha)!.start),
+                  tirarColunasDoDanfe: true)) >=
+              3);
 
-    // remove código de produto e numeração do começo ("7891234 CIMENTO…")
-    var nome = nomeBruto.trim().replaceFirst(RegExp(r'^[\d\W]+'), '').trim();
-    // e o preço/quantidade que sobrou no fim ("CIMENTO 50KG 32,50")
-    nome = nome.replaceFirst(RegExp(r'\s+\d+[.,]\d{2}.*$'), '').trim();
-    if (nome.length < 3) return null;
+  /// Quantidade × unitário = total, com a folga do arredondamento.
+  static bool _bate(double q, double vu, double vt) =>
+      (q * vu - vt).abs() <= 0.02 + vt * 0.01;
 
-    final canonico = _materialCanonico(nome);
+  static ItemMaterialModel? _itemDaNota(String descricao,
+      String quantidadeBruta, String sigla, String? unitario, String? total) {
+    var quantidade = _numero(quantidadeBruta, quantidade: true);
+    if (quantidade == null || quantidade <= 0 || quantidade > 1000000) {
+      return null;
+    }
+    if (_letras(descricao) < 3) return null;
+    final (unidade, fator) =
+        _siglas[sigla.toUpperCase().replaceAll('.', '')] ?? ('un', 1.0);
+    final vu = unitario == null ? null : _numero(unitario);
+    final vt = total == null ? null : _numero(total);
+    quantidade *= fator;
+    final canonico = _materialCanonico(descricao);
     return ItemMaterialModel(
-      material: canonico ?? _capitalizar(nome),
+      material: canonico ?? _nomeDoProduto(descricao),
       quantidade: quantidade,
-      unidade: _unidades[unidade.toLowerCase()] ?? 'un',
+      unidade: unidade,
+      descricao: descricao,
+      valorUnitario: vu == null ? null : vu / fator,
+      valorTotal:
+          vt ?? (vu == null ? null : _centavos(quantidade * vu / fator)),
     );
+  }
+
+  static double _centavos(double v) => (v * 100).roundToDouble() / 100;
+
+  /// Número da nota em pt-BR. Com vírgula, ela é a decimal ("1.852,60",
+  /// "20,0000"); só com ponto, "1.000" é milhar na quantidade e "389.00"
+  /// (o OCR trocou a vírgula) é decimal no dinheiro.
+  static double? _numero(String bruto, {bool quantidade = false}) {
+    final s = bruto.replaceAll(' ', '');
+    if (s.contains(',')) {
+      return double.tryParse(s.replaceAll('.', '').replaceAll(',', '.'));
+    }
+    final ponto = RegExp(r'^(\d+)\.(\d+)$').firstMatch(s);
+    if (ponto != null &&
+        quantidade &&
+        ponto.group(2)!.length == 3 &&
+        ponto.group(1) != '0') {
+      return double.tryParse(s.replaceAll('.', ''));
+    }
+    return double.tryParse(s);
+  }
+
+  /// Corrige as letras que o OCR põe no meio dos números ("38,9O",
+  /// "l0 SC", "1 .800,00") sem mexer nas palavras.
+  static String _numerosDoOcr(String linha) => linha
+      .replaceAllMapped(
+          RegExp(r'(?<=\d)[Oo](?=[\d,.])|(?<=[\d,.])[Oo](?=\d|\b)'), (_) => '0')
+      .replaceAllMapped(
+          RegExp(r'(?<=\d)[lI](?=\d)|(?<!\S)[lI](?=\d)'), (_) => '1')
+      .replaceAllMapped(
+          RegExp(r'(\d)\s+([.,])\s*(\d{2})\b'), (m) => '${m[1]}${m[2]}${m[3]}')
+      .replaceAllMapped(
+          RegExp(r'(\d)([.,])\s+(\d{2})\b'), (m) => '${m[1]}${m[2]}${m[3]}');
+
+  static int _letras(String s) => RegExp(r'[A-Za-zÀ-ÿ]').allMatches(s).length;
+
+  /// O nome do produto sem o número do item, o código (EAN ou interno) e,
+  /// no DANFE, as colunas de NCM, CST e CFOP que ficam entre o nome e a
+  /// unidade.
+  static String _limparDescricao(String bruto,
+      {bool tirarColunasDoDanfe = false}) {
+    var s = bruto.trim();
+    // número do item e código: "001 7891000100103 ", "1001 ", "#3 "
+    s = s.replaceFirst(
+        RegExp(r'^#?\s*(?:\d{1,4}[\s.)-]+)?(?:[A-Z]{0,3}\d{4,14}[\s-]+)?'), '');
+    s = s.replaceFirst(RegExp(r'^[\s\W_]+'), '');
+    if (tirarColunasDoDanfe) {
+      s = s.replaceFirst(RegExp(r'(\s+\d{2,8})+\s*$'), '');
+    }
+    return s.replaceAll(RegExp(r'\s+'), ' ').trim();
+  }
+
+  /// "CAL HIDRATADA CH-III 20KG" → "Cal hidratada CH-III 20KG": as
+  /// palavras em minúscula, os códigos e as medidas como vieram.
+  static String _nomeDoProduto(String descricao) {
+    final palavras = descricao.split(' ');
+    final saida = <String>[];
+    for (final p in palavras) {
+      final temNumeroOuCodigo = RegExp(r'[\d/-]').hasMatch(p);
+      saida.add(temNumeroOuCodigo ? p.toUpperCase() : p.toLowerCase());
+    }
+    final nome = saida.join(' ');
+    return nome.isEmpty ? nome : nome[0].toUpperCase() + nome.substring(1);
+  }
+
+  /// A mesma linha lida duas vezes (o OCR repetiu) entra uma vez só;
+  /// produtos diferentes que viram o mesmo material ficam os dois.
+  static List<ItemMaterialModel> _semRepetidos(List<ItemMaterialModel> itens) {
+    final vistos = <String>{};
+    return itens
+        .where((i) => vistos.add(
+            '${(i.descricao ?? i.material).toLowerCase()}|${i.quantidade}|${i.unidade}'))
+        .toList();
   }
 
   /// Procura o material canônico do app dentro do nome lido.

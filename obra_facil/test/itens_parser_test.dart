@@ -159,6 +159,72 @@ TOTAL R\$ 505,00
       expect(itens, isEmpty);
     });
 
+    test('cupom NFC-e: nome numa linha, quantidade e preço na outra', () {
+      const texto = '''
+001 7891000100103 CIMENTO CP II-E-32 50KG
+10 SC X 38,90
+389,00
+002 7896000300555 BLOCO CERAMICO 9X19X29
+500 UN X 1,25 625,00
+''';
+      final itens = ItensParser.deNotaOcr(texto);
+      expect(itens.map((i) => (i.material, i.quantidade, i.unidade)), [
+        ('Cimento', 10, 'sc'),
+        // bloco cerâmico é tijolo, não bloco de concreto
+        ('Tijolo', 500, 'un'),
+      ]);
+      expect(itens.first.descricao, 'CIMENTO CP II-E-32 50KG');
+      expect(itens.first.valorUnitario, 38.90);
+      expect(itens.first.valorTotal, 389.00);
+    });
+
+    test('foto inclinada: o total do item fica na linha de cima', () {
+      const texto = '''
+001 7891000100103 CIMENTO CP II-E-32 50KG
+389,00
+10 SC X 38,90
+''';
+      final item = ItensParser.deNotaOcr(texto).single;
+      expect(item.material, 'Cimento');
+      expect(item.valorTotal, 389.00);
+    });
+
+    test('DANFE: a linha da tabela, com NCM, CFOP, unidade e preços', () {
+      const texto = '''
+COD. PROD. DESCRICAO DO PRODUTO / SERVICO NCM/SH CST CFOP UN QUANT. VALOR UNIT. VALOR TOTAL
+1001 TUBO PVC SOLDAVEL 25MM BARRA 6M 39172300 000 5102 BR 20,0000 18,50 370,00
+1002 JOELHO 90 PVC SOLDAVEL 25MM 39174000 000 5102 UN 40,0000 1,90 76,00
+1005 FIO FLEXIVEL 2,5MM ROLO 100M 85444900 000 5102 RL 3,0000 219,00 657,00
+''';
+      final itens = ItensParser.deNotaOcr(texto);
+      expect(itens.map((i) => (i.descricao, i.quantidade, i.unidade)), [
+        ('TUBO PVC SOLDAVEL 25MM BARRA 6M', 20, 'br'),
+        // o mesmo material do estoque, produtos diferentes: ficam os dois
+        ('JOELHO 90 PVC SOLDAVEL 25MM', 40, 'un'),
+        ('FIO FLEXIVEL 2,5MM ROLO 100M', 3, 'rl'),
+      ]);
+      expect(itens.last.valorTotal, 657.00);
+    });
+
+    test('nota sem coluna de unidade, e o peso do saco não é a unidade', () {
+      final itens = ItensParser.deNotaOcr('01 CIMENTO 50KG 2 38,00 76,00\n'
+          '02 AREIA MEDIA SC 4 8,50 34,00\n'
+          '2 PARCELAS 1.240,00 2.480,00');
+      expect(itens.map((i) => (i.material, i.quantidade, i.unidade)), [
+        ('Cimento', 2, 'un'),
+        ('Areia', 4, 'sc'),
+      ]);
+    });
+
+    test('número com letra do OCR ("38,9O", "l0") ainda vira preço', () {
+      final item =
+          ItensParser.deNotaOcr('CIMENTO CP II 50KG\nl0 SC X 38,9O 389,0O')
+              .single;
+      expect(item.quantidade, 10);
+      expect(item.valorUnitario, 38.90);
+      expect(item.valorTotal, 389.00);
+    });
+
     test('a nota não muda com as regras da fala', () {
       // "cal" curto só vale na fala; na nota o nome lido continua inteiro.
       final itens = ItensParser.deNotaOcr('2 SC CAL HIDRATADA 12,00 24,00');

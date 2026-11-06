@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:firebase_core/firebase_core.dart' show FirebaseException;
+import 'package:cunning_document_scanner/cunning_document_scanner.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
@@ -142,18 +143,51 @@ class _NovoLancamentoScreenState extends State<_NovoLancamento> {
 
   // ------------------------------------------------------------------ OCR
 
+  /// A foto da nota: pelo scanner de documento (bordas, perspectiva e
+  /// recorte resolvidos antes do OCR) ou pela câmera e galeria. Sem o
+  /// scanner no aparelho, cai na câmera comum.
+  Future<XFile?> _pegarFoto(_OrigemDaFoto origem) async {
+    Future<XFile?> pelaCamera(ImageSource fonte) => ImagePicker().pickImage(
+          source: fonte,
+          imageQuality: 92,
+          maxWidth: 2200,
+        );
+    switch (origem) {
+      case _OrigemDaFoto.camera:
+        return pelaCamera(ImageSource.camera);
+      case _OrigemDaFoto.galeria:
+        return pelaCamera(ImageSource.gallery);
+      case _OrigemDaFoto.scanner:
+        try {
+          final paginas = await CunningDocumentScanner.getPictures(
+            noOfPages: 1,
+            scannerSource: ScannerSource.camera,
+            iosScannerOptions: IosScannerOptions(
+              imageFormat: IosImageFormat.jpg,
+              jpgCompressionQuality: 0.92,
+            ),
+          );
+          if (paginas == null || paginas.isEmpty) return null; // desistiu
+          return XFile(paginas.first);
+        } catch (_) {
+          if (!mounted) return null;
+          mostrarAviso(
+              context, 'O scanner não abriu neste celular: use a câmera.');
+          return pelaCamera(ImageSource.camera);
+        }
+    }
+  }
+
   Future<void> _lerNotaFiscal() async {
-    final origem = await showModalBottomSheet<ImageSource>(
+    final origem = await showModalBottomSheet<_OrigemDaFoto>(
       context: context,
+      // Três opções com fonte grande não cabem nos 9/16 da tela.
+      isScrollControlled: true,
       builder: (ctx) => const _EscolhaDaFoto(),
     );
-    if (origem == null) return;
+    if (origem == null || !mounted) return;
 
-    final xfile = await ImagePicker().pickImage(
-      source: origem,
-      imageQuality: 92,
-      maxWidth: 2200,
-    );
+    final xfile = await _pegarFoto(origem);
     if (xfile == null || !mounted) return;
 
     setState(() {
@@ -170,13 +204,17 @@ class _NovoLancamentoScreenState extends State<_NovoLancamento> {
       // preço da outra coluna na mesma linha, como estão no papel — é
       // dele que os itens e a conferência na tela saem melhor.
       final textoLido = nota.textoReconstruido ?? nota.textoCompleto;
+      final itens = ItensParser.deNotaOcr(textoLido);
+      // Foto inclinada pode pôr o desconto no lugar do total: a soma dos
+      // itens confere (e acha o total quando ele não foi lido).
+      final conferido = OcrNotaService.conferirTotal(nota, itens);
+      final valorTotal = conferido.total;
       setState(() {
         _fotoNota = File(xfile.path);
         _origem = OrigemLancamento.ocr;
         _categoria = CategoriaCusto.material;
-        if (nota.valorTotal != null) {
-          _valorCtrl.text =
-              nota.valorTotal!.toStringAsFixed(2).replaceAll('.', ',');
+        if (valorTotal != null) {
+          _valorCtrl.text = valorTotal.toStringAsFixed(2).replaceAll('.', ',');
         }
         if (nota.data != null) _data = nota.data!;
         if (nota.fornecedorNome != null) {
@@ -187,11 +225,15 @@ class _NovoLancamentoScreenState extends State<_NovoLancamento> {
         }
         _cnpjExtraido = nota.cnpj;
         _textoOcr = textoLido.trim().isEmpty ? null : textoLido;
-        _itens = ItensParser.deNotaOcr(textoLido);
-        _avisoIa = OcrNotaService.avisoDaLeitura(nota);
+        _itens = itens;
+        _avisoIa = [
+          OcrNotaService.avisoDaLeitura(nota),
+          if (conferido.trocado)
+            'O total foi conferido pela soma dos itens da nota.',
+        ].join(' ');
         _leitura = _Leitura(
           origem: OrigemLancamento.ocr,
-          valor: nota.valorTotal,
+          valor: valorTotal,
           fornecedor: nota.fornecedorNome,
           data: nota.data,
         );

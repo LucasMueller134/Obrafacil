@@ -2,6 +2,7 @@ import 'package:obra_facil/services/ia/cores_foto.dart';
 import 'package:obra_facil/services/ia/diario_foto_service.dart';
 import 'package:obra_facil/services/ia/diario_voz_service.dart';
 import 'package:obra_facil/services/ia/material_vision_service.dart';
+import 'package:obra_facil/services/ia/itens_parser.dart';
 import 'package:obra_facil/services/ia/ocr_nota_service.dart';
 import 'package:obra_facil/services/ia/voz_service.dart';
 
@@ -68,11 +69,24 @@ abstract class Adaptadores {
                   ),
               ]),
           ], codigos: codigos));
+    // Como a tela: os itens do texto remontado e o total conferido pela
+    // soma deles.
+    final itens =
+        ItensParser.deNotaOcr(nota.textoReconstruido ?? nota.textoCompleto);
     return {
       'fornecedor': nota.fornecedorNome,
       'cnpj': nota.cnpj,
-      'total': nota.valorTotal,
+      'total': OcrNotaService.conferirTotal(nota, itens).total,
       'data': _data(nota.data),
+      'itens': [
+        for (final i in itens)
+          {
+            'material': i.material,
+            'descricao': i.descricao,
+            'quantidade': i.quantidade,
+            'valorTotal': i.totalDaLinha,
+          },
+      ],
     };
   }
 

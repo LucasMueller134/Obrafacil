@@ -32,6 +32,7 @@ void main() {
       'cnpj': _igual,
       'total': _numero,
       'data': _igual,
+      'itens': _itensDaNota,
     }),
     _Conjunto('foto_diario', Adaptadores.fotoDiario, {
       'fase': _igual,
@@ -266,6 +267,22 @@ bool _itens(Object? e, Object? o) {
 
   final esperados = (e as List).map(chave).toSet();
   final obtidos = (o as List).map(chave).toSet();
+  return esperados.length == obtidos.length && esperados.containsAll(obtidos);
+}
+
+/// Itens da nota: o produto como veio impresso, a quantidade e o total da
+/// linha têm de bater, item a item.
+bool _itensDaNota(Object? e, Object? o) {
+  String chave(Object? i, {required bool esperado}) {
+    final m = i as Map;
+    final nome = esperado ? m['material'] : (m['descricao'] ?? m['material']);
+    final total = (m['valorTotal'] as num?)?.toDouble();
+    return '${_normalizar('$nome')}|${(m['quantidade'] as num).toDouble()}|'
+        '${total?.toStringAsFixed(2)}';
+  }
+
+  final esperados = {for (final i in e as List) chave(i, esperado: true)};
+  final obtidos = {for (final i in o as List) chave(i, esperado: false)};
   return esperados.length == obtidos.length && esperados.containsAll(obtidos);
 }
 

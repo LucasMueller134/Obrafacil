@@ -1,0 +1,6 @@
+# Gerador das notas fiscais de teste (Python 3.10+).
+# Usa as fontes DejaVu e Liberation do sistema (fonts-dejavu, fonts-liberation).
+Pillow>=10.0
+qrcode>=7.4
+python-barcode>=0.15
+numpy>=1.26

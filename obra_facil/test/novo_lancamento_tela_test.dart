@@ -306,6 +306,26 @@ void main() {
   });
 
   group('Leitura da nota', () {
+    testWidgets('escanear a nota: o scanner devolve a nota reta e ela é lida',
+        (tester) async {
+      final app = await _abrir(tester, _novo);
+      await _lerNota(tester, opcao: 'Escanear a nota');
+      expect(find.text('LIDO DA NOTA'), findsOneWidget);
+      // O item com o preço lido da nota.
+      expect(find.textContaining('R\$\u00a01,19 cada'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      await _fechar(tester, app);
+    });
+
+    testWidgets('celular sem scanner: avisa e cai na câmera', (tester) async {
+      final app = await _abrir(tester, _novo);
+      await _lerNota(tester, opcao: 'Escanear a nota', scannerFalha: true);
+      expect(find.text('O scanner não abriu neste celular: use a câmera.'),
+          findsOneWidget);
+      expect(find.text('LIDO DA NOTA'), findsOneWidget);
+      await _fechar(tester, app);
+    });
+
     testWidgets(
         'uma leitura que falha depois de uma boa não entra no recibo da boa',
         (tester) async {
@@ -350,7 +370,7 @@ void main() {
 
       await _lerNota(tester);
       for (final rotulo in [
-        'Tirar 2000 un Bloco de concreto do estoque',
+        'Tirar 2000 un Tijolo do estoque',
         'Tirar a foto da nota do lançamento',
       ]) {
         final caixa = tester.getSize(find.byTooltip(rotulo));
@@ -454,12 +474,18 @@ Future<void> _falarAreia(WidgetTester tester) async {
   await assentar(tester);
 }
 
-/// Tira a foto da nota pela câmera (o cupom de visual/suporte).
-Future<void> _lerNota(WidgetTester tester, {bool preparar = true}) async {
-  if (preparar) await prepararNotaFalsa(tester);
+/// Tira a foto da nota pela câmera (o cupom de visual/suporte), ou pelo
+/// scanner de documento.
+Future<void> _lerNota(WidgetTester tester,
+    {bool preparar = true,
+    String opcao = 'Tirar foto da nota',
+    bool scannerFalha = false}) async {
+  if (preparar) {
+    await prepararNotaFalsa(tester, scannerFalha: scannerFalha);
+  }
   await tester.tap(find.text('Foto da nota').first);
   await assentar(tester, total: const Duration(milliseconds: 600));
-  await tester.tap(find.text('Tirar foto da nota'));
+  await tester.tap(find.text(opcao));
   await assentar(tester);
 }
 

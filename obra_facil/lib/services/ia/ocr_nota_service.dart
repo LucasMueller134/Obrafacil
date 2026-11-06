@@ -10,6 +10,7 @@ import 'package:google_mlkit_barcode_scanning/google_mlkit_barcode_scanning.dart
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:image/image.dart' as img;
 
+import '../../models/item_material_model.dart';
 import 'chave_acesso.dart';
 import 'linhas_ocr.dart';
 import 'texto_br.dart';
@@ -367,6 +368,118 @@ class OcrNotaService {
 
   /// O aviso que a tela mostra depois da leitura: o que fazer quando nada
   /// foi lido, e o quanto confiar no que foi.
+  /// Confere o total lido com a soma dos itens da nota.
+  ///
+  /// Foto inclinada desalinha a coluna dos valores e o "Valor a pagar"
+  /// pode pegar o desconto da linha de cima. Com dois ou mais itens com
+  /// preço, um total fora de metade a uma vez e meia da soma não é o da
+  /// nota: entre os valores impressos, vence o que fecha a conta (soma
+  /// menos o desconto, ou mais o frete), o que aparece duas vezes (o
+  /// valor pago) e o que está ao lado de "total" ou "a pagar".
+  static ({double? total, bool trocado}) conferirTotal(
+      NotaFiscalExtraida nota, List<ItemMaterialModel> itens) {
+    final lido = nota.valorTotal;
+    final totais = [
+      for (final i in itens)
+        if (i.totalDaLinha != null) i.totalDaLinha!,
+    ];
+    if (totais.length < 2) return (total: lido, trocado: false);
+    final soma = totais.fold<double>(0, (a, b) => a + b);
+    bool plausivel(double v) => v >= soma * 0.5 && v <= soma * 1.5;
+    bool perto(double a, double b) => (a - b).abs() <= 0.02;
+    final texto = nota.textoReconstruido ?? nota.textoCompleto;
+    if (lido != null && plausivel(lido)) {
+      final trocado =
+          _totalDoSubtotalOuDoPago(texto, lido, soma, totais, perto);
+      return trocado == null
+          ? (total: lido, trocado: false)
+          : (total: trocado, trocado: true);
+    }
+
+    final vezes = <double, int>{};
+    final rotulado = <double>{};
+    final todos = <double>[];
+    final dinheiro =
+        RegExp(r'\d{1,3}(?:\.\d{3})+,\d{2}(?!\d)|(?<![\d.,])\d+,\d{2}(?!\d)');
+    final rotulo = RegExp(r'PAGAR|TOTAL DA NOTA|VALOR TOTAL|TOTAL R',
+        caseSensitive: false);
+    for (final linha in texto.split('\n')) {
+      for (final m in dinheiro.allMatches(linha)) {
+        final v = double.tryParse(
+            m.group(0)!.replaceAll('.', '').replaceAll(',', '.'));
+        if (v == null || v <= 0) continue;
+        todos.add(v);
+        if (!plausivel(v)) continue;
+        vezes[v] = (vezes[v] ?? 0) + 1;
+        if (rotulo.hasMatch(linha)) rotulado.add(v);
+      }
+    }
+    if (vezes.isEmpty) return (total: lido, trocado: false);
+    int pontos(double v) {
+      var p = 0;
+      if (vezes[v]! >= 2) p += 3;
+      if (perto(v, soma)) p += 2;
+      // fecha a conta com outro valor impresso: desconto ou frete
+      if (todos.any(
+          (x) => !perto(x, v) && (perto(soma - x, v) || perto(soma + x, v)))) {
+        p += 3;
+      }
+      if (rotulado.contains(v)) p += 1;
+      return p;
+    }
+
+    final melhor = vezes.keys.reduce((a, b) {
+      final pa = pontos(a), pb = pontos(b);
+      if (pa != pb) return pa > pb ? a : b;
+      return (a - soma).abs() <= (b - soma).abs() ? a : b;
+    });
+    if (pontos(melhor) < 2) return (total: lido, trocado: false);
+    return (total: melhor, trocado: lido == null || !perto(melhor, lido));
+  }
+
+  /// Um total plausível ainda pode ser o errado: o subtotal (quando a nota
+  /// soma frete ou tira desconto) ou o dinheiro entregue (quando tem
+  /// troco). Devolve o total certo, ou null se o lido fica.
+  static double? _totalDoSubtotalOuDoPago(String texto, double lido,
+      double soma, List<double> totais, bool Function(double, double) perto) {
+    // O total de um item fecha conta com os outros itens ("760 = 960 -
+    // 200"): ele nunca é o desconto, o frete nem o total da nota.
+    bool deItem(double v) => totais.any((t) => perto(t, v));
+    final valores = <double>[];
+    final dinheiro =
+        RegExp(r'\d{1,3}(?:\.\d{3})+,\d{2}(?!\d)|(?<![\d.,])\d+,\d{2}(?!\d)');
+    for (final m in dinheiro.allMatches(texto)) {
+      final v =
+          double.tryParse(m.group(0)!.replaceAll('.', '').replaceAll(',', '.'));
+      if (v != null && v > 0) valores.add(v);
+    }
+    bool tem(String rotulo) =>
+        RegExp(rotulo, caseSensitive: false).hasMatch(texto);
+    // Leu o subtotal: o total soma o frete ou tira o desconto impresso.
+    if (perto(lido, soma)) {
+      for (final x in valores) {
+        if (perto(x, lido) || deItem(x)) continue;
+        final mais = valores.where((v) => !deItem(v) && perto(v, soma + x));
+        if (mais.isNotEmpty && tem(r'\b(frete|entrega|acr[eé]scimo|taxa)\b')) {
+          return mais.first;
+        }
+        final menos = valores.where((v) => !deItem(v) && perto(v, soma - x));
+        if (menos.isNotEmpty && x < soma * 0.5 && tem(r'\bdesconto\b')) {
+          return menos.first;
+        }
+      }
+      return null;
+    }
+    // Leu o dinheiro entregue: ele menos a soma é o troco impresso.
+    if (lido > soma &&
+        tem(r'\btroco\b') &&
+        valores.any((v) => perto(v, soma)) &&
+        valores.any((v) => perto(v, lido - soma))) {
+      return valores.firstWhere((v) => perto(v, soma));
+    }
+    return null;
+  }
+
   static String avisoDaLeitura(NotaFiscalExtraida nota) {
     if (!nota.encontrouAlgo) {
       return 'Não consegui ler os dados desta nota (a foto ficou anexada). '
@@ -410,8 +523,10 @@ class OcrNotaService {
 
   // ------------------------------------------------------------- Parser
 
+  /// CNPJ com ou sem pontuação, e com espaço no lugar do ponto
+  /// ("08 412 936/0001-31"); o DV separa CNPJ de outro número.
   static final RegExp _regexCnpj =
-      RegExp(r'\b\d{2}\.?\d{3}\.?\d{3}\s*/?\s*\d{4}\s*-?\s*\d{2}\b');
+      RegExp(r'\b\d{2}[.\s]?\d{3}[.\s]?\d{3}\s*/?\s*\d{4}\s*-?\s*\d{2}\b');
 
   /// CNPJ com letra no lugar de dígito ("12.345.67B/0001-9O"). Só com a
   /// pontuação completa, que garante que é CNPJ e não uma palavra.
@@ -1485,7 +1600,25 @@ class OcrNotaService {
   static final RegExp _cidadeUf =
       RegExp(r'^([A-Z][A-Z .\x27\-]{1,40}?)[\s\-/,]+([A-Z]{2})\.?$');
 
-  static String? _extrairFornecedor(List<String> todas) {
+  /// Troca de letra por número que o OCR faz dentro das palavras do nome
+  /// ("DEP0SIT0", "VERGALH0ES", "RlTA"). Só em palavras que são quase
+  /// toda letra: "LOJA 10" e "3 IRMÃOS" ficam como estão.
+  static String _letrasDoNome(String linha) =>
+      linha.replaceAllMapped(RegExp(r'[A-Za-zÀ-ÿ0-9]+'), (m) {
+        final p = m.group(0)!;
+        final letras = RegExp(r'[A-Za-zÀ-ÿ]').allMatches(p).length;
+        if (letras < 3 || letras < p.length * 0.6) return p;
+        final maiuscula = p == p.toUpperCase();
+        var saida = p.replaceAll('0', 'O').replaceAll('1', 'I');
+        // "l" minúsculo numa palavra toda em maiúscula é um "I"
+        if (maiuscula || RegExp(r'^[A-ZÀ-Þl]+$').hasMatch(saida)) {
+          saida = saida.replaceAll('l', 'I');
+        }
+        return saida;
+      });
+
+  static String? _extrairFornecedor(List<String> linhasLidas) {
+    final todas = [for (final l in linhasLidas) _letrasDoNome(l)];
     // Da seção do destinatário em diante os nomes são de quem comprou.
     final fim = todas.indexWhere(
         (l) => _cabecalhoDeTerceiro.hasMatch(_maiusculaSemAcento(l)));

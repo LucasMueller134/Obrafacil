@@ -68,8 +68,18 @@ class _Titulo extends StatelessWidget {
   }
 }
 
-/// A folha que sobe ao tocar em "Foto da nota": câmera ou galeria, em
-/// linhas de 72 dp, e o "Cancelar" (o equivalente de arrastar para baixo).
+/// De onde vem a foto da nota.
+enum _OrigemDaFoto {
+  /// O scanner de documento do celular (ML Kit no Android, VisionKit no
+  /// iPhone): acha as bordas da nota, endireita e recorta.
+  scanner,
+  camera,
+  galeria,
+}
+
+/// A folha que sobe ao tocar em "Foto da nota": scanner, câmera ou
+/// galeria, em linhas de 72 dp, e o "Cancelar" (o equivalente de arrastar
+/// para baixo).
 class _EscolhaDaFoto extends StatelessWidget {
   const _EscolhaDaFoto();
 
@@ -78,7 +88,7 @@ class _EscolhaDaFoto extends StatelessWidget {
     final c = context.cores;
     return SafeArea(
       top: false,
-      child: Padding(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.only(bottom: Espaco.e16),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -97,13 +107,22 @@ class _EscolhaDaFoto extends StatelessWidget {
               ),
             ),
             LinhaLista(
+              titulo: 'Escanear a nota',
+              apoio: 'Acha a nota, endireita e recorta: lê melhor',
+              icone: Icons.document_scanner_outlined,
+              seta: false,
+              divisoria: true,
+              vibrar: true,
+              aoTocar: () => Navigator.pop(context, _OrigemDaFoto.scanner),
+            ),
+            LinhaLista(
               titulo: 'Tirar foto da nota',
               apoio: 'Abre a câmera',
               icone: Icons.photo_camera_outlined,
               seta: false,
               divisoria: true,
               vibrar: true,
-              aoTocar: () => Navigator.pop(context, ImageSource.camera),
+              aoTocar: () => Navigator.pop(context, _OrigemDaFoto.camera),
             ),
             LinhaLista(
               titulo: 'Escolher da galeria',
@@ -111,7 +130,7 @@ class _EscolhaDaFoto extends StatelessWidget {
               icone: Icons.photo_library_outlined,
               seta: false,
               vibrar: true,
-              aoTocar: () => Navigator.pop(context, ImageSource.gallery),
+              aoTocar: () => Navigator.pop(context, _OrigemDaFoto.galeria),
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(
@@ -387,6 +406,14 @@ class _Recibo extends StatelessWidget {
                           aoRemover: () => aoRemoverItem(item),
                         ),
                       ),
+                    if (_conferenciaDosItens(itens, valor) case final texto?)
+                      Padding(
+                        padding: const EdgeInsets.only(top: Espaco.e12),
+                        child: Text(
+                          texto,
+                          style: Tipografia.apoio.copyWith(color: c.grafite2),
+                        ),
+                      ),
                   ],
                 ),
               ),
@@ -619,9 +646,19 @@ class _LinhaItem extends StatelessWidget {
         Icon(Icons.inventory_2_outlined, size: 24, color: c.grafite),
         const SizedBox(width: Espaco.e12),
         Expanded(
-          child: Text(
-            item.resumo,
-            style: Tipografia.corpoForte.copyWith(color: c.grafite),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                item.resumo,
+                style: Tipografia.corpoForte.copyWith(color: c.grafite),
+              ),
+              if (_detalheDoItem(item) case final detalhe?)
+                Text(
+                  detalhe,
+                  style: Tipografia.apoio.copyWith(color: c.grafite2),
+                ),
+            ],
           ),
         ),
         const SizedBox(width: Espaco.e8),
@@ -633,6 +670,38 @@ class _LinhaItem extends StatelessWidget {
       ],
     );
   }
+}
+
+/// A soma dos itens lidos, e se ela fecha com o valor da nota. Só quando
+/// todos os itens trouxeram preço (senão a soma engana).
+String? _conferenciaDosItens(List<ItemMaterialModel> itens, double? valor) {
+  if (itens.length < 2 || itens.any((i) => i.totalDaLinha == null)) {
+    return null;
+  }
+  final soma = itens.fold<double>(0, (s, i) => s + i.totalDaLinha!);
+  final texto = 'Soma dos itens: ${Formatters.moeda(soma)}';
+  if (valor == null || (soma - valor).abs() <= 0.05) {
+    return valor == null ? texto : '$texto, igual ao total da nota.';
+  }
+  return soma > valor
+      ? '$texto. A nota fechou em ${Formatters.moeda(valor)}: '
+          'deve ter desconto.'
+      : '$texto. A nota fechou em ${Formatters.moeda(valor)}: '
+          'deve ter frete ou um item que não foi lido.';
+}
+
+/// "CIMENTO CP II 50KG · R\$ 38,90 cada · R\$ 389,00": o produto como veio
+/// na nota (quando o nome do estoque é outro) e os preços.
+String? _detalheDoItem(ItemMaterialModel item) {
+  final partes = <String>[
+    if (item.descricao != null &&
+        item.descricao!.toLowerCase() != item.material.toLowerCase())
+      item.descricao!,
+    if (item.valorUnitario != null)
+      '${Formatters.moeda(item.valorUnitario!)} cada',
+    if (item.totalDaLinha != null) Formatters.moeda(item.totalDaLinha!),
+  ];
+  return partes.isEmpty ? null : partes.join(' · ');
 }
 
 /// A foto da nota que vai junto com o lançamento, com o botão de tirar

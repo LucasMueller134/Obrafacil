@@ -14,6 +14,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 const _canalFoto = MethodChannel('plugins.flutter.io/image_picker');
 const _canalTexto = MethodChannel('google_mlkit_text_recognizer');
+const _canalScanner = MethodChannel('cunning_document_scanner');
 
 /// As linhas do cupom: o que está desenhado e o que o "OCR" lê.
 const _linhas = [
@@ -124,9 +125,13 @@ Map<String, Object?> _textoReconhecido() {
 /// Com uma [demora] maior que o tempo até a captura, a foto sai no meio
 /// da leitura; o harness ainda deixa o tempo correr 10 s depois de
 /// desmontar, então a resposta chega e nada fica pendente.
+///
+/// O scanner de documento devolve o mesmo arquivo; com [scannerFalha] ele
+/// responde como um celular sem o scanner (a tela cai na câmera).
 Future<void> prepararNotaFalsa(
   WidgetTester tester, {
   Duration demora = const Duration(milliseconds: 300),
+  bool scannerFalha = false,
 }) async {
   final caminho = (await tester.runAsync(_desenharNota))!;
   final mensageiro = tester.binding.defaultBinaryMessenger;
@@ -134,6 +139,13 @@ Future<void> prepararNotaFalsa(
     _canalFoto,
     (chamada) async => chamada.method == 'pickImage' ? caminho : null,
   );
+  mensageiro.setMockMethodCallHandler(_canalScanner, (chamada) async {
+    if (chamada.method != 'getPictures') return null;
+    if (scannerFalha) {
+      throw PlatformException(code: 'UNAVAILABLE', message: 'sem scanner');
+    }
+    return [caminho];
+  });
   mensageiro.setMockMethodCallHandler(_canalTexto, (chamada) async {
     if (chamada.method != 'vision#startTextRecognizer') return null;
     await Future<void>.delayed(demora);

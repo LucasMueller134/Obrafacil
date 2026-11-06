@@ -2867,5 +2867,3014 @@
       "total": 268.4,
       "data": "2026-06-30"
     }
+  },
+  {
+    "id": "ocr-teste-nfce-deposito-exemplo",
+    "origem": "sintetico",
+    "particao": "dev",
+    "nota": "A NFC-e de teste do app (docs/notas-de-teste): 6 itens com o nome numa linha e a quantidade na outra, desconto, PIX e QR de homologação. Total é o Valor a pagar.",
+    "entrada": {
+      "blocos": [
+        {
+          "linhas": [
+            {
+              "t": "DEPOSITO DE MATERIAIS EXEMPLO LTDA",
+              "l": 165,
+              "tp": 46,
+              "r": 779,
+              "b": 68
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "CNPJ: 11.222.333/0001-81 IE: 123.456.789.110",
+              "l": 75,
+              "tp": 86,
+              "r": 870,
+              "b": 111
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "RUA DAS OBRAS, 100 - CENTRO",
+              "l": 228,
+              "tp": 126,
+              "r": 716,
+              "b": 153
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "SAO PAULO - SP - CEP 01001-000",
+              "l": 201,
+              "tp": 166,
+              "r": 743,
+              "b": 188
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "DOCUMENTO AUXILIAR DA NOTA FISCAL",
+              "l": 174,
+              "tp": 246,
+              "r": 770,
+              "b": 268
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "DE CONSUMIDOR ELETRONICA",
+              "l": 255,
+              "tp": 286,
+              "r": 689,
+              "b": 308
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "EMITIDA EM AMBIENTE DE HOMOLOGACAO",
+              "l": 165,
+              "tp": 366,
+              "r": 779,
+              "b": 388
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "SEM VALOR FISCAL",
+              "l": 327,
+              "tp": 406,
+              "r": 616,
+              "b": 428
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "# CODIGO DESCRICAO",
+              "l": 32,
+              "tp": 486,
+              "r": 357,
+              "b": 508
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "QTD UN VL UNIT",
+              "l": 461,
+              "tp": 486,
+              "r": 913,
+              "b": 512
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "VL TOTAL",
+              "l": 913,
+              "tp": 486,
+              "r": 913,
+              "b": 512
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "001 7891000100103 CIMENTO CP II-E-32 50KG",
+              "l": 32,
+              "tp": 526,
+              "r": 773,
+              "b": 548
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "10 SC X 38,90",
+              "l": 158,
+              "tp": 566,
+              "r": 393,
+              "b": 593
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "389,00",
+              "l": 805,
+              "tp": 566,
+              "r": 913,
+              "b": 593
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "002 7890000201021 AREIA MEDIA LAVADA",
+              "l": 32,
+              "tp": 606,
+              "r": 682,
+              "b": 628
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "2 M3 X 145,00",
+              "l": 158,
+              "tp": 646,
+              "r": 393,
+              "b": 673
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "290,00",
+              "l": 805,
+              "tp": 646,
+              "r": 913,
+              "b": 673
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "003 7896000300555 BLOCO CERAMICO 9X19X29",
+              "l": 32,
+              "tp": 686,
+              "r": 755,
+              "b": 708
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "500 UN X 1,25",
+              "l": 158,
+              "tp": 726,
+              "r": 393,
+              "b": 753
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "625,00",
+              "l": 805,
+              "tp": 726,
+              "r": 913,
+              "b": 753
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "004 7891000412106 VERGALHAO CA-50 10MM 12M",
+              "l": 32,
+              "tp": 766,
+              "r": 791,
+              "b": 788
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "8 BR X 52,90",
+              "l": 158,
+              "tp": 806,
+              "r": 375,
+              "b": 833
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "423,20",
+              "l": 805,
+              "tp": 806,
+              "r": 913,
+              "b": 833
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "005 7895000500018 ARAME RECOZIDO 18 1KG",
+              "l": 32,
+              "tp": 846,
+              "r": 736,
+              "b": 868
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "2 UN X 18,90",
+              "l": 158,
+              "tp": 886,
+              "r": 375,
+              "b": 913
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "37,80",
+              "l": 823,
+              "tp": 886,
+              "r": 913,
+              "b": 913
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "006 7892000600127 CAL HIDRATADA CH-III 20KG",
+              "l": 32,
+              "tp": 926,
+              "r": 809,
+              "b": 948
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "4 SC X 21,90",
+              "l": 158,
+              "tp": 966,
+              "r": 375,
+              "b": 993
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "87,60",
+              "l": 823,
+              "tp": 966,
+              "r": 913,
+              "b": 993
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "QTD. TOTAL DE ITENS",
+              "l": 32,
+              "tp": 1046,
+              "r": 375,
+              "b": 1072
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "6",
+              "l": 895,
+              "tp": 1046,
+              "r": 913,
+              "b": 1068
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "VALOR TOTAL R$",
+              "l": 32,
+              "tp": 1086,
+              "r": 285,
+              "b": 1112
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "1.852,60",
+              "l": 768,
+              "tp": 1086,
+              "r": 913,
+              "b": 1113
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "DESCONTO R$",
+              "l": 32,
+              "tp": 1126,
+              "r": 231,
+              "b": 1152
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "52,60",
+              "l": 823,
+              "tp": 1126,
+              "r": 913,
+              "b": 1153
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "VALOR A PAGAR R$",
+              "l": 32,
+              "tp": 1166,
+              "r": 321,
+              "b": 1192
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "1.800,00",
+              "l": 768,
+              "tp": 1166,
+              "r": 913,
+              "b": 1193
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "FORMA DE PAGAMENTO",
+              "l": 32,
+              "tp": 1206,
+              "r": 357,
+              "b": 1228
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "VALOR PAGO R$",
+              "l": 678,
+              "tp": 1206,
+              "r": 913,
+              "b": 1232
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "PIX",
+              "l": 32,
+              "tp": 1246,
+              "r": 86,
+              "b": 1268
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "1.800,00",
+              "l": 768,
+              "tp": 1246,
+              "r": 913,
+              "b": 1273
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "Consulte pela Chave de Acesso em",
+              "l": 183,
+              "tp": 1325,
+              "r": 761,
+              "b": 1354
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "homologacao.nfce.fazenda.sp.gov.br/consulta",
+              "l": 84,
+              "tp": 1365,
+              "r": 861,
+              "b": 1394
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "3526 1111 2223 3300 0181 6500",
+              "l": 210,
+              "tp": 1406,
+              "r": 734,
+              "b": 1428
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "1000 0012 3418 1726 3548",
+              "l": 255,
+              "tp": 1446,
+              "r": 689,
+              "b": 1468
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "CONSUMIDOR NAO IDENTIFICADO",
+              "l": 228,
+              "tp": 1526,
+              "r": 716,
+              "b": 1548
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "NFC-e n 000001234 Serie 001",
+              "l": 228,
+              "tp": 1565,
+              "r": 716,
+              "b": 1588
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "Emissao: 06/11/2026 14:32:18",
+              "l": 219,
+              "tp": 1605,
+              "r": 725,
+              "b": 1631
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "Protocolo de autorizacao: 135269000012345",
+              "l": 102,
+              "tp": 1645,
+              "r": 843,
+              "b": 1668
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "Data de autorizacao: 06/11/2026 14:32:21",
+              "l": 111,
+              "tp": 1685,
+              "r": 834,
+              "b": 1711
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "Tributos totais incidentes",
+              "l": 237,
+              "tp": 2135,
+              "r": 707,
+              "b": 2158
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "(Lei Federal 12.741/2012): R$ 555,66",
+              "l": 147,
+              "tp": 2175,
+              "r": 797,
+              "b": 2203
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "DOCUMENTO DE TESTE - OBRA NA MAO",
+              "l": 183,
+              "tp": 2256,
+              "r": 761,
+              "b": 2278
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "SEM VALOR FISCAL",
+              "l": 327,
+              "tp": 2296,
+              "r": 616,
+              "b": 2318
+            }
+          ]
+        }
+      ],
+      "codigos": [
+        {
+          "formato": "qr",
+          "valor": "https://www.homologacao.nfce.fazenda.sp.gov.br/qrcode?p=35261111222333000181650010000012341817263548|2|2|1|7C3A0F61D2B94E58A1C6F0B27D8E9A4B3C5D6E7F"
+        }
+      ]
+    },
+    "esperado": {
+      "fornecedor": "Deposito de Materiais Exemplo Ltda",
+      "cnpj": "11.222.333/0001-81",
+      "total": 1800.0,
+      "data": "2026-11-06",
+      "itens": [
+        {
+          "material": "CIMENTO CP II-E-32 50KG",
+          "quantidade": 10,
+          "unidade": "SC",
+          "valorUnitario": 38.9,
+          "valorTotal": 389.0
+        },
+        {
+          "material": "AREIA MEDIA LAVADA",
+          "quantidade": 2,
+          "unidade": "M3",
+          "valorUnitario": 145.0,
+          "valorTotal": 290.0
+        },
+        {
+          "material": "BLOCO CERAMICO 9X19X29",
+          "quantidade": 500,
+          "unidade": "UN",
+          "valorUnitario": 1.25,
+          "valorTotal": 625.0
+        },
+        {
+          "material": "VERGALHAO CA-50 10MM 12M",
+          "quantidade": 8,
+          "unidade": "BR",
+          "valorUnitario": 52.9,
+          "valorTotal": 423.2
+        },
+        {
+          "material": "ARAME RECOZIDO 18 1KG",
+          "quantidade": 2,
+          "unidade": "UN",
+          "valorUnitario": 18.9,
+          "valorTotal": 37.8
+        },
+        {
+          "material": "CAL HIDRATADA CH-III 20KG",
+          "quantidade": 4,
+          "unidade": "SC",
+          "valorUnitario": 21.9,
+          "valorTotal": 87.6
+        }
+      ]
+    }
+  },
+  {
+    "id": "ocr-teste-danfe-ferragens-exemplo",
+    "origem": "sintetico",
+    "particao": "dev",
+    "nota": "O DANFE de teste do app (docs/notas-de-teste): itens em tabela, frete no total, emissão (05/11) antes da saída (06/11), destinatário com CPF e unidade RL.",
+    "entrada": {
+      "blocos": [
+        {
+          "linhas": [
+            {
+              "t": "RECEBEMOS DE COMERCIAL DE FERRAGENS EXEMPLO LTDA OS PRODUTOS CONSTANTES DA NOTA FISCAL INDICADA AO LADO",
+              "l": 102,
+              "tp": 103,
+              "r": 1485,
+              "b": 118
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "NF-e",
+              "l": 2090,
+              "tp": 128,
+              "r": 2170,
+              "b": 153
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "N. 000.004.567 SERIE 1",
+              "l": 1977,
+              "tp": 177,
+              "r": 2284,
+              "b": 196
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "COMERCIAL DE FERRAGENS",
+              "l": 226,
+              "tp": 340,
+              "r": 853,
+              "b": 370
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "EXEMPLO LTDA",
+              "l": 369,
+              "tp": 395,
+              "r": 710,
+              "b": 425
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "AV. DOS CONSTRUTORES, 2500 - DISTRITO INDUSTRIAL",
+              "l": 188,
+              "tp": 476,
+              "r": 892,
+              "b": 497
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "CAMPINAS - SP - CEP 13050-000",
+              "l": 340,
+              "tp": 516,
+              "r": 741,
+              "b": 534
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "FONE: (19) 3000-0000",
+              "l": 408,
+              "tp": 555,
+              "r": 672,
+              "b": 579
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "DANFE",
+              "l": 1125,
+              "tp": 332,
+              "r": 1304,
+              "b": 368
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "DOCUMENTO AUXILIAR DA",
+              "l": 1059,
+              "tp": 395,
+              "r": 1371,
+              "b": 412
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "NOTA FISCAL ELETRONICA",
+              "l": 1058,
+              "tp": 427,
+              "r": 1371,
+              "b": 444
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "0 - ENTRADA",
+              "l": 1020,
+              "tp": 485,
+              "r": 1169,
+              "b": 502
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "1 - SAIDA",
+              "l": 1020,
+              "tp": 517,
+              "r": 1127,
+              "b": 534
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "1",
+              "l": 1365,
+              "tp": 494,
+              "r": 1385,
+              "b": 519
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "N. 000.004.567",
+              "l": 1112,
+              "tp": 587,
+              "r": 1317,
+              "b": 608
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "SERIE 1  FOLHA 1/1",
+              "l": 1094,
+              "tp": 625,
+              "r": 1337,
+              "b": 644
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "CHAVE DE ACESSO",
+              "l": 1470,
+              "tp": 485,
+              "r": 1677,
+              "b": 500
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "3526 1112 3456 7800 0195 5500 1000 0045 6713 0405 0605",
+              "l": 1470,
+              "tp": 522,
+              "r": 2284,
+              "b": 543
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "Consulta de autenticidade no portal nacional da NF-e",
+              "l": 1470,
+              "tp": 595,
+              "r": 2037,
+              "b": 617
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "www.nfe.fazenda.gov.br/portal ou no site da Sefaz",
+              "l": 1469,
+              "tp": 630,
+              "r": 2003,
+              "b": 652
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "NATUREZA DA OPERACAO",
+              "l": 102,
+              "tp": 723,
+              "r": 384,
+              "b": 738
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "VENDA DE MERCADORIA",
+              "l": 102,
+              "tp": 767,
+              "r": 514,
+              "b": 790
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "PROTOCOLO DE AUTORIZACAO DE USO",
+              "l": 1452,
+              "tp": 723,
+              "r": 1883,
+              "b": 738
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "135269000045678 - 05/11/2026 10:15:42",
+              "l": 1452,
+              "tp": 765,
+              "r": 2075,
+              "b": 790
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "INSCRICAO ESTADUAL",
+              "l": 102,
+              "tp": 823,
+              "r": 345,
+              "b": 838
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "244.555.666.777",
+              "l": 102,
+              "tp": 867,
+              "r": 357,
+              "b": 890
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "INSC. ESTADUAL DO SUBST. TRIBUTARIO",
+              "l": 862,
+              "tp": 823,
+              "r": 1300,
+              "b": 838
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "CNPJ",
+              "l": 1622,
+              "tp": 823,
+              "r": 1679,
+              "b": 838
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "12.345.678/0001-95",
+              "l": 1622,
+              "tp": 865,
+              "r": 1926,
+              "b": 890
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "DESTINATARIO / REMETENTE",
+              "l": 90,
+              "tp": 945,
+              "r": 463,
+              "b": 965
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "NOME / RAZAO SOCIAL",
+              "l": 102,
+              "tp": 992,
+              "r": 349,
+              "b": 1008
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "OBRA EXEMPLO - JOAO DA SILVA (TESTE)",
+              "l": 102,
+              "tp": 1035,
+              "r": 788,
+              "b": 1067
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "CNPJ / CPF",
+              "l": 1502,
+              "tp": 992,
+              "r": 1622,
+              "b": 1008
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "123.456.789-09",
+              "l": 1502,
+              "tp": 1037,
+              "r": 1740,
+              "b": 1060
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "DATA DA EMISSAO",
+              "l": 2002,
+              "tp": 993,
+              "r": 2198,
+              "b": 1008
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "05/11/2026",
+              "l": 2002,
+              "tp": 1035,
+              "r": 2170,
+              "b": 1060
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "ENDERECO",
+              "l": 102,
+              "tp": 1093,
+              "r": 227,
+              "b": 1108
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "RUA DA OBRA NOVA, 42",
+              "l": 102,
+              "tp": 1137,
+              "r": 491,
+              "b": 1164
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "BAIRRO / DISTRITO",
+              "l": 1202,
+              "tp": 1092,
+              "r": 1407,
+              "b": 1108
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "JARDIM EXEMPLO",
+              "l": 1202,
+              "tp": 1137,
+              "r": 1502,
+              "b": 1160
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "CEP",
+              "l": 1602,
+              "tp": 1093,
+              "r": 1647,
+              "b": 1108
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "13000-000",
+              "l": 1602,
+              "tp": 1137,
+              "r": 1765,
+              "b": 1160
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "DATA DA SAIDA/ENTRADA",
+              "l": 2002,
+              "tp": 1092,
+              "r": 2275,
+              "b": 1108
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "06/11/2026",
+              "l": 2002,
+              "tp": 1135,
+              "r": 2170,
+              "b": 1160
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "MUNICIPIO",
+              "l": 102,
+              "tp": 1193,
+              "r": 218,
+              "b": 1208
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "CAMPINAS",
+              "l": 102,
+              "tp": 1237,
+              "r": 280,
+              "b": 1260
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "UF",
+              "l": 1202,
+              "tp": 1193,
+              "r": 1231,
+              "b": 1208
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "SP",
+              "l": 1202,
+              "tp": 1237,
+              "r": 1247,
+              "b": 1260
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "FONE / FAX",
+              "l": 1602,
+              "tp": 1192,
+              "r": 1723,
+              "b": 1208
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "HORA DA SAIDA",
+              "l": 2002,
+              "tp": 1193,
+              "r": 2172,
+              "b": 1208
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "08:30:00",
+              "l": 2002,
+              "tp": 1237,
+              "r": 2134,
+              "b": 1260
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "CALCULO DO IMPOSTO",
+              "l": 90,
+              "tp": 1316,
+              "r": 390,
+              "b": 1334
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "BASE DE CALC. DO ICMS",
+              "l": 102,
+              "tp": 1363,
+              "r": 368,
+              "b": 1378
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "2.380,00",
+              "l": 329,
+              "tp": 1407,
+              "r": 461,
+              "b": 1434
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "VALOR DO ICMS",
+              "l": 485,
+              "tp": 1363,
+              "r": 658,
+              "b": 1378
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "428,40",
+              "l": 740,
+              "tp": 1407,
+              "r": 844,
+              "b": 1434
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "BASE CALC. ICMS S.T.",
+              "l": 868,
+              "tp": 1363,
+              "r": 1103,
+              "b": 1378
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "0,00",
+              "l": 1162,
+              "tp": 1407,
+              "r": 1228,
+              "b": 1434
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "VALOR DO ICMS SUBST.",
+              "l": 1252,
+              "tp": 1363,
+              "r": 1508,
+              "b": 1378
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "0,00",
+              "l": 1545,
+              "tp": 1407,
+              "r": 1611,
+              "b": 1434
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "V. TOTAL TRIBUTOS",
+              "l": 1635,
+              "tp": 1363,
+              "r": 1844,
+              "b": 1378
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "737,80",
+              "l": 1890,
+              "tp": 1407,
+              "r": 1994,
+              "b": 1434
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "VALOR TOTAL DOS PRODUTOS",
+              "l": 2018,
+              "tp": 1363,
+              "r": 2349,
+              "b": 1378
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "2.380,00",
+              "l": 2246,
+              "tp": 1407,
+              "r": 2378,
+              "b": 1434
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "VALOR DO FRETE",
+              "l": 102,
+              "tp": 1463,
+              "r": 292,
+              "b": 1478
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "100,00",
+              "l": 357,
+              "tp": 1507,
+              "r": 461,
+              "b": 1534
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "VALOR DO SEGURO",
+              "l": 485,
+              "tp": 1463,
+              "r": 699,
+              "b": 1478
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "0,00",
+              "l": 778,
+              "tp": 1507,
+              "r": 844,
+              "b": 1534
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "DESCONTO",
+              "l": 868,
+              "tp": 1463,
+              "r": 992,
+              "b": 1478
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "0,00",
+              "l": 1162,
+              "tp": 1507,
+              "r": 1228,
+              "b": 1534
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "OUTRAS DESPESAS",
+              "l": 1252,
+              "tp": 1463,
+              "r": 1468,
+              "b": 1478
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "0,00",
+              "l": 1545,
+              "tp": 1507,
+              "r": 1611,
+              "b": 1534
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "VALOR DO IPI",
+              "l": 1635,
+              "tp": 1463,
+              "r": 1780,
+              "b": 1478
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "0,00",
+              "l": 1928,
+              "tp": 1507,
+              "r": 1994,
+              "b": 1534
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "VALOR TOTAL DA NOTA",
+              "l": 2018,
+              "tp": 1463,
+              "r": 2266,
+              "b": 1478
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "2.480,00",
+              "l": 2246,
+              "tp": 1507,
+              "r": 2378,
+              "b": 1535
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "TRANSPORTADOR / VOLUMES TRANSPORTADOS",
+              "l": 90,
+              "tp": 1585,
+              "r": 719,
+              "b": 1605
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "RAZAO SOCIAL",
+              "l": 102,
+              "tp": 1633,
+              "r": 265,
+              "b": 1648
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "TRANSPORTES EXEMPLO LTDA",
+              "l": 102,
+              "tp": 1677,
+              "r": 624,
+              "b": 1700
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "FRETE POR CONTA",
+              "l": 1402,
+              "tp": 1633,
+              "r": 1610,
+              "b": 1648
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "0 - EMITENTE",
+              "l": 1402,
+              "tp": 1677,
+              "r": 1623,
+              "b": 1700
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "PLACA DO VEICULO",
+              "l": 1902,
+              "tp": 1633,
+              "r": 2115,
+              "b": 1648
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "TST-0A00",
+              "l": 1902,
+              "tp": 1677,
+              "r": 2055,
+              "b": 1700
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "DADOS DOS PRODUTOS / SERVICOS",
+              "l": 90,
+              "tp": 1755,
+              "r": 557,
+              "b": 1775
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "COD. PROD.",
+              "l": 100,
+              "tp": 1817,
+              "r": 231,
+              "b": 1832
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "DESCRICAO DO PRODUTO / SERVICO",
+              "l": 290,
+              "tp": 1816,
+              "r": 693,
+              "b": 1832
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "NCM/SH",
+              "l": 1150,
+              "tp": 1816,
+              "r": 1237,
+              "b": 1832
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "CST",
+              "l": 1350,
+              "tp": 1817,
+              "r": 1394,
+              "b": 1832
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "CFOP",
+              "l": 1460,
+              "tp": 1817,
+              "r": 1521,
+              "b": 1832
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "UN",
+              "l": 1580,
+              "tp": 1817,
+              "r": 1612,
+              "b": 1832
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "QUANT.",
+              "l": 1680,
+              "tp": 1817,
+              "r": 1761,
+              "b": 1836
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "VALOR UNIT.",
+              "l": 1850,
+              "tp": 1817,
+              "r": 1984,
+              "b": 1832
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "VALOR TOTAL",
+              "l": 2100,
+              "tp": 1817,
+              "r": 2248,
+              "b": 1832
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "1001",
+              "l": 100,
+              "tp": 1889,
+              "r": 162,
+              "b": 1908
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "TUBO PVC SOLDAVEL 25MM BARRA 6M",
+              "l": 290,
+              "tp": 1889,
+              "r": 821,
+              "b": 1908
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "39172300",
+              "l": 1150,
+              "tp": 1889,
+              "r": 1275,
+              "b": 1908
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "000",
+              "l": 1350,
+              "tp": 1889,
+              "r": 1397,
+              "b": 1908
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "5102",
+              "l": 1460,
+              "tp": 1889,
+              "r": 1522,
+              "b": 1908
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "BR",
+              "l": 1580,
+              "tp": 1889,
+              "r": 1619,
+              "b": 1908
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "20,0000",
+              "l": 1727,
+              "tp": 1889,
+              "r": 1828,
+              "b": 1912
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "18,50",
+              "l": 2008,
+              "tp": 1889,
+              "r": 2078,
+              "b": 1912
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "370,00",
+              "l": 2292,
+              "tp": 1889,
+              "r": 2378,
+              "b": 1912
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "1002",
+              "l": 100,
+              "tp": 1964,
+              "r": 162,
+              "b": 1983
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "JOELHO 90 PVC SOLDAVEL 25MM",
+              "l": 290,
+              "tp": 1964,
+              "r": 744,
+              "b": 1983
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "39174000",
+              "l": 1150,
+              "tp": 1964,
+              "r": 1275,
+              "b": 1983
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "000",
+              "l": 1350,
+              "tp": 1964,
+              "r": 1397,
+              "b": 1983
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "5102",
+              "l": 1460,
+              "tp": 1964,
+              "r": 1522,
+              "b": 1983
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "UN",
+              "l": 1580,
+              "tp": 1964,
+              "r": 1620,
+              "b": 1983
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "40,0000",
+              "l": 1727,
+              "tp": 1964,
+              "r": 1828,
+              "b": 1987
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "1,90",
+              "l": 2023,
+              "tp": 1964,
+              "r": 2078,
+              "b": 1987
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "76,00",
+              "l": 2308,
+              "tp": 1964,
+              "r": 2378,
+              "b": 1987
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "1003",
+              "l": 100,
+              "tp": 2039,
+              "r": 162,
+              "b": 2058
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "REGISTRO DE GAVETA 3/4 BRUTO",
+              "l": 290,
+              "tp": 2038,
+              "r": 751,
+              "b": 2058
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "84818099",
+              "l": 1150,
+              "tp": 2039,
+              "r": 1275,
+              "b": 2058
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "000",
+              "l": 1350,
+              "tp": 2039,
+              "r": 1397,
+              "b": 2058
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "5102",
+              "l": 1460,
+              "tp": 2039,
+              "r": 1522,
+              "b": 2058
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "UN",
+              "l": 1580,
+              "tp": 2039,
+              "r": 1620,
+              "b": 2058
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "4,0000",
+              "l": 1742,
+              "tp": 2039,
+              "r": 1828,
+              "b": 2062
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "64,50",
+              "l": 2008,
+              "tp": 2039,
+              "r": 2078,
+              "b": 2062
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "258,00",
+              "l": 2292,
+              "tp": 2039,
+              "r": 2378,
+              "b": 2062
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "1004",
+              "l": 100,
+              "tp": 2114,
+              "r": 162,
+              "b": 2133
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "CAIXA D'AGUA POLIETILENO 1000L",
+              "l": 290,
+              "tp": 2114,
+              "r": 761,
+              "b": 2133
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "39251000",
+              "l": 1150,
+              "tp": 2114,
+              "r": 1275,
+              "b": 2133
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "000",
+              "l": 1350,
+              "tp": 2114,
+              "r": 1397,
+              "b": 2133
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "5102",
+              "l": 1460,
+              "tp": 2114,
+              "r": 1522,
+              "b": 2133
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "UN",
+              "l": 1580,
+              "tp": 2114,
+              "r": 1620,
+              "b": 2133
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "1,0000",
+              "l": 1742,
+              "tp": 2114,
+              "r": 1828,
+              "b": 2137
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "489,00",
+              "l": 1992,
+              "tp": 2114,
+              "r": 2078,
+              "b": 2137
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "489,00",
+              "l": 2292,
+              "tp": 2114,
+              "r": 2378,
+              "b": 2137
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "1005",
+              "l": 100,
+              "tp": 2189,
+              "r": 162,
+              "b": 2208
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "FIO FLEXIVEL 2,5MM ROLO 100M",
+              "l": 290,
+              "tp": 2189,
+              "r": 733,
+              "b": 2212
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "85444900",
+              "l": 1150,
+              "tp": 2189,
+              "r": 1275,
+              "b": 2208
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "000",
+              "l": 1350,
+              "tp": 2189,
+              "r": 1397,
+              "b": 2208
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "5102",
+              "l": 1460,
+              "tp": 2189,
+              "r": 1522,
+              "b": 2208
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "RL",
+              "l": 1580,
+              "tp": 2189,
+              "r": 1616,
+              "b": 2208
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "3,0000",
+              "l": 1742,
+              "tp": 2189,
+              "r": 1828,
+              "b": 2212
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "219,00",
+              "l": 1992,
+              "tp": 2189,
+              "r": 2078,
+              "b": 2212
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "657,00",
+              "l": 2292,
+              "tp": 2189,
+              "r": 2378,
+              "b": 2212
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "1006",
+              "l": 100,
+              "tp": 2264,
+              "r": 162,
+              "b": 2283
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "DISJUNTOR MONOPOLAR 20A",
+              "l": 290,
+              "tp": 2264,
+              "r": 697,
+              "b": 2283
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "85362000",
+              "l": 1150,
+              "tp": 2264,
+              "r": 1275,
+              "b": 2283
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "000",
+              "l": 1350,
+              "tp": 2264,
+              "r": 1397,
+              "b": 2283
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "5102",
+              "l": 1460,
+              "tp": 2264,
+              "r": 1522,
+              "b": 2283
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "UN",
+              "l": 1580,
+              "tp": 2264,
+              "r": 1620,
+              "b": 2283
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "10,0000",
+              "l": 1727,
+              "tp": 2264,
+              "r": 1828,
+              "b": 2287
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "15,00",
+              "l": 2008,
+              "tp": 2264,
+              "r": 2078,
+              "b": 2287
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "150,00",
+              "l": 2292,
+              "tp": 2264,
+              "r": 2378,
+              "b": 2287
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "1007",
+              "l": 100,
+              "tp": 2339,
+              "r": 162,
+              "b": 2358
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "ELETRODUTO CORRUGADO 25MM 50M",
+              "l": 290,
+              "tp": 2339,
+              "r": 822,
+              "b": 2358
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "39173900",
+              "l": 1150,
+              "tp": 2339,
+              "r": 1275,
+              "b": 2358
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "000",
+              "l": 1350,
+              "tp": 2339,
+              "r": 1397,
+              "b": 2358
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "5102",
+              "l": 1460,
+              "tp": 2339,
+              "r": 1522,
+              "b": 2358
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "RL",
+              "l": 1580,
+              "tp": 2339,
+              "r": 1616,
+              "b": 2358
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "2,0000",
+              "l": 1742,
+              "tp": 2339,
+              "r": 1828,
+              "b": 2362
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "190,00",
+              "l": 1992,
+              "tp": 2339,
+              "r": 2078,
+              "b": 2362
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "380,00",
+              "l": 2292,
+              "tp": 2339,
+              "r": 2378,
+              "b": 2362
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "DADOS ADICIONAIS",
+              "l": 90,
+              "tp": 2431,
+              "r": 343,
+              "b": 2449
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "INFORMACOES COMPLEMENTARES",
+              "l": 102,
+              "tp": 2478,
+              "r": 485,
+              "b": 2493
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "DOCUMENTO DE TESTE DO APP OBRA NA MAO - EMITIDA EM AMBIENTE DE HOMOLOGACAO - SEM VALOR FISCAL",
+              "l": 102,
+              "tp": 2522,
+              "r": 1651,
+              "b": 2541
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "Pedido 7788 - Entrega na obra. Pagamento: boleto 28 dias.",
+              "l": 102,
+              "tp": 2566,
+              "r": 842,
+              "b": 2592
+            }
+          ]
+        }
+      ],
+      "codigos": [
+        {
+          "formato": "code128",
+          "valor": "35261112345678000195550010000045671304050605"
+        }
+      ]
+    },
+    "esperado": {
+      "fornecedor": "Comercial de Ferragens Exemplo Ltda",
+      "cnpj": "12.345.678/0001-95",
+      "total": 2480.0,
+      "data": "2026-11-05",
+      "itens": [
+        {
+          "material": "TUBO PVC SOLDAVEL 25MM BARRA 6M",
+          "quantidade": 20,
+          "unidade": "BR",
+          "valorUnitario": 18.5,
+          "valorTotal": 370.0
+        },
+        {
+          "material": "JOELHO 90 PVC SOLDAVEL 25MM",
+          "quantidade": 40,
+          "unidade": "UN",
+          "valorUnitario": 1.9,
+          "valorTotal": 76.0
+        },
+        {
+          "material": "REGISTRO DE GAVETA 3/4 BRUTO",
+          "quantidade": 4,
+          "unidade": "UN",
+          "valorUnitario": 64.5,
+          "valorTotal": 258.0
+        },
+        {
+          "material": "CAIXA D'AGUA POLIETILENO 1000L",
+          "quantidade": 1,
+          "unidade": "UN",
+          "valorUnitario": 489.0,
+          "valorTotal": 489.0
+        },
+        {
+          "material": "FIO FLEXIVEL 2,5MM ROLO 100M",
+          "quantidade": 3,
+          "unidade": "RL",
+          "valorUnitario": 219.0,
+          "valorTotal": 657.0
+        },
+        {
+          "material": "DISJUNTOR MONOPOLAR 20A",
+          "quantidade": 10,
+          "unidade": "UN",
+          "valorUnitario": 15.0,
+          "valorTotal": 150.0
+        },
+        {
+          "material": "ELETRODUTO CORRUGADO 25MM 50M",
+          "quantidade": 2,
+          "unidade": "RL",
+          "valorUnitario": 190.0,
+          "valorTotal": 380.0
+        }
+      ]
+    }
+  },
+  {
+    "id": "ocr-teste-nfce-foto-inclinada-tesseract",
+    "origem": "tesseract",
+    "particao": "dev",
+    "nota": "A NFC-e de teste fotografada inclinada e lida pelo Tesseract (sem os cantos de cada linha): a coluna de valores sobe uma linha, o total do item fica acima da quantidade e o \"Valor a pagar\" encosta no desconto. O total certo sai da soma dos itens menos o desconto.",
+    "entrada": {
+      "blocos": [
+        {
+          "linhas": [
+            {
+              "t": "DEPOSITO DE MATERIAIS EXEMPLO LTDA",
+              "l": 379,
+              "tp": 212,
+              "r": 814,
+              "b": 242
+            },
+            {
+              "t": "CNPJ: 11.222.333/0001-81 IE: 123.456.789.110",
+              "l": 315,
+              "tp": 236,
+              "r": 878,
+              "b": 271
+            },
+            {
+              "t": "RUA DAS OBRAS, 100 -",
+              "l": 423,
+              "tp": 271,
+              "r": 675,
+              "b": 294
+            },
+            {
+              "t": "CENTRO",
+              "l": 693,
+              "tp": 267,
+              "r": 769,
+              "b": 284
+            },
+            {
+              "t": "SAO PAULO -",
+              "l": 403,
+              "tp": 303,
+              "r": 540,
+              "b": 322
+            },
+            {
+              "t": "SP -",
+              "l": 558,
+              "tp": 300,
+              "r": 604,
+              "b": 316
+            },
+            {
+              "t": "CEP 01001-000",
+              "l": 623,
+              "tp": 293,
+              "r": 789,
+              "b": 314
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "DOCUMENTO AUXILIAR DA NOTA FISCAL",
+              "l": 382,
+              "tp": 347,
+              "r": 809,
+              "b": 377
+            },
+            {
+              "t": "DE CONSUMIDOR ELETRONICA",
+              "l": 440,
+              "tp": 376,
+              "r": 751,
+              "b": 402
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "EMITIDA EM AMBIENTE DE HOMOLOGACAO",
+              "l": 373,
+              "tp": 428,
+              "r": 817,
+              "b": 459
+            },
+            {
+              "t": "SEM VALOR FISCAL",
+              "l": 490,
+              "tp": 460,
+              "r": 699,
+              "b": 483
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "& CODIGO DESCRICAO",
+              "l": 272,
+              "tp": 523,
+              "r": 509,
+              "b": 546
+            },
+            {
+              "t": "QTD UN VL UNIT VL",
+              "l": 587,
+              "tp": 512,
+              "r": 837,
+              "b": 538
+            },
+            {
+              "t": "001 7891000100103 CIMENTO cP II-E-32 50KG",
+              "l": 272,
+              "tp": 541,
+              "r": 814,
+              "b": 575
+            },
+            {
+              "t": "10 SC X 38,90",
+              "l": 365,
+              "tp": 579,
+              "r": 534,
+              "b": 600
+            },
+            {
+              "t": "002 7890000201021 AREIA MEDIA LAVADA",
+              "l": 270,
+              "tp": 600,
+              "r": 749,
+              "b": 632
+            },
+            {
+              "t": "2 M3 X 145,00",
+              "l": 362,
+              "tp": 636,
+              "r": 534,
+              "b": 658
+            },
+            {
+              "t": "003 7896000300555 BLOCO CERAMICO 9X19X29",
+              "l": 267,
+              "tp": 656,
+              "r": 802,
+              "b": 690
+            },
+            {
+              "t": "500 UN X 1,25",
+              "l": 360,
+              "tp": 694,
+              "r": 533,
+              "b": 716
+            },
+            {
+              "t": "004 7891000412106 VERGALHAO CA-50 10MM 12M",
+              "l": 265,
+              "tp": 713,
+              "r": 831,
+              "b": 749
+            },
+            {
+              "t": "8 BR X 52,90",
+              "l": 358,
+              "tp": 753,
+              "r": 519,
+              "b": 775
+            },
+            {
+              "t": "005 7895000500018 ARAME RECOZIDO 18 1KG",
+              "l": 263,
+              "tp": 774,
+              "r": 790,
+              "b": 808
+            },
+            {
+              "t": "2 UN X 18,90",
+              "l": 357,
+              "tp": 813,
+              "r": 518,
+              "b": 835
+            },
+            {
+              "t": "006 7892000600127 CAL HIDRATADA CH-III 20KG",
+              "l": 260,
+              "tp": 832,
+              "r": 847,
+              "b": 868
+            },
+            {
+              "t": "4 Sc x 21,90",
+              "l": 354,
+              "tp": 873,
+              "r": 517,
+              "b": 895
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "389,00",
+              "l": 841,
+              "tp": 565,
+              "r": 918,
+              "b": 586
+            },
+            {
+              "t": "290,00",
+              "l": 842,
+              "tp": 623,
+              "r": 920,
+              "b": 644
+            },
+            {
+              "t": "625,00",
+              "l": 843,
+              "tp": 681,
+              "r": 921,
+              "b": 702
+            },
+            {
+              "t": "423,20",
+              "l": 844,
+              "tp": 739,
+              "r": 923,
+              "b": 761
+            },
+            {
+              "t": "37,80",
+              "l": 859,
+              "tp": 799,
+              "r": 925,
+              "b": 821
+            },
+            {
+              "t": "87,60",
+              "l": 860,
+              "tp": 859,
+              "r": 926,
+              "b": 881
+            },
+            {
+              "t": "6",
+              "l": 916,
+              "tp": 920,
+              "r": 928,
+              "b": 938
+            },
+            {
+              "t": "1.852,60",
+              "l": 821,
+              "tp": 951,
+              "r": 928,
+              "b": 973
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "52,60",
+              "l": 863,
+              "tp": 982,
+              "r": 930,
+              "b": 1004
+            },
+            {
+              "t": "1.800,00",
+              "l": 821,
+              "tp": 1013,
+              "r": 930,
+              "b": 1036
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "QTD. TOTAL DE ITENS",
+              "l": 256,
+              "tp": 934,
+              "r": 516,
+              "b": 962
+            },
+            {
+              "t": "VALOR TOTAL R$",
+              "l": 255,
+              "tp": 968,
+              "r": 447,
+              "b": 991
+            },
+            {
+              "t": "DESCONTO R$",
+              "l": 254,
+              "tp": 1000,
+              "r": 405,
+              "b": 1022
+            },
+            {
+              "t": "VALOR A PAGAR R$",
+              "l": 253,
+              "tp": 1029,
+              "r": 473,
+              "b": 1053
+            },
+            {
+              "t": "FORMA DE PAGAMENTO",
+              "l": 252,
+              "tp": 1059,
+              "r": 501,
+              "b": 1084
+            },
+            {
+              "t": "VALOR PAGO R$",
+              "l": 751,
+              "tp": 1045,
+              "r": 932,
+              "b": 1068
+            },
+            {
+              "t": "PIX",
+              "l": 251,
+              "tp": 1097,
+              "r": 290,
+              "b": 1116
+            },
+            {
+              "t": "1.800,00",
+              "l": 823,
+              "tp": 1076,
+              "r": 932,
+              "b": 1099
+            },
+            {
+              "t": "mm",
+              "l": 248,
+              "tp": 1115,
+              "r": 932,
+              "b": 1140
+            },
+            {
+              "t": "Consulte pela Chave de Acesso em",
+              "l": 366,
+              "tp": 1147,
+              "r": 816,
+              "b": 1177
+            },
+            {
+              "t": "homologacao.nfce. fazenda. sp.gov.br/consu",
+              "l": 288,
+              "tp": 1177,
+              "r": 851,
+              "b": 1213
+            },
+            {
+              "t": "3526 1111 2223 3300 0181 6500",
+              "l": 385,
+              "tp": 1208,
+              "r": 795,
+              "b": 1240
+            },
+            {
+              "t": "1000 0012 3418 1726 3548",
+              "l": 421,
+              "tp": 1242,
+              "r": 759,
+              "b": 1272
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "lta",
+              "l": 854,
+              "tp": 1173,
+              "r": 894,
+              "b": 1193
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "CONSUMIDOR NAO IDENTIFICADO",
+              "l": 397,
+              "tp": 1307,
+              "r": 782,
+              "b": 1338
+            },
+            {
+              "t": "NFC-e n 000001234 Serie 001",
+              "l": 395,
+              "tp": 1340,
+              "r": 782,
+              "b": 1372
+            },
+            {
+              "t": "Emissao: 06/11/2026 14:32:18",
+              "l": 388,
+              "tp": 1374,
+              "r": 790,
+              "b": 1406
+            },
+            {
+              "t": "Protocolo de autorizacao: 135269000012345",
+              "l": 294,
+              "tp": 1404,
+              "r": 885,
+              "b": 1442
+            },
+            {
+              "t": "Data de autorizacao: 06/11/2026 14:32:21",
+              "l": 299,
+              "tp": 1438,
+              "r": 878,
+              "b": 1476
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "Tributos totais incidentes",
+              "l": 390,
+              "tp": 1840,
+              "r": 781,
+              "b": 1871
+            },
+            {
+              "t": "(Lei Federal 12.741/2012): R$ 555,66",
+              "l": 318,
+              "tp": 1873,
+              "r": 858,
+              "b": 1913
+            }
+          ]
+        },
+        {
+          "linhas": [
+            {
+              "t": "DOCUMENTO DE TESTE - OBRA NA MAO E",
+              "l": 342,
+              "tp": 1931,
+              "r": 884,
+              "b": 1984
+            },
+            {
+              "t": "SEM VALOR FISCAL",
+              "l": 463,
+              "tp": 1989,
+              "r": 706,
+              "b": 2018
+            }
+          ]
+        }
+      ],
+      "codigos": [
+        {
+          "formato": "qr",
+          "valor": "https://www.homologacao.nfce.fazenda.sp.gov.br/qrcode?p=35261111222333000181650010000012341817263548|2|2|1|7C3A0F61D2B94E58A1C6F0B27D8E9A4B3C5D6E7F"
+        }
+      ]
+    },
+    "esperado": {
+      "fornecedor": "Deposito de Materiais Exemplo Ltda",
+      "cnpj": "11.222.333/0001-81",
+      "total": 1800.0,
+      "data": "2026-11-06",
+      "itens": [
+        {
+          "material": "CIMENTO CP II-E-32 50KG",
+          "quantidade": 10,
+          "unidade": "SC",
+          "valorUnitario": 38.9,
+          "valorTotal": 389.0
+        },
+        {
+          "material": "AREIA MEDIA LAVADA",
+          "quantidade": 2,
+          "unidade": "M3",
+          "valorUnitario": 145.0,
+          "valorTotal": 290.0
+        },
+        {
+          "material": "BLOCO CERAMICO 9X19X29",
+          "quantidade": 500,
+          "unidade": "UN",
+          "valorUnitario": 1.25,
+          "valorTotal": 625.0
+        },
+        {
+          "material": "VERGALHAO CA-50 10MM 12M",
+          "quantidade": 8,
+          "unidade": "BR",
+          "valorUnitario": 52.9,
+          "valorTotal": 423.2
+        },
+        {
+          "material": "ARAME RECOZIDO 18 1KG",
+          "quantidade": 2,
+          "unidade": "UN",
+          "valorUnitario": 18.9,
+          "valorTotal": 37.8
+        },
+        {
+          "material": "CAL HIDRATADA CH-III 20KG",
+          "quantidade": 4,
+          "unidade": "SC",
+          "valorUnitario": 21.9,
+          "valorTotal": 87.6
+        }
+      ]
+    }
   }
 ]
