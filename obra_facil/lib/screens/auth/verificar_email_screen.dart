@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../constants/app_colors.dart';
+import '../../design/design.dart';
 import '../../providers/auth_provider.dart';
 
 /// Confirmação do e-mail para quem entra de fora da equipe.
@@ -11,14 +11,22 @@ import '../../providers/auth_provider.dart';
 /// O cliente não passa daqui sem clicar no link: é o que garante que o
 /// e-mail do cadastro existe de verdade e é dele. A tela fica conferindo
 /// sozinha, porque a confirmação acontece no navegador, fora do app.
-class VerificarEmailScreen extends StatefulWidget {
+class VerificarEmailScreen extends StatelessWidget {
   const VerificarEmailScreen({super.key});
 
   @override
-  State<VerificarEmailScreen> createState() => _VerificarEmailScreenState();
+  Widget build(BuildContext context) =>
+      const TemaPrancheta(child: _VerificarEmail());
 }
 
-class _VerificarEmailScreenState extends State<VerificarEmailScreen> {
+class _VerificarEmail extends StatefulWidget {
+  const _VerificarEmail();
+
+  @override
+  State<_VerificarEmail> createState() => _VerificarEmailScreenState();
+}
+
+class _VerificarEmailScreenState extends State<_VerificarEmail> {
   Timer? _conferindo;
   bool _reenviando = false;
   int _segundosParaReenviar = 0;
@@ -48,9 +56,8 @@ class _VerificarEmailScreenState extends State<VerificarEmailScreen> {
       _reenviando = false;
       _segundosParaReenviar = erro == null ? 60 : 0;
     });
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(erro ?? 'E-mail reenviado. Confira também o spam.'),
-    ));
+    unawaited(erro == null ? Tato.confirmar() : Tato.erro());
+    mostrarAviso(context, erro ?? 'E-mail reenviado. Confira também o spam.');
     if (erro == null) _contarRegressiva();
   }
 
@@ -65,105 +72,90 @@ class _VerificarEmailScreenState extends State<VerificarEmailScreen> {
   }
 
   Future<void> _conferirAgora() async {
-    final verificado = await context.read<AuthProvider>().atualizarVerificacao();
+    final verificado =
+        await context.read<AuthProvider>().atualizarVerificacao();
     if (!mounted || verificado) return;
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-      content: Text('Ainda não recebi a confirmação. Abra o link do '
-          'e-mail e tente de novo.'),
-    ));
+    unawaited(Tato.erro());
+    mostrarAviso(
+        context,
+        'Ainda não recebi a confirmação. Abra o link do e-mail e tente de '
+        'novo.');
   }
 
   @override
   Widget build(BuildContext context) {
+    final c = context.cores;
     final auth = context.watch<AuthProvider>();
     final email = auth.emailPendente ?? auth.usuario?.email ?? 'seu e-mail';
+    final esperando = _segundosParaReenviar > 0;
 
     return Scaffold(
       body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(28),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Container(
-                  width: 88,
-                  height: 88,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: AppColors.laranja.withValues(alpha: 0.12),
-                    shape: BoxShape.circle,
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(
+              Espaco.margem, Espaco.e48, Espaco.margem, Espaco.e32),
+          children: [
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Icon(Icons.mark_email_unread_outlined,
+                  size: 48, color: c.grafite),
+            ),
+            const SizedBox(height: Espaco.e16),
+            const Rotulo('Último passo'),
+            const SizedBox(height: Espaco.e4),
+            Semantics(
+              header: true,
+              child: Text('Confirme seu e-mail',
+                  style: Tipografia.tituloTela.copyWith(color: c.grafite)),
+            ),
+            const SizedBox(height: Espaco.e16),
+            Carimbo(linhas: [
+              [
+                CelulaCarimbo(
+                  rotulo: 'Enviamos o link para',
+                  conteudo: Text(
+                    email,
+                    style: Tipografia.corpoForte.copyWith(color: c.grafite),
                   ),
-                  child: const Icon(Icons.mark_email_unread,
-                      size: 42, color: AppColors.laranja),
-                ),
-                const SizedBox(height: 22),
-                Text(
-                  'Confirme seu e-mail',
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context)
-                      .textTheme
-                      .titleLarge
-                      ?.copyWith(fontWeight: FontWeight.w700),
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  'Enviamos um link de confirmação para:',
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodyMedium
-                      ?.copyWith(color: AppColors.textoSecundario),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  email,
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: AppColors.amareloCapacete,
-                        fontWeight: FontWeight.w700,
-                      ),
-                ),
-                const SizedBox(height: 14),
-                Text(
-                  'Abra o e-mail e toque no link. Assim que confirmar, esta '
-                  'tela avança sozinha. Se não achar, olhe no spam.',
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodySmall
-                      ?.copyWith(color: AppColors.textoSecundario),
-                ),
-                const SizedBox(height: 26),
-                ElevatedButton.icon(
-                  onPressed: _conferirAgora,
-                  icon: const Icon(Icons.refresh),
-                  label: const Text('Já confirmei'),
-                ),
-                const SizedBox(height: 10),
-                OutlinedButton.icon(
-                  onPressed: _reenviando || _segundosParaReenviar > 0
-                      ? null
-                      : _reenviar,
-                  icon: _reenviando
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2))
-                      : const Icon(Icons.send),
-                  label: Text(_segundosParaReenviar > 0
-                      ? 'Reenviar em ${_segundosParaReenviar}s'
-                      : 'Reenviar e-mail'),
-                ),
-                const SizedBox(height: 18),
-                TextButton(
-                  onPressed: () => context.read<AuthProvider>().sair(),
-                  child: const Text('Usar outra conta'),
                 ),
               ],
+            ]),
+            const SizedBox(height: Espaco.e16),
+            Text(
+              'Abra o e-mail e toque no link. Assim que confirmar, esta tela '
+              'avança sozinha. Se não achar, olhe no spam.',
+              style: Tipografia.corpo.copyWith(color: c.grafite2),
             ),
-          ),
+            const SizedBox(height: Espaco.e32),
+            BotaoPrincipal(
+              rotulo: 'Já confirmei',
+              icone: Icons.refresh,
+              grande: true,
+              expandir: true,
+              aoTocar: () => unawaited(_conferirAgora()),
+            ),
+            const SizedBox(height: Espaco.entreAlvos),
+            BotaoContorno(
+              rotulo: esperando
+                  ? 'Reenviar em ${_segundosParaReenviar}s'
+                  : 'Reenviar e-mail',
+              icone: Icons.send_outlined,
+              expandir: true,
+              carregando: _reenviando,
+              aoTocar: _reenviando || esperando
+                  ? null
+                  : () => unawaited(_reenviar()),
+            ),
+            const SizedBox(height: Espaco.e24),
+            const LinhaCota(legenda: 'E-mail errado?'),
+            const SizedBox(height: Espaco.e8),
+            Center(
+              child: TextButton(
+                onPressed: () => context.read<AuthProvider>().sair(),
+                child: const Text('Usar outra conta'),
+              ),
+            ),
+          ],
         ),
       ),
     );

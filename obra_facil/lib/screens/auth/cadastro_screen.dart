@@ -1,8 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
-import '../../constants/app_colors.dart';
+import '../../design/design.dart';
 import '../../models/usuario_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../utils/validators.dart';
@@ -12,14 +14,21 @@ import '../../utils/validators.dart';
 /// Os três perfis lado a lado não cabiam na largura de um celular — o
 /// texto estourava por cima do formulário. Separado assim cada perfil
 /// ganha uma linha inteira e o formulário aparece sem disputa de espaço.
-class CadastroScreen extends StatefulWidget {
+class CadastroScreen extends StatelessWidget {
   const CadastroScreen({super.key});
 
   @override
-  State<CadastroScreen> createState() => _CadastroScreenState();
+  Widget build(BuildContext context) => const TemaPrancheta(child: _Cadastro());
 }
 
-class _CadastroScreenState extends State<CadastroScreen> {
+class _Cadastro extends StatefulWidget {
+  const _Cadastro();
+
+  @override
+  State<_Cadastro> createState() => _CadastroScreenState();
+}
+
+class _CadastroScreenState extends State<_Cadastro> {
   final _formKey = GlobalKey<FormState>();
   final _nomeCtrl = TextEditingController();
   final _emailCtrl = TextEditingController();
@@ -37,7 +46,10 @@ class _CadastroScreenState extends State<CadastroScreen> {
   }
 
   Future<void> _cadastrar() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate()) {
+      unawaited(Tato.erro());
+      return;
+    }
     setState(() => _carregando = true);
     final erro = await context.read<AuthProvider>().cadastrar(
           nome: _nomeCtrl.text,
@@ -48,8 +60,8 @@ class _CadastroScreenState extends State<CadastroScreen> {
     if (!mounted) return;
     setState(() => _carregando = false);
     if (erro != null) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(erro)));
+      unawaited(Tato.erro());
+      mostrarAviso(context, erro);
     }
     // Deu certo: o router leva para a área do perfil escolhido.
   }
@@ -66,15 +78,15 @@ class _CadastroScreenState extends State<CadastroScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(_perfil == null ? 'Criar conta' : 'Seus dados'),
         leading: BackButton(onPressed: _voltar),
       ),
       body: SafeArea(
+        top: false,
         // Uma etapa por vez: a anterior sai do desenho na hora, sem ficar
         // por baixo da que entra.
         child: AnimatedSwitcher(
-          duration: const Duration(milliseconds: 240),
-          switchInCurve: Curves.easeOutCubic,
+          duration: context.duracao(Movimento.medio),
+          switchInCurve: Movimento.entrar,
           layoutBuilder: (atual, __) => atual ?? const SizedBox.shrink(),
           transitionBuilder: (filho, animacao) => FadeTransition(
             opacity: animacao,
@@ -89,48 +101,83 @@ class _CadastroScreenState extends State<CadastroScreen> {
           child: _perfil == null ? _escolhaDePerfil() : _formulario(),
         ),
       ),
+      bottomNavigationBar: _perfil == null
+          ? null
+          : BarraDeAcao(
+              principal: BotaoPrincipal(
+                rotulo: 'Criar conta',
+                grande: true,
+                expandir: true,
+                carregando: _carregando,
+                aoTocar: _carregando ? null : () => unawaited(_cadastrar()),
+              ),
+            ),
+    );
+  }
+
+  Widget _cabecalho(String etapa, String titulo, String texto) {
+    final c = context.cores;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Rotulo(etapa),
+        const SizedBox(height: Espaco.e4),
+        Semantics(
+          header: true,
+          child: Text(titulo,
+              style: Tipografia.tituloTela.copyWith(color: c.grafite)),
+        ),
+        const SizedBox(height: Espaco.e8),
+        Text(texto, style: Tipografia.corpo.copyWith(color: c.grafite2)),
+      ],
     );
   }
 
   // ------------------------------------------------------- Etapa 1
 
   Widget _escolhaDePerfil() {
+    const perfis = [
+      (PerfilUsuario.dono, Icons.business_center_outlined),
+      (PerfilUsuario.mestre, Icons.engineering_outlined),
+      (PerfilUsuario.cliente, Icons.holiday_village_outlined),
+    ];
     return SingleChildScrollView(
       key: const ValueKey('perfil'),
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.fromLTRB(
+          Espaco.margem, Espaco.e4, Espaco.margem, Espaco.e32),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text('Como você vai usar o ObraFácil?',
-              style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 6),
-          Text(
-            'Escolha o seu perfil. Isso define o que você vê no app.',
-            style: Theme.of(context)
-                .textTheme
-                .bodySmall
-                ?.copyWith(color: AppColors.textoSecundario),
+          _cabecalho('Criar conta · 1 de 2', 'Como você vai usar o ObraFácil?',
+              'Escolha o seu perfil. Isso define o que você vê no app.'),
+          const SizedBox(height: Espaco.e24),
+          Folha(
+            preenchimento: EdgeInsets.zero,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (var i = 0; i < perfis.length; i++)
+                  LinhaLista(
+                    icone: perfis[i].$2,
+                    titulo: perfis[i].$1.label,
+                    apoio: perfis[i].$1.descricao,
+                    margemHorizontal: Espaco.e12,
+                    divisoria: i < perfis.length - 1,
+                    seta: true,
+                    vibrar: true,
+                    aoTocar: () => setState(() => _perfil = perfis[i].$1),
+                  ),
+              ],
+            ),
           ),
-          const SizedBox(height: 20),
-          for (final (perfil, icone) in const [
-            (PerfilUsuario.dono, Icons.business_center),
-            (PerfilUsuario.mestre, Icons.engineering),
-            (PerfilUsuario.cliente, Icons.holiday_village),
-          ]) ...[
-            _CartaoPerfil(
-              perfil: perfil,
-              icone: icone,
-              onTap: () => setState(() => _perfil = perfil),
-            ),
-            const SizedBox(height: 12),
-          ],
-          const SizedBox(height: 8),
-          Center(
-            child: TextButton(
-              onPressed: () =>
-                  context.canPop() ? context.pop() : context.go('/login'),
-              child: const Text('Já tenho conta'),
-            ),
+          const SizedBox(height: Espaco.e24),
+          const LinhaCota(legenda: 'Já tem conta?'),
+          const SizedBox(height: Espaco.e16),
+          BotaoContorno(
+            rotulo: 'Entrar',
+            expandir: true,
+            aoTocar: () =>
+                context.canPop() ? context.pop() : context.go('/login'),
           ),
         ],
       ),
@@ -140,202 +187,94 @@ class _CadastroScreenState extends State<CadastroScreen> {
   // ------------------------------------------------------- Etapa 2
 
   Widget _formulario() {
+    final c = context.cores;
     final perfil = _perfil!;
     return SingleChildScrollView(
       key: const ValueKey('formulario'),
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.fromLTRB(
+          Espaco.margem, Espaco.e4, Espaco.margem, Espaco.e32),
       child: Form(
         key: _formKey,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            _cabecalho('Criar conta · 2 de 2', 'Seus dados',
+                'Com eles você entra no app de qualquer celular.'),
+            const SizedBox(height: Espaco.e16),
             // Lembra a escolha da etapa anterior e deixa trocar.
-            InkWell(
-              onTap: () => setState(() => _perfil = null),
-              borderRadius: BorderRadius.circular(12),
-              child: Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppColors.laranja.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                      color: AppColors.laranja.withValues(alpha: 0.5)),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.badge_outlined,
-                        size: 18, color: AppColors.laranja),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'Entrando como ${perfil.label}',
-                        style: Theme.of(context)
-                            .textTheme
-                            .bodyMedium
-                            ?.copyWith(fontWeight: FontWeight.w600),
-                      ),
-                    ),
-                    const Text('Trocar',
-                        style: TextStyle(
-                            color: AppColors.laranja,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 13)),
-                  ],
-                ),
+            Folha(
+              preenchimento: EdgeInsets.zero,
+              child: LinhaLista(
+                icone: Icons.badge_outlined,
+                titulo: 'Entrando como ${perfil.label}',
+                apoio: 'Toque para trocar o perfil',
+                margemHorizontal: Espaco.e12,
+                aoTocar: () => setState(() => _perfil = null),
+                seta: false,
+                fim: Text('Trocar',
+                    style: Tipografia.corpoForte.copyWith(color: c.marcaTexto)),
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: Espaco.e24),
             TextFormField(
               controller: _nomeCtrl,
               textCapitalization: TextCapitalization.words,
               textInputAction: TextInputAction.next,
-              decoration: const InputDecoration(
-                labelText: 'Nome completo',
-                prefixIcon: Icon(Icons.person_outline),
-              ),
+              autofillHints: const [AutofillHints.name],
+              decoration: const InputDecoration(labelText: 'Nome completo'),
               validator: (v) => Validators.obrigatorio(v, 'O nome'),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: Espaco.e16),
             TextFormField(
               controller: _emailCtrl,
               keyboardType: TextInputType.emailAddress,
               textInputAction: TextInputAction.next,
               autocorrect: false,
-              decoration: const InputDecoration(
-                labelText: 'E-mail',
-                prefixIcon: Icon(Icons.mail_outline),
-              ),
+              autofillHints: const [AutofillHints.email],
+              decoration: const InputDecoration(labelText: 'E-mail'),
               validator: Validators.email,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: Espaco.e16),
             TextFormField(
               controller: _senhaCtrl,
               obscureText: !_senhaVisivel,
               textInputAction: TextInputAction.done,
+              autofillHints: const [AutofillHints.newPassword],
               onFieldSubmitted: (_) => _carregando ? null : _cadastrar(),
               decoration: InputDecoration(
                 labelText: 'Senha',
                 helperText: 'Mínimo de 6 caracteres',
-                prefixIcon: const Icon(Icons.lock_outline),
                 suffixIcon: IconButton(
                   tooltip: _senhaVisivel ? 'Ocultar senha' : 'Mostrar senha',
                   icon: Icon(_senhaVisivel
-                      ? Icons.visibility_off
-                      : Icons.visibility),
+                      ? Icons.visibility_off_outlined
+                      : Icons.visibility_outlined),
                   onPressed: () =>
                       setState(() => _senhaVisivel = !_senhaVisivel),
                 ),
               ),
               validator: Validators.senha,
             ),
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: AppColors.amareloCapacete.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                    color: AppColors.amareloCapacete.withValues(alpha: 0.5)),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.mark_email_read,
-                      size: 18, color: AppColors.amareloCapacete),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      perfil == PerfilUsuario.cliente
-                          ? 'Vamos enviar um link para confirmar seu e-mail. '
-                              'Depois, use o código que o responsável pela '
-                              'obra te passar.'
-                          : 'Vamos enviar um link para confirmar seu e-mail. '
-                              'Você já pode usar o app enquanto isso.',
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
+            const SizedBox(height: Espaco.e24),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Icons.mark_email_read_outlined,
+                    size: 22, color: c.grafite2),
+                const SizedBox(width: Espaco.e12),
+                Expanded(
+                  child: Text(
+                    perfil == PerfilUsuario.cliente
+                        ? 'Vamos enviar um link para confirmar seu e-mail. '
+                            'Depois, use o código que o responsável pela '
+                            'obra te passar.'
+                        : 'Vamos enviar um link para confirmar seu e-mail. '
+                            'Você já pode usar o app enquanto isso.',
+                    style: Tipografia.apoio.copyWith(color: c.grafite2),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-            const SizedBox(height: 28),
-            ElevatedButton(
-              onPressed: _carregando ? null : _cadastrar,
-              child: _carregando
-                  ? const SizedBox(
-                      width: 22,
-                      height: 22,
-                      child: CircularProgressIndicator(
-                          strokeWidth: 2.5, color: Colors.white),
-                    )
-                  : const Text('Criar conta'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Perfil ocupando a linha inteira: ícone, nome e o que ele faz.
-class _CartaoPerfil extends StatelessWidget {
-  final PerfilUsuario perfil;
-  final IconData icone;
-  final VoidCallback onTap;
-
-  const _CartaoPerfil({
-    required this.perfil,
-    required this.icone,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: AppColors.superficie,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.borda),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 46,
-              height: 46,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: AppColors.laranja.withValues(alpha: 0.14),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(icone, size: 24, color: AppColors.laranja),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    perfil.label,
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleSmall
-                        ?.copyWith(fontWeight: FontWeight.w700),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    perfil.descricao,
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodySmall
-                        ?.copyWith(color: AppColors.textoSecundario),
-                  ),
-                ],
-              ),
-            ),
-            const Icon(Icons.chevron_right,
-                color: AppColors.textoDesabilitado),
           ],
         ),
       ),

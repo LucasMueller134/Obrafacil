@@ -1,20 +1,29 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
-import '../../constants/app_colors.dart';
+import '../../design/design.dart';
 import '../../services/notificacoes/notificacao_service.dart';
 import '../../services/notificacoes/preferencias_notificacao.dart';
 import '../../services/notificacoes/tarefa_segundo_plano.dart';
-import '../../widgets/carregando_obra.dart';
 
 /// Preferências de notificação: o que avisar e em que horário.
-class NotificacoesScreen extends StatefulWidget {
+class NotificacoesScreen extends StatelessWidget {
   const NotificacoesScreen({super.key});
 
   @override
-  State<NotificacoesScreen> createState() => _NotificacoesScreenState();
+  Widget build(BuildContext context) =>
+      const TemaPrancheta(child: _Notificacoes());
 }
 
-class _NotificacoesScreenState extends State<NotificacoesScreen> {
+class _Notificacoes extends StatefulWidget {
+  const _Notificacoes();
+
+  @override
+  State<_Notificacoes> createState() => _NotificacoesScreenState();
+}
+
+class _NotificacoesScreenState extends State<_Notificacoes> {
   PreferenciasNotificacao? _prefs;
 
   @override
@@ -51,135 +60,159 @@ class _NotificacoesScreenState extends State<NotificacoesScreen> {
   String _horaTexto(int h, int m) =>
       '${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}';
 
+  /// Liga ou desliga e já aplica (agenda ou cancela os lembretes).
+  Future<void> _trocar(void Function() mudar) async {
+    unawaited(Tato.leve());
+    setState(mudar);
+    await _aplicar();
+  }
+
   @override
   Widget build(BuildContext context) {
+    final c = context.cores;
     final p = _prefs;
     return Scaffold(
-      appBar: AppBar(title: const Text('Notificações')),
+      appBar: AppBar(),
       body: p == null
-          ? const CarregandoObra(mensagem: 'Carregando preferências…')
+          ? ListView(
+              padding: const EdgeInsets.all(Espaco.margem),
+              children: const [
+                EsqueletoFolha(
+                    linhas: 4, rotuloSemantico: 'Abrindo as preferências'),
+              ],
+            )
           : ListView(
-              padding: EdgeInsets.fromLTRB(
-                  16, 8, 16, MediaQuery.of(context).padding.bottom + 16),
+              padding: const EdgeInsets.fromLTRB(
+                  Espaco.margem, Espaco.e4, Espaco.margem, Espaco.e32),
               children: [
-                const _TituloSecao('Lembretes da rotina'),
-                SwitchListTile(
-                  value: p.lembreteDiario,
-                  onChanged: (v) async {
-                    setState(() => p.lembreteDiario = v);
-                    await _aplicar();
-                  },
-                  activeTrackColor: AppColors.laranja,
-                  title: const Text('Registrar o dia no canteiro 📝'),
-                  subtitle:
-                      Text('Todo dia às ${_horaTexto(p.lembreteDiarioHora, p.lembreteDiarioMinuto)}'),
+                const Rotulo('Configurações'),
+                const SizedBox(height: Espaco.e4),
+                Semantics(
+                  header: true,
+                  child: Text('Notificações',
+                      style: Tipografia.tituloTela.copyWith(color: c.grafite)),
                 ),
-                if (p.lembreteDiario)
-                  _LinhaHora(
-                    hora: _horaTexto(
-                        p.lembreteDiarioHora, p.lembreteDiarioMinuto),
-                    onTap: () => _escolherHora(
-                      p.lembreteDiarioHora,
-                      p.lembreteDiarioMinuto,
-                      (t) {
-                        p.lembreteDiarioHora = t.hour;
-                        p.lembreteDiarioMinuto = t.minute;
-                      },
-                    ),
+                const SizedBox(height: Espaco.e24),
+                const LinhaCota(legenda: 'Lembretes da rotina'),
+                const SizedBox(height: Espaco.e16),
+                Folha(
+                  preenchimento: EdgeInsets.zero,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _Interruptor(
+                        titulo: 'Registrar o dia no canteiro',
+                        apoio: p.lembreteDiario
+                            ? 'Todo dia, para escrever o diário'
+                            : 'Desligado',
+                        valor: p.lembreteDiario,
+                        aoMudar: (v) => _trocar(() => p.lembreteDiario = v),
+                      ),
+                      if (p.lembreteDiario)
+                        _LinhaHora(
+                          hora: _horaTexto(
+                              p.lembreteDiarioHora, p.lembreteDiarioMinuto),
+                          onTap: () => _escolherHora(
+                            p.lembreteDiarioHora,
+                            p.lembreteDiarioMinuto,
+                            (t) {
+                              p.lembreteDiarioHora = t.hour;
+                              p.lembreteDiarioMinuto = t.minute;
+                            },
+                          ),
+                        ),
+                      const _Divisoria(),
+                      _Interruptor(
+                        titulo: 'Bom dia da obra',
+                        apoio: p.resumoMatinal
+                            ? 'Todo dia, o resumo da obra'
+                            : 'Desligado',
+                        valor: p.resumoMatinal,
+                        aoMudar: (v) => _trocar(() => p.resumoMatinal = v),
+                      ),
+                      if (p.resumoMatinal)
+                        _LinhaHora(
+                          hora: _horaTexto(
+                              p.resumoMatinalHora, p.resumoMatinalMinuto),
+                          onTap: () => _escolherHora(
+                            p.resumoMatinalHora,
+                            p.resumoMatinalMinuto,
+                            (t) {
+                              p.resumoMatinalHora = t.hour;
+                              p.resumoMatinalMinuto = t.minute;
+                            },
+                          ),
+                        ),
+                      const _Divisoria(),
+                      _Interruptor(
+                        titulo: 'Relatório semanal',
+                        apoio: p.relatorioSemanal
+                            ? 'Toda sexta, a análise da semana'
+                            : 'Desligado',
+                        valor: p.relatorioSemanal,
+                        aoMudar: (v) => _trocar(() => p.relatorioSemanal = v),
+                      ),
+                      if (p.relatorioSemanal)
+                        _LinhaHora(
+                          hora: _horaTexto(
+                              p.relatorioSemanalHora, p.relatorioSemanalMinuto),
+                          onTap: () => _escolherHora(
+                            p.relatorioSemanalHora,
+                            p.relatorioSemanalMinuto,
+                            (t) {
+                              p.relatorioSemanalHora = t.hour;
+                              p.relatorioSemanalMinuto = t.minute;
+                            },
+                          ),
+                        ),
+                    ],
                   ),
-                SwitchListTile(
-                  value: p.resumoMatinal,
-                  onChanged: (v) async {
-                    setState(() => p.resumoMatinal = v);
-                    await _aplicar();
-                  },
-                  activeTrackColor: AppColors.laranja,
-                  title: const Text('Bom dia da obra ☀️'),
-                  subtitle: Text(
-                      'Todo dia às ${_horaTexto(p.resumoMatinalHora, p.resumoMatinalMinuto)}'),
                 ),
-                if (p.resumoMatinal)
-                  _LinhaHora(
-                    hora:
-                        _horaTexto(p.resumoMatinalHora, p.resumoMatinalMinuto),
-                    onTap: () => _escolherHora(
-                      p.resumoMatinalHora,
-                      p.resumoMatinalMinuto,
-                      (t) {
-                        p.resumoMatinalHora = t.hour;
-                        p.resumoMatinalMinuto = t.minute;
-                      },
-                    ),
+                const SizedBox(height: Espaco.e24),
+                const LinhaCota(legenda: 'Avisos da obra'),
+                const SizedBox(height: Espaco.e16),
+                Folha(
+                  preenchimento: EdgeInsets.zero,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _Interruptor(
+                        titulo: 'Aprovações',
+                        apoio: 'Dono: lançamentos novos para aprovar. '
+                            'Mestre: aprovado ou recusado.',
+                        valor: p.aprovacoes,
+                        aoMudar: (v) => _trocar(() => p.aprovacoes = v),
+                      ),
+                      const _Divisoria(),
+                      _Interruptor(
+                        titulo: 'Alertas da obra',
+                        apoio: 'Estoque no fim, material acabando, orçamento '
+                            'em 90% e fase atrasada.',
+                        valor: p.alertas,
+                        aoMudar: (v) => _trocar(() => p.alertas = v),
+                      ),
+                    ],
                   ),
-                SwitchListTile(
-                  value: p.relatorioSemanal,
-                  onChanged: (v) async {
-                    setState(() => p.relatorioSemanal = v);
-                    await _aplicar();
-                  },
-                  activeTrackColor: AppColors.laranja,
-                  title: const Text('Relatório semanal 📊'),
-                  subtitle: Text(
-                      'Toda sexta às ${_horaTexto(p.relatorioSemanalHora, p.relatorioSemanalMinuto)}'),
                 ),
-                if (p.relatorioSemanal)
-                  _LinhaHora(
-                    hora: _horaTexto(
-                        p.relatorioSemanalHora, p.relatorioSemanalMinuto),
-                    onTap: () => _escolherHora(
-                      p.relatorioSemanalHora,
-                      p.relatorioSemanalMinuto,
-                      (t) {
-                        p.relatorioSemanalHora = t.hour;
-                        p.relatorioSemanalMinuto = t.minute;
-                      },
-                    ),
-                  ),
-                const SizedBox(height: 12),
-                const _TituloSecao('Avisos da obra (a cada ~15 min)'),
-                SwitchListTile(
-                  value: p.aprovacoes,
-                  onChanged: (v) async {
-                    setState(() => p.aprovacoes = v);
-                    await _aplicar();
-                  },
-                  activeTrackColor: AppColors.laranja,
-                  title: const Text('Aprovações 🔔'),
-                  subtitle: const Text(
-                      'Dono: novos lançamentos p/ aprovar · Mestre: aprovado/rejeitado'),
+                const SizedBox(height: Espaco.e8),
+                Text(
+                  'Os avisos são conferidos pelo Android em segundo plano, a '
+                  'cada 15 minutos mais ou menos, mesmo com o app fechado. '
+                  'Sem servidor e sem custo.',
+                  style: Tipografia.apoio.copyWith(color: c.grafite2),
                 ),
-                SwitchListTile(
-                  value: p.alertas,
-                  onChanged: (v) async {
-                    setState(() => p.alertas = v);
-                    await _aplicar();
-                  },
-                  activeTrackColor: AppColors.laranja,
-                  title: const Text('Alertas inteligentes 📦💰🚧'),
-                  subtitle: const Text(
-                      'Estoque no fim, material acabando, orçamento em 90%, fase atrasada'),
-                ),
-                const SizedBox(height: 20),
-                OutlinedButton.icon(
-                  onPressed: () => NotificacaoService.mostrar(
+                const SizedBox(height: Espaco.e24),
+                BotaoContorno(
+                  rotulo: 'Testar notificação agora',
+                  icone: Icons.notifications_active_outlined,
+                  expandir: true,
+                  aoTocar: () => NotificacaoService.mostrar(
                     id: 1,
                     canal: 'lembretes',
                     titulo: '👷 Notificação de teste',
                     corpo:
                         'É assim que os avisos da obra vão chegar. Tudo certo!',
                   ),
-                  icon: const Icon(Icons.notifications_active),
-                  label: const Text('Testar notificação agora'),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'Os avisos de aprovação e os alertas são verificados pelo '
-                  'Android em segundo plano (~15 min), mesmo com o app '
-                  'fechado — sem servidor e sem custo.',
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodySmall
-                      ?.copyWith(color: AppColors.textoDesabilitado),
                 ),
               ],
             ),
@@ -187,24 +220,45 @@ class _NotificacoesScreenState extends State<NotificacoesScreen> {
   }
 }
 
-class _TituloSecao extends StatelessWidget {
-  final String texto;
+class _Interruptor extends StatelessWidget {
+  const _Interruptor({
+    required this.titulo,
+    required this.apoio,
+    required this.valor,
+    required this.aoMudar,
+  });
 
-  const _TituloSecao(this.texto);
+  final String titulo;
+  final String apoio;
+  final bool valor;
+  final ValueChanged<bool> aoMudar;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(4, 12, 4, 4),
-      child: Text(
-        texto,
-        style: Theme.of(context).textTheme.titleSmall?.copyWith(
-              color: AppColors.laranja,
-              fontWeight: FontWeight.w700,
-            ),
+    final c = context.cores;
+    // O toque precisa de um Material logo acima (a folha é uma caixa).
+    return Material(
+      type: MaterialType.transparency,
+      child: SwitchListTile(
+        value: valor,
+        onChanged: aoMudar,
+        contentPadding: const EdgeInsets.symmetric(
+            horizontal: Espaco.e12, vertical: Espaco.e4),
+        title: Text(titulo,
+            style: Tipografia.corpoForte.copyWith(color: c.grafite)),
+        subtitle:
+            Text(apoio, style: Tipografia.apoio.copyWith(color: c.grafite2)),
       ),
     );
   }
+}
+
+class _Divisoria extends StatelessWidget {
+  const _Divisoria();
+
+  @override
+  Widget build(BuildContext context) => Divider(
+      height: Traco.fino, thickness: Traco.fino, color: context.cores.grade);
 }
 
 class _LinhaHora extends StatelessWidget {
@@ -215,17 +269,14 @@ class _LinhaHora extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 16, bottom: 4),
-      child: Align(
-        alignment: Alignment.centerLeft,
-        child: ActionChip(
-          avatar: const Icon(Icons.schedule,
-              size: 16, color: AppColors.amareloCapacete),
-          label: Text('Mudar horário ($hora)'),
-          onPressed: onTap,
-        ),
-      ),
+    return LinhaLista(
+      icone: Icons.schedule,
+      titulo: 'Horário',
+      apoio: 'Toque para mudar',
+      rotuloSemantico: 'Horário: $hora. Toque para mudar.',
+      valor: hora,
+      margemHorizontal: Espaco.e12,
+      aoTocar: onTap,
     );
   }
 }

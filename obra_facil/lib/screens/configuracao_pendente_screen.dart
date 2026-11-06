@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../constants/app_colors.dart';
-import '../constants/app_theme.dart';
+import '../design/design.dart';
 import '../router/transicoes.dart';
 import 'demo_ia_screen.dart';
 
@@ -15,65 +14,63 @@ class ConfiguracaoPendenteApp extends StatelessWidget {
     return MaterialApp(
       title: 'ObraFácil — configuração',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.dark,
-      home: Scaffold(
-        body: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Spacer(),
-                const Icon(Icons.cloud_off,
-                    size: 56, color: AppColors.amareloCapacete),
-                const SizedBox(height: 16),
-                Text('Firebase ainda não configurado',
-                    style: Theme.of(context).textTheme.headlineSmall),
-                const SizedBox(height: 12),
-                const Text(
-                  'Para conectar o app ao seu projeto Firebase, rode no '
-                  'terminal, dentro da pasta do projeto:',
-                  style: TextStyle(color: AppColors.textoSecundario),
-                ),
-                const SizedBox(height: 16),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: AppColors.superficie,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.borda),
-                  ),
-                  child: const Text(
-                    'dart pub global activate flutterfire_cli\n'
-                    'flutterfire configure',
-                    style: TextStyle(
-                      fontFamily: 'monospace',
-                      color: AppColors.laranja,
-                      fontSize: 14,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                const Text(
-                  'O comando gera o lib/firebase_options.dart com as chaves '
-                  'do seu projeto. Depois é só rodar o app de novo.',
-                  style: TextStyle(color: AppColors.textoSecundario),
-                ),
-                const SizedBox(height: 24),
-                Builder(
-                  builder: (ctx) => OutlinedButton.icon(
-                    onPressed: () =>
-                        Navigator.of(ctx).push(rotaSuave(const DemoIaScreen())),
-                    icon: const Icon(Icons.auto_awesome),
-                    label:
-                        const Text('Testar as IAs sem conta (demonstração)'),
-                  ),
-                ),
-                const Spacer(flex: 2),
-              ],
+      theme: TemaPrancheta.claro,
+      darkTheme: TemaPrancheta.escuro,
+      home: const TemaPrancheta(child: _Configuracao()),
+    );
+  }
+}
+
+class _Configuracao extends StatelessWidget {
+  const _Configuracao();
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.cores;
+    return Scaffold(
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(
+              Espaco.margem, Espaco.e48, Espaco.margem, Espaco.e32),
+          children: [
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Icon(Icons.cloud_off_outlined, size: 48, color: c.grafite),
             ),
-          ),
+            const SizedBox(height: Espaco.e16),
+            const Rotulo('Configuração'),
+            const SizedBox(height: Espaco.e4),
+            Text('Firebase ainda não configurado',
+                style: Tipografia.tituloTela.copyWith(color: c.grafite)),
+            const SizedBox(height: Espaco.e12),
+            Text(
+              'Para conectar o app ao seu projeto Firebase, rode no '
+              'terminal, dentro da pasta do projeto:',
+              style: Tipografia.corpo.copyWith(color: c.grafite2),
+            ),
+            const SizedBox(height: Espaco.e16),
+            Folha(
+              child: SelectableText(
+                'dart pub global activate flutterfire_cli\n'
+                'flutterfire configure',
+                style: Tipografia.codigo.copyWith(color: c.grafite),
+              ),
+            ),
+            const SizedBox(height: Espaco.e16),
+            Text(
+              'O comando gera o lib/firebase_options.dart com as chaves do '
+              'seu projeto. Depois é só rodar o app de novo.',
+              style: Tipografia.corpo.copyWith(color: c.grafite2),
+            ),
+            const SizedBox(height: Espaco.e32),
+            BotaoContorno(
+              rotulo: 'Testar as IAs sem conta (demonstração)',
+              icone: Icons.auto_awesome_outlined,
+              expandir: true,
+              aoTocar: () =>
+                  Navigator.of(context).push(rotaSuave(const DemoIaScreen())),
+            ),
+          ],
         ),
       ),
     );

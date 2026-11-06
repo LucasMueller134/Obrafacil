@@ -1,104 +1,161 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../constants/app_colors.dart';
+import '../../design/design.dart';
 import '../../models/models.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/firestore_service.dart';
 import '../../utils/validators.dart';
-import '../../widgets/animacoes.dart';
-import '../../widgets/carregando_obra.dart';
-import '../../widgets/estado_vazio.dart';
-import '../../widgets/ilustracoes.dart';
 
+/// Os fornecedores do dono: entram sozinhos pelas notas e lançamentos, ou
+/// à mão. Tocar edita.
 class FornecedoresScreen extends StatelessWidget {
   const FornecedoresScreen({super.key});
 
   @override
+  Widget build(BuildContext context) =>
+      const TemaPrancheta(child: _Fornecedores());
+}
+
+class _Fornecedores extends StatefulWidget {
+  const _Fornecedores();
+
+  @override
+  State<_Fornecedores> createState() => _FornecedoresState();
+}
+
+class _FornecedoresState extends State<_Fornecedores> {
+  Stream<List<FornecedorModel>>? _stream;
+  String? _donoDaStream;
+
+  @override
   Widget build(BuildContext context) {
-    final db = context.read<FirestoreService>();
+    final c = context.cores;
     final usuario = context.watch<AuthProvider>().usuario;
     if (usuario == null) return const SizedBox.shrink();
+    if (_donoDaStream != usuario.id) {
+      _donoDaStream = usuario.id;
+      _stream = context.read<FirestoreService>().fornecedores(usuario.id);
+    }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Fornecedores')),
+      appBar: AppBar(),
       body: StreamBuilder<List<FornecedorModel>>(
-        stream: db.fornecedores(usuario.id),
+        stream: _stream,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const CarregandoObra(mensagem: 'Chamando os fornecedores…');
-          }
-          final fornecedores = snapshot.data ?? const <FornecedorModel>[];
-          if (fornecedores.isEmpty) {
-            return EstadoVazio(
-              icone: Icons.storefront,
-              ilustracao: const IlustracaoLoja(),
-              titulo: 'Nenhum fornecedor',
-              mensagem:
-                  'Fornecedores são cadastrados automaticamente quando '
-                  'aparecem em notas fiscais e lançamentos — ou adicione '
-                  'manualmente.',
-              rotuloAcao: 'Adicionar fornecedor',
-              onAcao: () => _abrirFormulario(context, usuario.id),
+            return ListView(
+              padding: const EdgeInsets.all(Espaco.margem),
+              children: const [
+                EsqueletoFolha(
+                    linhas: 4, rotuloSemantico: 'Abrindo os fornecedores'),
+              ],
             );
           }
-          return ListView.separated(
-            padding: EdgeInsets.fromLTRB(
-                16, 16, 16, MediaQuery.of(context).padding.bottom + 96),
-            itemCount: fornecedores.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 10),
-            itemBuilder: (_, i) {
-              final f = fornecedores[i];
-              return Card(
-                child: ListTile(
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16)),
-                  leading: Container(
-                    width: 42,
-                    height: 42,
-                    decoration: BoxDecoration(
-                      color: AppColors.laranja.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(Icons.storefront,
-                        color: AppColors.laranja, size: 22),
+          final fornecedores = snapshot.data ?? const <FornecedorModel>[];
+          return ListView(
+            padding: const EdgeInsets.fromLTRB(
+                Espaco.margem, Espaco.e4, Espaco.margem, Espaco.e32),
+            children: [
+              const Rotulo('Cadastro'),
+              const SizedBox(height: Espaco.e4),
+              Semantics(
+                header: true,
+                child: Text('Fornecedores',
+                    style: Tipografia.tituloTela.copyWith(color: c.grafite)),
+              ),
+              const SizedBox(height: Espaco.e8),
+              Text(
+                'Entram sozinhos quando aparecem numa nota ou num '
+                'lançamento. Toque para editar.',
+                style: Tipografia.corpo.copyWith(color: c.grafite2),
+              ),
+              const SizedBox(height: Espaco.e24),
+              if (fornecedores.isEmpty)
+                const AvisoVazio(
+                  icone: Icons.storefront_outlined,
+                  titulo: 'Nenhum fornecedor',
+                  texto: 'Fornecedores são cadastrados automaticamente quando '
+                      'aparecem em notas fiscais e lançamentos, ou adicione '
+                      'à mão.',
+                )
+              else ...[
+                LinhaCota(
+                    legenda: fornecedores.length == 1
+                        ? '1 fornecedor'
+                        : '${fornecedores.length} fornecedores'),
+                const SizedBox(height: Espaco.e16),
+                Folha(
+                  preenchimento: EdgeInsets.zero,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      for (var i = 0; i < fornecedores.length; i++)
+                        _LinhaFornecedor(
+                          fornecedor: fornecedores[i],
+                          divisoria: i < fornecedores.length - 1,
+                          aoTocar: () => _abrirFormulario(context, usuario.id,
+                              fornecedor: fornecedores[i]),
+                        ),
+                    ],
                   ),
-                  title: Text(f.nome,
-                      style: const TextStyle(fontWeight: FontWeight.w600)),
-                  subtitle: Text(
-                    [
-                      if (f.telefone != null && f.telefone!.isNotEmpty)
-                        f.telefone!,
-                      if (f.cnpj != null && f.cnpj!.isNotEmpty)
-                        'CNPJ ${f.cnpj}',
-                    ].join(' · '),
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodySmall
-                        ?.copyWith(color: AppColors.textoSecundario),
-                  ),
-                  onTap: () =>
-                      _abrirFormulario(context, usuario.id, fornecedor: f),
                 ),
-              ).aparecer(i);
-            },
+              ],
+            ],
           );
         },
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _abrirFormulario(context, usuario.id),
-        icon: const Icon(Icons.add),
-        label: const Text('Fornecedor'),
+      bottomNavigationBar: BarraDeAcao(
+        principal: BotaoPrincipal(
+          rotulo: 'Adicionar fornecedor',
+          icone: Icons.add,
+          grande: true,
+          expandir: true,
+          aoTocar: () => _abrirFormulario(context, usuario.id),
+        ),
       ),
     );
   }
 
   void _abrirFormulario(BuildContext context, String donoId,
       {FornecedorModel? fornecedor}) {
-    showModalBottomSheet(
+    unawaited(showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       builder: (_) => _FormFornecedor(donoId: donoId, fornecedor: fornecedor),
+    ));
+  }
+}
+
+class _LinhaFornecedor extends StatelessWidget {
+  const _LinhaFornecedor({
+    required this.fornecedor,
+    required this.divisoria,
+    required this.aoTocar,
+  });
+
+  final FornecedorModel fornecedor;
+  final bool divisoria;
+  final VoidCallback aoTocar;
+
+  @override
+  Widget build(BuildContext context) {
+    final f = fornecedor;
+    final apoio = [
+      if (f.telefone != null && f.telefone!.isNotEmpty) f.telefone!,
+      if (f.cnpj != null && f.cnpj!.isNotEmpty) 'CNPJ ${f.cnpj}',
+      if (f.email != null && f.email!.isNotEmpty) f.email!,
+    ].join(' · ');
+    return LinhaLista(
+      icone: Icons.storefront_outlined,
+      titulo: f.nome,
+      apoio: apoio.isEmpty ? 'Sem telefone nem CNPJ' : apoio,
+      margemHorizontal: Espaco.e12,
+      divisoria: divisoria,
+      seta: true,
+      aoTocar: aoTocar,
     );
   }
 }
@@ -137,7 +194,10 @@ class _FormFornecedorState extends State<_FormFornecedor> {
   }
 
   Future<void> _salvar() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate()) {
+      unawaited(Tato.erro());
+      return;
+    }
     final db = context.read<FirestoreService>();
     await db.salvarFornecedor(FornecedorModel(
       id: widget.fornecedor?.id ?? '',
@@ -150,25 +210,33 @@ class _FormFornecedorState extends State<_FormFornecedor> {
       observacoes: _obsCtrl.text.trim().isEmpty ? null : _obsCtrl.text.trim(),
       criadoEm: widget.fornecedor?.criadoEm ?? DateTime.now(),
     ));
+    unawaited(Tato.confirmar());
     if (mounted) Navigator.pop(context);
   }
 
+  /// Exclui na hora, com desfazer (grava o mesmo fornecedor de volta).
   Future<void> _excluir() async {
     final db = context.read<FirestoreService>();
-    await db.excluirFornecedor(widget.fornecedor!.id);
-    if (mounted) Navigator.pop(context);
+    final f = widget.fornecedor!;
+    await db.excluirFornecedor(f.id);
+    unawaited(Tato.confirmar());
+    if (!mounted) return;
+    mostrarAviso(context, '${f.nome} saiu dos fornecedores.',
+        aoDesfazer: () => unawaited(db.salvarFornecedor(f)));
+    Navigator.pop(context);
   }
 
   @override
   Widget build(BuildContext context) {
+    final c = context.cores;
     return Padding(
       padding: EdgeInsets.only(
-        left: 20,
-        right: 20,
-        top: 20,
+        left: Espaco.margem,
+        right: Espaco.margem,
+        top: Espaco.e8,
         bottom: MediaQuery.of(context).viewInsets.bottom +
             MediaQuery.of(context).viewPadding.bottom +
-            24,
+            Espaco.e16,
       ),
       child: Form(
         key: _formKey,
@@ -177,55 +245,73 @@ class _FormFornecedorState extends State<_FormFornecedor> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              const Rotulo('Fornecedores'),
+              const SizedBox(height: Espaco.e4),
               Text(
                 widget.fornecedor == null
                     ? 'Novo fornecedor'
                     : 'Editar fornecedor',
-                style: Theme.of(context).textTheme.titleMedium,
+                style: Tipografia.titulo.copyWith(color: c.grafite),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: Espaco.e16),
               TextFormField(
                 controller: _nomeCtrl,
                 textCapitalization: TextCapitalization.words,
+                textInputAction: TextInputAction.next,
                 decoration: const InputDecoration(labelText: 'Nome'),
                 validator: (v) => Validators.obrigatorio(v, 'O nome'),
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: Espaco.e16),
               TextFormField(
                 controller: _telefoneCtrl,
                 keyboardType: TextInputType.phone,
+                textInputAction: TextInputAction.next,
                 decoration:
                     const InputDecoration(labelText: 'Telefone (opcional)'),
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: Espaco.e16),
               TextFormField(
                 controller: _emailCtrl,
                 keyboardType: TextInputType.emailAddress,
+                textInputAction: TextInputAction.next,
+                autocorrect: false,
                 decoration:
                     const InputDecoration(labelText: 'E-mail (opcional)'),
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: Espaco.e16),
               TextFormField(
                 controller: _cnpjCtrl,
                 keyboardType: TextInputType.number,
-                decoration:
-                    const InputDecoration(labelText: 'CNPJ (opcional)'),
+                textInputAction: TextInputAction.next,
+                style: Tipografia.corpo.copyWith(
+                    color: c.grafite, fontFeatures: Tipografia.tabular),
+                decoration: const InputDecoration(labelText: 'CNPJ (opcional)'),
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: Espaco.e16),
               TextFormField(
                 controller: _obsCtrl,
-                maxLines: 2,
-                decoration:
-                    const InputDecoration(labelText: 'Observações (opcional)'),
+                minLines: 2,
+                maxLines: 4,
+                textCapitalization: TextCapitalization.sentences,
+                decoration: const InputDecoration(
+                    labelText: 'Observações (opcional)',
+                    alignLabelWithHint: true),
               ),
-              const SizedBox(height: 20),
-              ElevatedButton(onPressed: _salvar, child: const Text('Salvar')),
+              const SizedBox(height: Espaco.e24),
+              BotaoPrincipal(
+                rotulo: 'Salvar',
+                icone: Icons.check,
+                grande: true,
+                expandir: true,
+                aoTocar: () => unawaited(_salvar()),
+              ),
               if (widget.fornecedor != null) ...[
-                const SizedBox(height: 8),
-                TextButton(
-                  onPressed: _excluir,
-                  child: const Text('Excluir fornecedor',
-                      style: TextStyle(color: AppColors.erro)),
+                const SizedBox(height: Espaco.e8),
+                TextButton.icon(
+                  onPressed: () => unawaited(_excluir()),
+                  style: TextButton.styleFrom(foregroundColor: c.revisao),
+                  icon: const Icon(Icons.delete_outline),
+                  label: const Text('Excluir fornecedor'),
                 ),
               ],
             ],

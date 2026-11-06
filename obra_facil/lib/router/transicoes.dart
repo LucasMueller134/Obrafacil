@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../constants/app_colors.dart';
-
 /// A transição do app, num lugar só.
 ///
 /// A tela nova entra pela direita **opaca**, deslizando por cima da
@@ -77,9 +75,9 @@ class _PlacaDeslizante extends StatelessWidget {
     return DecoratedBox(
       // O fundo garante que nada de trás apareça mesmo se a tela filha
       // demorar um quadro para pintar o próprio fundo.
-      decoration: const BoxDecoration(
-        color: AppColors.fundo,
-        boxShadow: [
+      decoration: BoxDecoration(
+        color: Theme.of(context).scaffoldBackgroundColor,
+        boxShadow: const [
           BoxShadow(
             color: Color(0x66000000),
             blurRadius: 18,
@@ -127,7 +125,7 @@ Widget _construirTransicaoRaiz(
     reverseCurve: Curves.easeInCubic,
   );
   return ColoredBox(
-    color: AppColors.fundo,
+    color: Theme.of(context).scaffoldBackgroundColor,
     child: FadeTransition(
       opacity: entra,
       child: SlideTransition(

@@ -8,7 +8,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:obra_facil/constants/app_theme.dart';
+import 'package:obra_facil/design/design.dart';
 
 import 'suporte/fontes.dart';
 
@@ -47,29 +47,30 @@ Widget _quadro(GlobalKey chave, Widget filho) => Center(
 void main() {
   setUpAll(carregarFontes);
 
-  testWidgets('texto do tema atual e das fontes novas sai na fonte de verdade',
+  testWidgets('texto do tema e das fontes embutidas sai na fonte de verdade',
       (tester) async {
     const familiasNovas = ['Archivo', 'Atkinson', 'PlexMono'];
     await tester.pumpWidget(MaterialApp(
-      theme: AppTheme.dark,
+      theme: TemaPrancheta.claro,
       home: Scaffold(
         body: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Sem família: o texto padrão do tema da prancheta.
             const Text(_amostra,
-                key: ValueKey('Poppins'), style: TextStyle(fontSize: _tamanho)),
+                key: ValueKey('tema'), style: TextStyle(fontSize: _tamanho)),
             for (final familia in familiasNovas)
               Text(_amostra,
                   key: ValueKey(familia),
                   style: TextStyle(fontFamily: familia, fontSize: _tamanho)),
-            const Text('Olá → R\$ 1.234,56 · Toque no ✕'),
+            const Text('Olá · R\$ 1.234,56 · 7,00 × 20,00 m² …'),
           ],
         ),
       ),
     ));
 
     expect(familiasNaoCarregadas(), isEmpty);
-    for (final familia in ['Poppins', ...familiasNovas]) {
+    for (final familia in ['tema', ...familiasNovas]) {
       final largura = tester.getSize(find.byKey(ValueKey(familia))).width;
       expect(largura, lessThan(_amostra.length * _tamanho * 0.8),
           reason: '$familia saiu na fonte de teste (largura $largura)');
@@ -94,32 +95,5 @@ void main() {
     expect(brilho(24, 24), greaterThan(200), reason: 'centro do +');
     expect(brilho(24, 14), greaterThan(200), reason: 'braço de cima do +');
     expect(brilho(12, 12), lessThan(50), reason: 'canto do quadro');
-  });
-
-  testWidgets('símbolo que a Poppins não tem cai na fonte de símbolos',
-      (tester) async {
-    Future<Uint8List> desenhar(String simbolo) async {
-      final chave = GlobalKey();
-      // O Material põe o texto do tema (Poppins) como estilo padrão.
-      await tester.pumpWidget(MaterialApp(
-        theme: AppTheme.dark,
-        home: Material(
-          type: MaterialType.transparency,
-          child: _quadro(
-            chave,
-            Text(simbolo,
-                style: const TextStyle(fontSize: 32, color: Colors.white)),
-          ),
-        ),
-      ));
-      expect(familiasNaoCarregadas(), isEmpty);
-      return _pixels(tester, chave);
-    }
-
-    // Sem o fallback, as duas setas viram o mesmo quadradinho.
-    final direita = await desenhar('→');
-    final esquerda = await desenhar('←');
-    expect(direita.any((b) => b > 200), isTrue, reason: 'a seta não apareceu');
-    expect(direita, isNot(equals(esquerda)));
   });
 }

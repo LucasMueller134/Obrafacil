@@ -19,7 +19,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/date_symbol_data_local.dart';
-import 'package:obra_facil/constants/app_theme.dart';
+import 'package:obra_facil/design/design.dart';
 import 'package:obra_facil/models/models.dart';
 import 'package:obra_facil/providers/auth_provider.dart';
 import 'package:obra_facil/router/app_router.dart';
@@ -124,6 +124,10 @@ enum SituacaoLogin {
 
   /// O Firebase ainda não respondeu: o app fica na abertura.
   abrindo,
+
+  /// Logado, com o e-mail ainda não confirmado (o cliente para na tela de
+  /// confirmar o e-mail).
+  emailPendente,
 }
 
 /// O serviço de login falso de cada [SituacaoLogin].
@@ -131,6 +135,8 @@ AuthService servicoDeLogin(Cena cena) => switch (cena.situacao) {
       SituacaoLogin.logado => AuthServiceFalso(cena.usuario),
       SituacaoLogin.deslogado => AuthServiceDeslogado(cena.usuario),
       SituacaoLogin.abrindo => AuthServiceAbrindo(cena.usuario),
+      SituacaoLogin.emailPendente =>
+        AuthServiceFalso(cena.usuario, emailConfirmado: false),
     };
 
 /// Fontes e datas em pt_BR. Chame no setUpAll do arquivo de capturas.
@@ -180,7 +186,8 @@ class AppDeCaptura extends StatelessWidget {
       child: MaterialApp.router(
         title: 'ObraFácil',
         debugShowCheckedModeBanner: false,
-        theme: AppTheme.dark,
+        theme: TemaPrancheta.claro,
+        darkTheme: TemaPrancheta.escuro,
         routerConfig: router,
         locale: const Locale('pt', 'BR'),
         supportedLocales: const [Locale('pt', 'BR')],
@@ -249,7 +256,8 @@ Future<void> _capturarCom(
 
   await tester.pumpWidget(RepaintBoundary(
     key: moldura,
-    child: AppDeCaptura(auth: auth, db: db, router: router, ia: cena.ia?.call()),
+    child:
+        AppDeCaptura(auth: auth, db: db, router: router, ia: cena.ia?.call()),
   ));
   // Splash → área do perfil, quando o AuthProvider termina de carregar.
   await assentar(tester);

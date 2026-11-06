@@ -1,9 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
-import '../../constants/app_colors.dart';
 import '../../constants/app_constants.dart';
+import '../../design/design.dart';
 import '../../models/models.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/cep_service.dart';
@@ -11,14 +13,23 @@ import '../../services/firestore_service.dart';
 import '../../utils/formatters.dart';
 import '../../utils/validators.dart';
 
-class NovaObraScreen extends StatefulWidget {
+/// Cadastrar uma obra: nome e cliente, endereço (com o CEP conferido nos
+/// Correios), orçamento, prazo e o cronograma com as fases padrão.
+class NovaObraScreen extends StatelessWidget {
   const NovaObraScreen({super.key});
 
   @override
-  State<NovaObraScreen> createState() => _NovaObraScreenState();
+  Widget build(BuildContext context) => const TemaPrancheta(child: _NovaObra());
 }
 
-class _NovaObraScreenState extends State<NovaObraScreen> {
+class _NovaObra extends StatefulWidget {
+  const _NovaObra();
+
+  @override
+  State<_NovaObra> createState() => _NovaObraScreenState();
+}
+
+class _NovaObraScreenState extends State<_NovaObra> {
   final _formKey = GlobalKey<FormState>();
   final _nomeCtrl = TextEditingController();
   final _cepCtrl = TextEditingController();
@@ -112,10 +123,13 @@ class _NovaObraScreenState extends State<NovaObraScreen> {
   }
 
   Future<void> _salvar() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate()) {
+      unawaited(Tato.erro());
+      return;
+    }
     if (!_previsaoTermino.isAfter(_dataInicio)) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('A previsão de término deve ser após o início.')));
+      unawaited(Tato.erro());
+      mostrarAviso(context, 'A previsão de término deve ser após o início.');
       return;
     }
     // Quem não tocou no botão de conferir tem o CEP conferido agora: é
@@ -137,9 +151,8 @@ class _NovaObraScreenState extends State<NovaObraScreen> {
       id: '',
       nome: _nomeCtrl.text.trim(),
       endereco: _enderecoCompleto(),
-      cliente: _clienteCtrl.text.trim().isEmpty
-          ? null
-          : _clienteCtrl.text.trim(),
+      cliente:
+          _clienteCtrl.text.trim().isEmpty ? null : _clienteCtrl.text.trim(),
       orcamento: Formatters.parseValor(_orcamentoCtrl.text)!,
       dataInicio: _dataInicio,
       previsaoTermino: _previsaoTermino,
@@ -154,12 +167,13 @@ class _NovaObraScreenState extends State<NovaObraScreen> {
         await _gerarCronogramaPadrao(db, obraId);
       }
       if (!mounted) return;
+      unawaited(Tato.confirmar());
       context.go('/obras/$obraId');
     } catch (e) {
       if (!mounted) return;
       setState(() => _salvando = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Não foi possível salvar: $e')));
+      unawaited(Tato.erro());
+      mostrarAviso(context, 'Não foi possível salvar: $e');
     }
   }
 
@@ -188,46 +202,76 @@ class _NovaObraScreenState extends State<NovaObraScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.cores;
+    final cep = _resultadoCep;
+    final dias = _previsaoTermino.difference(_dataInicio).inDays;
+    final estiloValor = Tipografia.valorHeroi.copyWith(
+      fontSize: 32,
+      height: 1.1,
+      color: c.grafite,
+    );
     return Scaffold(
-      appBar: AppBar(title: const Text('Nova obra')),
+      appBar: AppBar(),
       body: SafeArea(
+        top: false,
+        bottom: false,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.fromLTRB(
+              Espaco.margem, Espaco.e4, Espaco.margem, Espaco.e32),
           child: Form(
             key: _formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                const Rotulo('Obras'),
+                const SizedBox(height: Espaco.e4),
+                Semantics(
+                  header: true,
+                  child: Text('Nova obra',
+                      style: Tipografia.tituloTela.copyWith(color: c.grafite)),
+                ),
+                const SizedBox(height: Espaco.e24),
+                const LinhaCota(legenda: 'A obra'),
+                const SizedBox(height: Espaco.e16),
                 TextFormField(
                   controller: _nomeCtrl,
                   textCapitalization: TextCapitalization.sentences,
+                  textInputAction: TextInputAction.next,
                   decoration: const InputDecoration(
                     labelText: 'Nome da obra',
                     hintText: 'Ex.: Casa do Sr. João',
-                    prefixIcon: Icon(Icons.apartment),
                   ),
                   validator: (v) => Validators.obrigatorio(v, 'O nome'),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: Espaco.e16),
+                TextFormField(
+                  controller: _clienteCtrl,
+                  textCapitalization: TextCapitalization.words,
+                  textInputAction: TextInputAction.next,
+                  decoration: const InputDecoration(
+                    labelText: 'Cliente (opcional)',
+                    helperText: 'Quem vai morar ou pagar a obra.',
+                  ),
+                ),
+                const SizedBox(height: Espaco.e24),
+                const LinhaCota(legenda: 'Endereço'),
+                const SizedBox(height: Espaco.e16),
                 TextFormField(
                   controller: _cepCtrl,
                   keyboardType: TextInputType.number,
                   maxLength: 9,
                   onChanged: (_) => setState(() => _resultadoCep = null),
+                  onFieldSubmitted: (_) => unawaited(_consultarCep()),
+                  style: Tipografia.corpo.copyWith(
+                      color: c.grafite, fontFeatures: Tipografia.tabular),
                   decoration: InputDecoration(
                     labelText: 'CEP',
                     hintText: '00000-000',
                     counterText: '',
-                    prefixIcon: const Icon(Icons.markunread_mailbox_outlined),
                     suffixIcon: _consultandoCep
                         ? const Padding(
-                            padding: EdgeInsets.all(12),
-                            child: SizedBox(
-                              width: 18,
-                              height: 18,
-                              child:
-                                  CircularProgressIndicator(strokeWidth: 2.5),
-                            ),
+                            padding: EdgeInsets.all(Espaco.e12),
+                            child: IndicadorCarregando(tamanho: 24),
                           )
                         : IconButton(
                             tooltip: 'Conferir CEP',
@@ -237,139 +281,158 @@ class _NovaObraScreenState extends State<NovaObraScreen> {
                   ),
                   validator: _validarCep,
                 ),
-                if (_resultadoCep != null) ...[
-                  const SizedBox(height: 4),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Icon(
-                        _resultadoCep!.valido
-                            ? Icons.check_circle
-                            : _resultadoCep!.situacao == SituacaoCep.semResposta
-                                ? Icons.cloud_off
-                                : Icons.error_outline,
-                        size: 16,
-                        color: _resultadoCep!.valido
-                            ? AppColors.sucesso
-                            : _resultadoCep!.situacao == SituacaoCep.semResposta
-                                ? AppColors.textoSecundario
-                                : AppColors.erro,
-                      ),
-                      const SizedBox(width: 6),
-                      Expanded(
-                        child: Text(
-                          _resultadoCep!.mensagem,
-                          style: Theme.of(context)
-                              .textTheme
-                              .bodySmall
-                              ?.copyWith(
-                                color: _resultadoCep!.valido
-                                    ? AppColors.sucesso
-                                    : AppColors.textoSecundario,
-                              ),
-                        ),
-                      ),
-                    ],
-                  ),
+                if (cep != null) ...[
+                  const SizedBox(height: Espaco.e8),
+                  _ResultadoDoCep(resultado: cep),
                 ],
-                const SizedBox(height: 16),
+                const SizedBox(height: Espaco.e16),
                 TextFormField(
                   controller: _enderecoCtrl,
                   textCapitalization: TextCapitalization.sentences,
+                  textInputAction: TextInputAction.next,
+                  minLines: 1,
+                  maxLines: 2,
                   decoration: const InputDecoration(
                     labelText: 'Endereço',
                     hintText: 'Conferido o CEP, preenche sozinho',
-                    prefixIcon: Icon(Icons.place_outlined),
                   ),
                   validator: (v) => Validators.obrigatorio(v, 'O endereço'),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: Espaco.e16),
                 TextFormField(
                   controller: _numeroCtrl,
                   keyboardType: TextInputType.text,
+                  textInputAction: TextInputAction.next,
                   decoration: const InputDecoration(
                     labelText: 'Número e complemento (opcional)',
-                    prefixIcon: Icon(Icons.numbers),
                   ),
                 ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _clienteCtrl,
-                  textCapitalization: TextCapitalization.words,
-                  decoration: const InputDecoration(
-                    labelText: 'Cliente (opcional)',
-                    prefixIcon: Icon(Icons.person_outline),
-                  ),
-                ),
-                const SizedBox(height: 16),
+                const SizedBox(height: Espaco.e24),
+                const LinhaCota(legenda: 'Orçamento e prazo'),
+                const SizedBox(height: Espaco.e16),
                 TextFormField(
                   controller: _orcamentoCtrl,
                   keyboardType:
                       const TextInputType.numberWithOptions(decimal: true),
-                  decoration: const InputDecoration(
-                    labelText: 'Orçamento total (R\$)',
-                    hintText: 'Ex.: 250.000,00',
-                    prefixIcon: Icon(Icons.payments_outlined),
+                  style: estiloValor,
+                  decoration: InputDecoration(
+                    labelText: 'Orçamento total',
+                    hintText: '250.000,00',
+                    prefixText: 'R\$ ',
+                    prefixStyle: estiloValor,
                   ),
                   validator: Validators.valor,
                 ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _CampoData(
-                        rotulo: 'Início',
-                        data: _dataInicio,
-                        onTap: () => _escolherData(inicio: true),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _CampoData(
-                        rotulo: 'Previsão de término',
-                        data: _previsaoTermino,
-                        onTap: () => _escolherData(inicio: false),
-                      ),
-                    ),
-                  ],
+                const SizedBox(height: Espaco.e16),
+                _CampoData(
+                  rotulo: 'Início',
+                  data: _dataInicio,
+                  onTap: () => _escolherData(inicio: true),
                 ),
-                const SizedBox(height: 16),
-                SwitchListTile(
-                  value: _criarCronograma,
-                  onChanged: (v) => setState(() => _criarCronograma = v),
-                  title: const Text('Gerar cronograma com fases padrão'),
-                  subtitle: Text(
-                    'Cria ${AppConstants.fasesPadrao.length} fases (fundação, '
-                    'estrutura, alvenaria...) distribuídas no período da obra',
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodySmall
-                        ?.copyWith(color: AppColors.textoSecundario),
+                const SizedBox(height: Espaco.e16),
+                _CampoData(
+                  rotulo: 'Previsão de término',
+                  data: _previsaoTermino,
+                  onTap: () => _escolherData(inicio: false),
+                ),
+                const SizedBox(height: Espaco.e8),
+                Text(
+                  dias > 0
+                      ? '$dias dias de obra (cerca de ${(dias / 30).round()} '
+                          '${(dias / 30).round() == 1 ? 'mês' : 'meses'}).'
+                      : 'O término precisa ser depois do início.',
+                  style: Tipografia.apoio
+                      .copyWith(color: dias > 0 ? c.grafite2 : c.revisao),
+                ),
+                const SizedBox(height: Espaco.e24),
+                Folha(
+                  preenchimento: EdgeInsets.zero,
+                  // O toque do SwitchListTile precisa de um Material logo
+                  // acima (a folha é uma caixa decorada).
+                  child: Material(
+                    type: MaterialType.transparency,
+                    child: SwitchListTile(
+                      value: _criarCronograma,
+                      onChanged: (v) {
+                        unawaited(Tato.leve());
+                        setState(() => _criarCronograma = v);
+                      },
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: Espaco.e12, vertical: Espaco.e4),
+                      title: Text('Gerar cronograma com fases padrão',
+                          style:
+                              Tipografia.corpoForte.copyWith(color: c.grafite)),
+                      subtitle: Text(
+                        'Cria ${AppConstants.fasesPadrao.length} fases (fundação, '
+                        'estrutura, alvenaria...) distribuídas no período da '
+                        'obra. A maquete cresce com elas.',
+                        style: Tipografia.apoio.copyWith(color: c.grafite2),
+                      ),
+                    ),
                   ),
-                  activeTrackColor: AppColors.laranja,
-                  contentPadding: EdgeInsets.zero,
-                ),
-                const SizedBox(height: 20),
-                ElevatedButton(
-                  onPressed: _salvando ? null : _salvar,
-                  child: _salvando
-                      ? const SizedBox(
-                          width: 22,
-                          height: 22,
-                          child: CircularProgressIndicator(
-                              strokeWidth: 2.5, color: Colors.white),
-                        )
-                      : const Text('Criar obra'),
                 ),
               ],
             ),
           ),
         ),
       ),
+      bottomNavigationBar: BarraDeAcao(
+        principal: BotaoPrincipal(
+          rotulo: 'Criar obra',
+          icone: Icons.check,
+          grande: true,
+          expandir: true,
+          carregando: _salvando,
+          aoTocar: _salvando ? null : () => unawaited(_salvar()),
+        ),
+      ),
     );
   }
 }
 
+/// O que os Correios disseram do CEP: ícone e texto (nunca só cor).
+class _ResultadoDoCep extends StatelessWidget {
+  const _ResultadoDoCep({required this.resultado});
+
+  final ResultadoCep resultado;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.cores;
+    final semSinal = resultado.situacao == SituacaoCep.semResposta;
+    final cor = resultado.valido
+        ? c.ok
+        : semSinal
+            ? c.grafite2
+            : c.revisao;
+    return Semantics(
+      liveRegion: true,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            resultado.valido
+                ? Icons.check_circle_outline
+                : semSinal
+                    ? Icons.cloud_off_outlined
+                    : Icons.error_outline,
+            size: 20,
+            color: cor,
+          ),
+          const SizedBox(width: Espaco.e8),
+          Expanded(
+            child: Text(
+              resultado.mensagem,
+              style: Tipografia.apoio.copyWith(color: cor),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Campo de data: toca e abre o calendário.
 class _CampoData extends StatelessWidget {
   final String rotulo;
   final DateTime data;
@@ -383,15 +446,25 @@ class _CampoData extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(14),
-      child: InputDecorator(
+    final c = context.cores;
+    final texto = Formatters.data(data);
+    return AreaPressionavel(
+      aoTocar: onTap,
+      escala: 1,
+      vibrar: true,
+      rotuloSemantico: '$rotulo: $texto',
+      dicaSemantica: 'Abre o calendário para trocar a data',
+      construtor: (context, e) => InputDecorator(
+        isFocused: e.focado || e.pressionado,
         decoration: InputDecoration(
           labelText: rotulo,
-          prefixIcon: const Icon(Icons.calendar_today, size: 20),
+          suffixIcon: const Icon(Icons.calendar_today_outlined),
         ),
-        child: Text(Formatters.data(data)),
+        child: Text(
+          texto,
+          style: Tipografia.corpo
+              .copyWith(color: c.grafite, fontFeatures: Tipografia.tabular),
+        ),
       ),
     );
   }

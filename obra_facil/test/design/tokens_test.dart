@@ -3,7 +3,6 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:obra_facil/constants/app_theme.dart';
 import 'package:obra_facil/design/design.dart';
 
 import '../visual/suporte/fontes.dart';
@@ -11,8 +10,7 @@ import '../visual/suporte/fontes.dart';
 void main() {
   setUpAll(() async {
     Tato.ativo = false;
-    // O AppTheme antigo usa a Poppins do google_fonts, que no teste não
-    // pode ir à rede: o harness das capturas serve os arquivos locais.
+    // As fontes embutidas, como nas capturas.
     await carregarFontes();
   });
 
@@ -189,10 +187,10 @@ void main() {
       expect(c.marca, const Color(0xFF00FF00));
     });
 
-    testWidgets('componentes novos numa tela antiga (AppTheme) não quebram',
+    testWidgets('componentes num tema sem a paleta da prancheta não quebram',
         (tester) async {
       await tester.pumpWidget(MaterialApp(
-        theme: AppTheme.dark,
+        theme: ThemeData.dark(),
         home: Scaffold(
           body: SingleChildScrollView(
             child: Column(
@@ -215,7 +213,7 @@ void main() {
       ));
       await tester.pump(const Duration(seconds: 1));
       expect(tester.takeException(), isNull);
-      // O AppTheme antigo é escuro: os componentes pegam a paleta escura.
+      // Sem a extensão, os componentes pegam a paleta escura.
       final contexto = tester.element(find.byType(Folha).first);
       expect(contexto.cores, CoresObra.escuro);
     });

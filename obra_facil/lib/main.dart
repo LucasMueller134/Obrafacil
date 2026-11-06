@@ -5,7 +5,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
 
-import 'constants/app_theme.dart';
+import 'design/design.dart';
 import 'firebase_options.dart';
 import 'providers/auth_provider.dart';
 import 'router/app_router.dart';
@@ -60,7 +60,9 @@ class _ObraFacilAppState extends State<ObraFacilApp> {
       child: MaterialApp.router(
         title: 'ObraFácil',
         debugShowCheckedModeBanner: false,
-        theme: AppTheme.dark,
+        // A prancheta: claro de dia, escuro à noite, como o celular.
+        theme: TemaPrancheta.claro,
+        darkTheme: TemaPrancheta.escuro,
         routerConfig: router,
         locale: const Locale('pt', 'BR'),
         supportedLocales: const [Locale('pt', 'BR')],

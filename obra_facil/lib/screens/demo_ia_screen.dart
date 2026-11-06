@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
-import '../constants/app_colors.dart';
+import '../design/design.dart';
 import '../services/ia/material_vision_service.dart';
 import '../services/ia/ocr_nota_service.dart';
 import '../services/ia/voz_service.dart';
@@ -11,14 +11,21 @@ import '../widgets/painel_voz.dart';
 /// Demonstração das IAs on-device — funciona sem login e sem internet.
 /// Acessível pela tela de configuração pendente, para testar o app
 /// antes mesmo de conectar o Firebase.
-class DemoIaScreen extends StatefulWidget {
+class DemoIaScreen extends StatelessWidget {
   const DemoIaScreen({super.key});
 
   @override
-  State<DemoIaScreen> createState() => _DemoIaScreenState();
+  Widget build(BuildContext context) => const TemaPrancheta(child: _DemoIa());
 }
 
-class _DemoIaScreenState extends State<DemoIaScreen> {
+class _DemoIa extends StatefulWidget {
+  const _DemoIa();
+
+  @override
+  State<_DemoIa> createState() => _DemoIaScreenState();
+}
+
+class _DemoIaScreenState extends State<_DemoIa> {
   final _ocr = OcrNotaService();
   final _voz = VozService();
 
@@ -45,15 +52,16 @@ class _DemoIaScreenState extends State<DemoIaScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            ListTile(
-              leading: const Icon(Icons.photo_camera),
-              title: const Text('Tirar foto da nota'),
-              onTap: () => Navigator.pop(ctx, ImageSource.camera),
+            LinhaLista(
+              icone: Icons.photo_camera_outlined,
+              titulo: 'Tirar foto da nota',
+              divisoria: true,
+              aoTocar: () => Navigator.pop(ctx, ImageSource.camera),
             ),
-            ListTile(
-              leading: const Icon(Icons.photo_library),
-              title: const Text('Escolher da galeria'),
-              onTap: () => Navigator.pop(ctx, ImageSource.gallery),
+            LinhaLista(
+              icone: Icons.photo_library_outlined,
+              titulo: 'Escolher da galeria',
+              aoTocar: () => Navigator.pop(ctx, ImageSource.gallery),
             ),
           ],
         ),
@@ -112,37 +120,38 @@ class _DemoIaScreenState extends State<DemoIaScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.cores;
+    final alerta = Tipografia.apoio
+        .copyWith(color: c.revisao, fontWeight: FontWeight.w700);
     return Scaffold(
-      appBar: AppBar(title: const Text('Demonstração das IAs')),
+      appBar: AppBar(),
       body: ListView(
-        padding: EdgeInsets.fromLTRB(
-            16, 16, 16, MediaQuery.of(context).padding.bottom + 16),
+        padding: const EdgeInsets.fromLTRB(
+            Espaco.margem, Espaco.e4, Espaco.margem, Espaco.e32),
         children: [
+          const Rotulo('Demonstração'),
+          const SizedBox(height: Espaco.e4),
+          Text('As IAs do ObraFácil',
+              style: Tipografia.tituloTela.copyWith(color: c.grafite)),
+          const SizedBox(height: Espaco.e8),
           Text(
             'Os quatro módulos de IA do ObraFácil rodam dentro do celular, '
-            'sem internet. Teste três deles aqui — sem precisar de conta.',
-            style: Theme.of(context)
-                .textTheme
-                .bodyMedium
-                ?.copyWith(color: AppColors.textoSecundario),
+            'sem internet. Teste três deles aqui, sem precisar de conta.',
+            style: Tipografia.corpo.copyWith(color: c.grafite2),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: Espaco.e24),
 
           // ------------------------------------------------------- OCR
           _CartaoDemo(
-            icone: Icons.document_scanner,
+            icone: Icons.document_scanner_outlined,
             titulo: 'OCR de nota fiscal',
-            descricao: 'Fotografe uma nota ou cupom fiscal — o app extrai '
+            descricao: 'Fotografe uma nota ou cupom fiscal: o app extrai '
                 'fornecedor, CNPJ, total e data.',
             botao: 'Ler nota',
             carregando: _lendoNota,
             onPressed: _demonstrarOcr,
             resultado: _erroNota != null
-                ? Text(
-                    _erroNota!,
-                    style:
-                        const TextStyle(fontSize: 12, color: AppColors.alerta),
-                  )
+                ? Text(_erroNota!, style: alerta)
                 : _nota == null
                     ? null
                     : Column(
@@ -173,27 +182,26 @@ class _DemoIaScreenState extends State<DemoIaScreen> {
                                         ?.formatada ??
                                     _nota!.chaveAcesso!),
                           if (!_nota!.encontrouAlgo)
-                            const Padding(
-                              padding: EdgeInsets.only(top: 6),
+                            Padding(
+                              padding: const EdgeInsets.only(top: Espaco.e8),
                               child: Text(
-                                'Nada reconhecido — tente uma foto mais nítida, '
+                                'Nada reconhecido. Tente uma foto mais nítida, '
                                 'bem iluminada e sem inclinação.',
-                                style: TextStyle(
-                                    fontSize: 12, color: AppColors.alerta),
+                                style: alerta,
                               ),
                             ),
                         ],
                       ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: Espaco.e16),
 
           // ------------------------------------------------------- Voz
           _CartaoDemo(
-            icone: Icons.mic,
+            icone: Icons.mic_none,
             titulo: 'Lançamento por voz',
             descricao: 'Diga algo como "comprei dez sacos de cimento por '
-                'trezentos e cinquenta reais no Depósito São José" — '
-                'a interpretação acontece ao vivo enquanto você fala.',
+                'trezentos e cinquenta reais no Depósito São José". '
+                'A interpretação acontece ao vivo enquanto você fala.',
             botao: 'Falar',
             carregando: false,
             onPressed: _demonstrarVoz,
@@ -207,9 +215,8 @@ class _DemoIaScreenState extends State<DemoIaScreen> {
                           padding: const EdgeInsets.only(bottom: 6),
                           child: Text(
                             '"$_transcricao"',
-                            style: const TextStyle(
-                                fontStyle: FontStyle.italic,
-                                color: AppColors.amareloCapacete),
+                            style: Tipografia.corpo.copyWith(
+                                fontStyle: FontStyle.italic, color: c.grafite),
                           ),
                         ),
                       if (_interpretado != null) ...[
@@ -237,11 +244,11 @@ class _DemoIaScreenState extends State<DemoIaScreen> {
                     ],
                   ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: Espaco.e16),
 
           // ----------------------------------------------------- Visão
           _CartaoDemo(
-            icone: Icons.camera_alt,
+            icone: Icons.photo_camera_outlined,
             titulo: 'Reconhecimento de material',
             descricao: 'Aponte a câmera para um material de construção '
                 '(tijolo, madeira, cano...) e veja a classificação.',
@@ -251,9 +258,9 @@ class _DemoIaScreenState extends State<DemoIaScreen> {
             resultado: _materiais == null
                 ? null
                 : _materiais!.isEmpty
-                    ? const Text(
+                    ? Text(
                         'Nenhum material de construção reconhecido nesta foto.',
-                        style: TextStyle(fontSize: 12, color: AppColors.alerta),
+                        style: alerta,
                       )
                     : Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -263,21 +270,20 @@ class _DemoIaScreenState extends State<DemoIaScreen> {
                               padding: const EdgeInsets.symmetric(vertical: 3),
                               child: Row(
                                 children: [
-                                  Expanded(child: Text(m.material)),
+                                  Expanded(
+                                      child: Text(m.material,
+                                          style: Tipografia.corpo
+                                              .copyWith(color: c.grafite))),
                                   SizedBox(
                                     width: 90,
-                                    child: ClipRRect(
-                                      borderRadius: BorderRadius.circular(4),
-                                      child: LinearProgressIndicator(
-                                        value: m.confianca,
-                                        minHeight: 8,
-                                      ),
-                                    ),
+                                    child: ReguaCota(valor: m.confianca),
                                   ),
-                                  const SizedBox(width: 8),
+                                  const SizedBox(width: Espaco.e8),
                                   Text(
                                     '${(m.confianca * 100).toStringAsFixed(0)}%',
-                                    style: const TextStyle(fontSize: 12),
+                                    style: Tipografia.corpoForte.copyWith(
+                                        color: c.grafite,
+                                        fontFeatures: Tipografia.tabular),
                                   ),
                                 ],
                               ),
@@ -287,13 +293,10 @@ class _DemoIaScreenState extends State<DemoIaScreen> {
           ),
           const SizedBox(height: 16),
           Text(
-            'O 4º módulo — previsão de estouro de orçamento por regressão — '
-            'aparece no dashboard da obra depois que o Firebase for conectado '
+            'O 4º módulo, a previsão de estouro do orçamento por regressão, '
+            'aparece na central da obra depois que o Firebase for conectado '
             'e houver lançamentos aprovados.',
-            style: Theme.of(context)
-                .textTheme
-                .bodySmall
-                ?.copyWith(color: AppColors.textoDesabilitado),
+            style: Tipografia.apoio.copyWith(color: c.grafite2),
           ),
         ],
       ),
@@ -322,55 +325,37 @@ class _CartaoDemo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.superficie,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.borda),
-      ),
+    final c = context.cores;
+    return Folha(
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Row(
             children: [
-              Icon(icone, color: AppColors.laranja),
-              const SizedBox(width: 10),
+              Icon(icone, color: c.grafite),
+              const SizedBox(width: Espaco.e8),
               Expanded(
                 child: Text(titulo,
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleSmall
-                        ?.copyWith(fontWeight: FontWeight.w700)),
+                    style: Tipografia.subtitulo.copyWith(color: c.grafite)),
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          Text(descricao,
-              style: Theme.of(context)
-                  .textTheme
-                  .bodySmall
-                  ?.copyWith(color: AppColors.textoSecundario)),
-          const SizedBox(height: 12),
-          ElevatedButton(
-            onPressed: carregando ? null : onPressed,
-            child: carregando
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                        strokeWidth: 2.5, color: Colors.white),
-                  )
-                : Text(botao),
+          const SizedBox(height: Espaco.e8),
+          Text(descricao, style: Tipografia.apoio.copyWith(color: c.grafite2)),
+          const SizedBox(height: Espaco.e12),
+          BotaoContorno(
+            rotulo: botao,
+            expandir: true,
+            carregando: carregando,
+            aoTocar: carregando ? null : onPressed,
           ),
           if (resultado != null) ...[
-            const SizedBox(height: 12),
+            const SizedBox(height: Espaco.e12),
             Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(Espaco.e12),
               decoration: BoxDecoration(
-                color: AppColors.fundo,
-                borderRadius: BorderRadius.circular(12),
+                color: c.folhaRebaixada,
+                borderRadius: Raio.cantoPequeno,
               ),
               child: resultado,
             ),
@@ -389,22 +374,14 @@ class _Linha extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.cores;
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
-      child: Row(
+      padding: const EdgeInsets.symmetric(vertical: Espaco.e4),
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(
-            width: 100,
-            child: Text(rotulo,
-                style: const TextStyle(
-                    fontSize: 12, color: AppColors.textoSecundario)),
-          ),
-          Expanded(
-            child: Text(valor,
-                style:
-                    const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-          ),
+          Rotulo(rotulo),
+          Text(valor, style: Tipografia.corpoForte.copyWith(color: c.grafite)),
         ],
       ),
     );

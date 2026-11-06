@@ -1,11 +1,12 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
-import '../../constants/app_colors.dart';
 import '../../constants/app_constants.dart';
+import '../../design/design.dart';
 import '../../models/models.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/firestore_service.dart';
@@ -17,190 +18,230 @@ import '../../services/ia/voz_service.dart';
 import '../../services/imagem_service.dart';
 import '../../utils/formatters.dart';
 import '../../utils/validators.dart';
-import '../../widgets/animacoes.dart';
 import '../../widgets/botao_ia.dart';
-import '../../widgets/carregando_obra.dart';
-import '../../widgets/estado_vazio.dart';
-import '../../widgets/ilustracoes.dart';
 import '../../widgets/imagem_obra.dart';
 import '../../widgets/painel_voz.dart';
 
+/// O diário de obra: o que aconteceu no canteiro, dia a dia (atividades,
+/// equipe, clima, fase e fotos). Registrar dá para ditar por voz ou deixar
+/// a IA ler a foto do canteiro.
 class DiarioScreen extends StatelessWidget {
   final String obraId;
 
   const DiarioScreen({super.key, required this.obraId});
 
   @override
-  Widget build(BuildContext context) {
-    final db = context.read<FirestoreService>();
+  Widget build(BuildContext context) =>
+      TemaPrancheta(child: _Diario(obraId: obraId));
+}
 
+class _Diario extends StatefulWidget {
+  const _Diario({required this.obraId});
+
+  final String obraId;
+
+  @override
+  State<_Diario> createState() => _DiarioState();
+}
+
+class _DiarioState extends State<_Diario> {
+  late final Stream<List<DiarioEntradaModel>> _diario =
+      context.read<FirestoreService>().diario(widget.obraId);
+  late final Stream<ObraModel?> _obra =
+      context.read<FirestoreService>().obra(widget.obraId);
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.cores;
     return Scaffold(
-      appBar: AppBar(title: const Text('Diário de obra')),
+      appBar: AppBar(),
       body: StreamBuilder<List<DiarioEntradaModel>>(
-        stream: db.diario(obraId),
+        stream: _diario,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const CarregandoObra(mensagem: 'Abrindo o diário…');
-          }
-          final entradas = snapshot.data ?? const <DiarioEntradaModel>[];
-          if (entradas.isEmpty) {
-            return EstadoVazio(
-              icone: Icons.menu_book,
-              ilustracao: const IlustracaoPrancheta(),
-              titulo: 'Diário vazio',
-              mensagem:
-                  'Registre o que aconteceu no canteiro hoje: atividades, '
-                  'equipe presente e condições do tempo. Dá para ditar por '
-                  'voz ou deixar a IA ler a foto do canteiro.',
-              rotuloAcao: 'Registrar dia',
-              onAcao: () => _novaEntrada(context),
+            return ListView(
+              padding: const EdgeInsets.all(Espaco.margem),
+              children: const [
+                EsqueletoFolha(linhas: 3, rotuloSemantico: 'Abrindo o diário'),
+              ],
             );
           }
-          return ListView.separated(
-            padding: EdgeInsets.fromLTRB(
-                16, 16, 16, MediaQuery.of(context).padding.bottom + 96),
-            itemCount: entradas.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 12),
-            itemBuilder: (_, i) =>
-                _CartaoDiario(entrada: entradas[i]).aparecer(i),
+          final entradas = snapshot.data ?? const <DiarioEntradaModel>[];
+          final ultimo = entradas.isEmpty ? null : entradas.first.data;
+          return ListView(
+            padding: const EdgeInsets.fromLTRB(
+                Espaco.margem, Espaco.e4, Espaco.margem, Espaco.e32),
+            children: [
+              StreamBuilder<ObraModel?>(
+                stream: _obra,
+                builder: (context, obra) => Carimbo(linhas: [
+                  [
+                    CelulaCarimbo(
+                      rotulo: 'Diário de obra',
+                      conteudo: Semantics(
+                        header: true,
+                        child: Text(
+                          obra.data?.nome ?? 'Obra',
+                          style:
+                              Tipografia.tituloTela.copyWith(color: c.grafite),
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ),
+                  ],
+                  [
+                    CelulaCarimbo(
+                      rotulo: 'Registros',
+                      valor: '${entradas.length}',
+                    ),
+                    CelulaCarimbo(
+                      rotulo: 'Último',
+                      valor: ultimo == null ? '—' : Formatters.data(ultimo),
+                    ),
+                  ],
+                ]),
+              ),
+              const SizedBox(height: Espaco.e24),
+              if (entradas.isEmpty)
+                const AvisoVazio(
+                  icone: Icons.menu_book_outlined,
+                  titulo: 'Diário vazio',
+                  texto: 'Registre o que aconteceu no canteiro hoje: '
+                      'atividades, equipe presente e condições do tempo. Dá '
+                      'para ditar por voz ou deixar a IA ler a foto do '
+                      'canteiro.',
+                )
+              else
+                for (var i = 0; i < entradas.length; i++) ...[
+                  if (i > 0) const SizedBox(height: Espaco.e12),
+                  _CartaoDiario(entrada: entradas[i]),
+                ],
+            ],
           );
         },
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _novaEntrada(context),
-        icon: const Icon(Icons.add),
-        label: const Text('Registrar dia'),
+      bottomNavigationBar: BarraDeAcao(
+        principal: BotaoPrincipal(
+          rotulo: 'Registrar dia',
+          icone: Icons.add,
+          grande: true,
+          expandir: true,
+          aoTocar: () => _novaEntrada(context),
+        ),
       ),
     );
   }
 
   void _novaEntrada(BuildContext context) {
-    showModalBottomSheet(
+    unawaited(showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (_) => _FormDiario(obraId: obraId),
-    );
+      builder: (_) => _FormDiario(obraId: widget.obraId),
+    ));
   }
 }
+
+/// Ícone do clima (o texto vai junto: nunca só o ícone).
+IconData _iconeDoClima(String clima) => switch (clima) {
+      'Ensolarado' => Icons.wb_sunny_outlined,
+      'Nublado' => Icons.cloud_outlined,
+      'Chuvoso' => Icons.umbrella_outlined,
+      'Chuva forte' => Icons.thunderstorm_outlined,
+      _ => Icons.wb_sunny_outlined,
+    };
 
 class _CartaoDiario extends StatelessWidget {
   final DiarioEntradaModel entrada;
 
   const _CartaoDiario({required this.entrada});
 
-  IconData get _iconeClima => switch (entrada.clima) {
-        'Ensolarado' => Icons.wb_sunny,
-        'Nublado' => Icons.cloud,
-        'Chuvoso' => Icons.umbrella,
-        'Chuva forte' => Icons.thunderstorm,
-        _ => Icons.wb_sunny,
-      };
-
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    Formatters.diaSemana(entrada.data),
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleSmall
-                        ?.copyWith(fontWeight: FontWeight.w700),
-                  ),
-                ),
-                Icon(_iconeClima, size: 18, color: AppColors.amareloCapacete),
-                const SizedBox(width: 4),
-                Text(
-                  entrada.clima,
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodySmall
-                      ?.copyWith(color: AppColors.textoSecundario),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            if (entrada.fase.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 6),
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: AppColors.laranja.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    entrada.fase,
-                    style: const TextStyle(
-                        fontSize: 11,
-                        color: AppColors.laranja,
-                        fontWeight: FontWeight.w600),
-                  ),
+    final c = context.cores;
+    return Folha(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Text(
+                  Formatters.diaSemana(entrada.data),
+                  style: Tipografia.subtitulo.copyWith(color: c.grafite),
                 ),
               ),
-            Text(entrada.descricao,
-                style: Theme.of(context).textTheme.bodyMedium),
-            if (entrada.fotosUrls.isNotEmpty) ...[
-              const SizedBox(height: 10),
-              if (entrada.fotosUrls.length == 1)
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: SizedBox(
-                    height: 150,
-                    width: double.infinity,
-                    child: ImagemObra(entrada.fotosUrls.first),
-                  ),
-                )
-              else
-                SizedBox(
-                  height: 110,
-                  child: ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: entrada.fotosUrls.length,
-                    separatorBuilder: (_, __) => const SizedBox(width: 8),
-                    itemBuilder: (_, i) => ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: SizedBox(
-                        width: 150,
-                        child: ImagemObra(entrada.fotosUrls[i]),
-                      ),
+              const SizedBox(width: Espaco.e8),
+              Icon(_iconeDoClima(entrada.clima), size: 20, color: c.grafite),
+              const SizedBox(width: Espaco.e4),
+              Text(entrada.clima,
+                  style: Tipografia.apoio.copyWith(color: c.grafite)),
+            ],
+          ),
+          if (entrada.fase.isNotEmpty) ...[
+            const SizedBox(height: Espaco.e4),
+            Text(
+              entrada.fase.toUpperCase(),
+              style: Tipografia.rotulo.copyWith(color: c.marcaTexto),
+            ),
+          ],
+          const SizedBox(height: Espaco.e8),
+          Text(entrada.descricao,
+              style: Tipografia.corpo.copyWith(color: c.grafite)),
+          if (entrada.fotosUrls.isNotEmpty) ...[
+            const SizedBox(height: Espaco.e12),
+            if (entrada.fotosUrls.length == 1)
+              ClipRRect(
+                borderRadius: Raio.cantoPequeno,
+                child: SizedBox(
+                  height: 180,
+                  width: double.infinity,
+                  child: ImagemObra(entrada.fotosUrls.first),
+                ),
+              )
+            else
+              SizedBox(
+                height: 120,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: entrada.fotosUrls.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: Espaco.e8),
+                  itemBuilder: (_, i) => ClipRRect(
+                    borderRadius: Raio.cantoPequeno,
+                    child: SizedBox(
+                      width: 160,
+                      child: ImagemObra(entrada.fotosUrls[i]),
                     ),
                   ),
                 ),
-            ],
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                const Icon(Icons.groups,
-                    size: 15, color: AppColors.textoSecundario),
-                const SizedBox(width: 4),
-                Text(
-                  '${entrada.numeroPessoas} no canteiro',
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodySmall
-                      ?.copyWith(color: AppColors.textoSecundario),
-                ),
-                const Spacer(),
-                Text(
-                  'por ${entrada.registradoPorNome}',
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodySmall
-                      ?.copyWith(color: AppColors.textoDesabilitado),
-                ),
-              ],
-            ),
+              ),
           ],
-        ),
+          const SizedBox(height: Espaco.e12),
+          Divider(height: Traco.fino, thickness: Traco.fino, color: c.grade),
+          const SizedBox(height: Espaco.e8),
+          Row(
+            children: [
+              Icon(Icons.groups_outlined, size: 20, color: c.grafite2),
+              const SizedBox(width: Espaco.e4),
+              Text(
+                '${entrada.numeroPessoas} no canteiro',
+                style: Tipografia.apoio.copyWith(
+                    color: c.grafite2, fontFeatures: Tipografia.tabular),
+              ),
+              const SizedBox(width: Espaco.e8),
+              Expanded(
+                child: Text(
+                  'por ${entrada.registradoPorNome}',
+                  textAlign: TextAlign.end,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Tipografia.apoio.copyWith(color: c.grafite2),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -287,15 +328,16 @@ class _FormDiarioState extends State<_FormDiario> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            ListTile(
-              leading: const Icon(Icons.photo_camera),
-              title: const Text('Tirar foto do canteiro'),
-              onTap: () => Navigator.pop(ctx, ImageSource.camera),
+            LinhaLista(
+              icone: Icons.photo_camera_outlined,
+              titulo: 'Tirar foto do canteiro',
+              divisoria: true,
+              aoTocar: () => Navigator.pop(ctx, ImageSource.camera),
             ),
-            ListTile(
-              leading: const Icon(Icons.photo_library),
-              title: const Text('Escolher da galeria'),
-              onTap: () => Navigator.pop(ctx, ImageSource.gallery),
+            LinhaLista(
+              icone: Icons.photo_library_outlined,
+              titulo: 'Escolher da galeria',
+              aoTocar: () => Navigator.pop(ctx, ImageSource.gallery),
             ),
           ],
         ),
@@ -398,103 +440,100 @@ class _FormDiarioState extends State<_FormDiario> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (ctx) => Padding(
-        padding: EdgeInsets.only(
-          left: 20,
-          right: 20,
-          top: 20,
-          bottom: MediaQuery.of(ctx).viewPadding.bottom + 24,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('O que a IA viu na foto',
-                style: Theme.of(ctx).textTheme.titleMedium),
-            const SizedBox(height: 4),
-            Text(
-              'A fase sai de duas leituras: os rótulos do modelo de visão '
-              'e a composição de cores da própria foto. Se ela saiu '
-              'errada, é aqui que dá para ver por quê.',
-              style: Theme.of(ctx)
-                  .textTheme
-                  .bodySmall
-                  ?.copyWith(color: AppColors.textoSecundario),
-            ),
-            const SizedBox(height: 12),
-            Text('Cores da foto',
-                style: Theme.of(ctx)
-                    .textTheme
-                    .titleSmall
-                    ?.copyWith(fontWeight: FontWeight.w700)),
-            const SizedBox(height: 6),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                for (final (rotulo, fatia) in [
-                  ('Terra', _paletaVista.terra),
-                  ('Madeira', _paletaVista.madeira),
-                  ('Tijolo', _paletaVista.tijolo),
-                  ('Concreto', _paletaVista.concreto),
-                  ('Parede clara', _paletaVista.claro),
-                  ('Vegetação', _paletaVista.vegetacao),
-                ])
-                  if (fatia >= 0.03)
-                    Chip(
-                      visualDensity: VisualDensity.compact,
-                      label: Text(
-                        '$rotulo ${(fatia * 100).toStringAsFixed(0)}%',
-                        style: const TextStyle(fontSize: 12),
-                      ),
-                    ),
-              ],
-            ),
-            const SizedBox(height: 14),
-            Text('Rótulos do modelo',
-                style: Theme.of(ctx)
-                    .textTheme
-                    .titleSmall
-                    ?.copyWith(fontWeight: FontWeight.w700)),
-            const SizedBox(height: 6),
-            ConstrainedBox(
-              constraints: BoxConstraints(
-                  maxHeight: MediaQuery.of(ctx).size.height * 0.45),
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    for (final r in _rotulosVistos)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 4),
-                        child: Row(
-                          children: [
-                            Expanded(
-                                child: SelectableText(_nomeDoRotulo(r.label))),
-                            Text(
-                              '${(r.confianca * 100).toStringAsFixed(0)}%',
-                              style: Theme.of(ctx)
-                                  .textTheme
-                                  .bodySmall
-                                  ?.copyWith(color: AppColors.laranja),
-                            ),
-                          ],
+      builder: (ctx) {
+        final c = ctx.cores;
+        return Padding(
+          padding: EdgeInsets.only(
+            left: Espaco.margem,
+            right: Espaco.margem,
+            top: Espaco.e8,
+            bottom: MediaQuery.of(ctx).viewPadding.bottom + Espaco.e24,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Rotulo('Foto do canteiro'),
+              const SizedBox(height: Espaco.e4),
+              Text('O que a IA viu na foto',
+                  style: Tipografia.titulo.copyWith(color: c.grafite)),
+              const SizedBox(height: Espaco.e8),
+              Text(
+                'A fase sai de duas leituras: os rótulos do modelo de visão '
+                'e a composição de cores da própria foto. Se ela saiu '
+                'errada, é aqui que dá para ver por quê.',
+                style: Tipografia.apoio.copyWith(color: c.grafite2),
+              ),
+              const SizedBox(height: Espaco.e16),
+              const LinhaCota(legenda: 'Cores da foto'),
+              const SizedBox(height: Espaco.e8),
+              Wrap(
+                spacing: Espaco.e8,
+                runSpacing: Espaco.e8,
+                children: [
+                  for (final (rotulo, fatia) in [
+                    ('Terra', _paletaVista.terra),
+                    ('Madeira', _paletaVista.madeira),
+                    ('Tijolo', _paletaVista.tijolo),
+                    ('Concreto', _paletaVista.concreto),
+                    ('Parede clara', _paletaVista.claro),
+                    ('Vegetação', _paletaVista.vegetacao),
+                  ])
+                    if (fatia >= 0.03)
+                      Chip(
+                        label: Text(
+                          '$rotulo ${(fatia * 100).toStringAsFixed(0)}%',
+                          style: Tipografia.apoio.copyWith(
+                              color: c.grafite,
+                              fontFeatures: Tipografia.tabular),
                         ),
                       ),
-                  ],
+                ],
+              ),
+              const SizedBox(height: Espaco.e16),
+              const LinhaCota(legenda: 'Rótulos do modelo'),
+              const SizedBox(height: Espaco.e8),
+              ConstrainedBox(
+                constraints: BoxConstraints(
+                    maxHeight: MediaQuery.of(ctx).size.height * 0.45),
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      for (final r in _rotulosVistos)
+                        Padding(
+                          padding:
+                              const EdgeInsets.symmetric(vertical: Espaco.e4),
+                          child: ParComValor(
+                            esquerda: SelectableText(_nomeDoRotulo(r.label),
+                                style: Tipografia.corpo
+                                    .copyWith(color: c.grafite)),
+                            direita: Text(
+                              '${(r.confianca * 100).toStringAsFixed(0)}%',
+                              style: Tipografia.corpoForte.copyWith(
+                                  color: c.grafite,
+                                  fontFeatures: Tipografia.tabular),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
-        ),
-      ),
+            ],
+          ),
+        );
+      },
     );
   }
 
   // --------------------------------------------------------------- Salvar
 
   Future<void> _salvar() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate()) {
+      unawaited(Tato.erro());
+      return;
+    }
     setState(() => _salvando = true);
 
     final db = context.read<FirestoreService>();
@@ -537,28 +576,44 @@ class _FormDiarioState extends State<_FormDiario> {
         data: _data,
         criadoEm: DateTime.now(),
       ));
-      if (mounted) Navigator.pop(context);
+      if (!mounted) return;
+      unawaited(Tato.confirmar());
+      mostrarAviso(context, 'Dia registrado no diário.');
+      Navigator.pop(context);
     } catch (e) {
       debugPrint('Diário: falha ao salvar o registro: $e');
       if (!mounted) return;
       setState(() => _salvando = false);
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(MensagensErro.aoSalvar(e))));
+      unawaited(Tato.erro());
+      mostrarAviso(context, MensagensErro.aoSalvar(e));
     }
   }
 
   // ------------------------------------------------------------------- UI
 
+  Future<void> _escolherData() async {
+    final escolhida = await showDatePicker(
+      context: context,
+      initialDate: _data,
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now(),
+      locale: const Locale('pt', 'BR'),
+    );
+    if (escolhida != null) setState(() => _data = escolhida);
+  }
+
   @override
   Widget build(BuildContext context) {
+    final c = context.cores;
+    final textoData = Formatters.data(_data);
     return Padding(
       padding: EdgeInsets.only(
-        left: 20,
-        right: 20,
-        top: 20,
+        left: Espaco.margem,
+        right: Espaco.margem,
+        top: Espaco.e8,
         bottom: MediaQuery.of(context).viewInsets.bottom +
             MediaQuery.of(context).viewPadding.bottom +
-            24,
+            Espaco.e16,
       ),
       child: Form(
         key: _formKey,
@@ -567,47 +622,52 @@ class _FormDiarioState extends State<_FormDiario> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              const Rotulo('Diário de obra'),
+              const SizedBox(height: Espaco.e4),
               Text('Registro do dia',
-                  style: Theme.of(context).textTheme.titleMedium),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: BotaoIa(
-                      icone: Icons.mic,
-                      rotulo: 'Ditar o dia',
-                      descricao: 'Conte como foi',
-                      onTap: _analisando ? null : _ditarODia,
+                  style: Tipografia.titulo.copyWith(color: c.grafite)),
+              const SizedBox(height: Espaco.e16),
+              IntrinsicHeight(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Expanded(
+                      child: BotaoIa(
+                        icone: Icons.mic_none,
+                        rotulo: 'Ditar o dia',
+                        descricao: 'Conte como foi',
+                        onTap: _analisando ? null : _ditarODia,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: BotaoIa(
-                      icone: Icons.photo_camera,
-                      rotulo: 'Foto do canteiro',
-                      descricao: 'A IA lê a cena',
-                      onTap: _analisando ? null : _analisarFoto,
+                    const SizedBox(width: Espaco.entreAlvos),
+                    Expanded(
+                      child: BotaoIa(
+                        icone: Icons.photo_camera_outlined,
+                        rotulo: 'Foto do canteiro',
+                        descricao: 'A IA lê a cena',
+                        onTap: _analisando ? null : _analisarFoto,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
               if (_analisando) ...[
-                const SizedBox(height: 16),
-                const Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2.5),
-                    ),
-                    SizedBox(width: 10),
-                    Text('Analisando a foto…'),
-                  ],
+                const SizedBox(height: Espaco.e16),
+                Semantics(
+                  liveRegion: true,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const IndicadorCarregando(),
+                      const SizedBox(width: Espaco.e12),
+                      Text('Analisando a foto…',
+                          style: Tipografia.corpo.copyWith(color: c.grafite)),
+                    ],
+                  ),
                 ),
               ],
               if (_avisoIa != null) ...[
-                const SizedBox(height: 16),
+                const SizedBox(height: Espaco.e16),
                 AvisoIa(mensagem: _avisoIa!),
               ],
               if (_rotulosVistos.isNotEmpty)
@@ -615,45 +675,46 @@ class _FormDiarioState extends State<_FormDiario> {
                   alignment: Alignment.centerLeft,
                   child: TextButton.icon(
                     onPressed: _verOQueIaViu,
-                    icon: const Icon(Icons.visibility, size: 18),
+                    icon: const Icon(Icons.visibility_outlined),
                     label: const Text('Ver o que a IA viu na foto'),
                   ),
                 ),
               if (_materiaisVistos.isNotEmpty) ...[
-                const SizedBox(height: 12),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text('Material visto na foto',
-                      style: Theme.of(context).textTheme.titleSmall),
-                ),
-                const SizedBox(height: 8),
+                const SizedBox(height: Espaco.e12),
+                const Rotulo('Material visto na foto'),
+                const SizedBox(height: Espaco.e8),
                 Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
+                  spacing: Espaco.e8,
+                  runSpacing: Espaco.e8,
                   children: [
                     for (final material in _materiaisVistos)
                       Chip(
-                        avatar: const Icon(Icons.visibility,
-                            size: 16, color: AppColors.laranja),
+                        avatar: Icon(Icons.visibility_outlined,
+                            size: 18, color: c.grafite),
                         label: Text(material),
                       ),
                   ],
                 ),
               ],
-              const SizedBox(height: 20),
+              const SizedBox(height: Espaco.e24),
+              const LinhaCota(legenda: 'O dia'),
+              const SizedBox(height: Espaco.e16),
               TextFormField(
                 controller: _descricaoCtrl,
-                maxLines: 3,
+                minLines: 3,
+                maxLines: 6,
                 textCapitalization: TextCapitalization.sentences,
                 decoration: const InputDecoration(
                   labelText: 'O que foi feito hoje?',
                   hintText: 'Ex.: Concluída a concretagem da laje do 1º andar',
+                  alignLabelWithHint: true,
                 ),
                 validator: (v) => Validators.obrigatorio(v, 'A descrição'),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: Espaco.e16),
               DropdownButtonFormField<String>(
                 initialValue: _fase,
+                isExpanded: true,
                 decoration:
                     const InputDecoration(labelText: 'Fase da obra (opcional)'),
                 items: [
@@ -662,76 +723,79 @@ class _FormDiarioState extends State<_FormDiario> {
                 ],
                 onChanged: (v) => setState(() => _fase = v),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: Espaco.e16),
               TextFormField(
                 controller: _pessoasCtrl,
                 keyboardType: TextInputType.number,
+                style: Tipografia.corpo.copyWith(
+                    color: c.grafite, fontFeatures: Tipografia.tabular),
                 decoration: const InputDecoration(
                     labelText: 'Pessoas no canteiro hoje'),
                 validator: Validators.numero,
               ),
-              const SizedBox(height: 16),
-              InkWell(
-                onTap: () async {
-                  final escolhida = await showDatePicker(
-                    context: context,
-                    initialDate: _data,
-                    firstDate: DateTime(2020),
-                    lastDate: DateTime.now(),
-                    locale: const Locale('pt', 'BR'),
-                  );
-                  if (escolhida != null) setState(() => _data = escolhida);
-                },
-                borderRadius: BorderRadius.circular(14),
-                child: InputDecorator(
+              const SizedBox(height: Espaco.e16),
+              AreaPressionavel(
+                aoTocar: () => unawaited(_escolherData()),
+                escala: 1,
+                vibrar: true,
+                rotuloSemantico: 'Dia do registro: $textoData',
+                dicaSemantica: 'Abre o calendário para trocar a data',
+                construtor: (context, e) => InputDecorator(
+                  isFocused: e.focado || e.pressionado,
                   decoration: const InputDecoration(
                     labelText: 'Dia do registro',
-                    prefixIcon: Icon(Icons.calendar_today, size: 20),
+                    suffixIcon: Icon(Icons.calendar_today_outlined),
                   ),
-                  child: Text(Formatters.data(_data)),
+                  child: Text(textoData,
+                      style: Tipografia.corpo.copyWith(
+                          color: c.grafite, fontFeatures: Tipografia.tabular)),
                 ),
               ),
-              const SizedBox(height: 16),
-              Text('Clima', style: Theme.of(context).textTheme.titleSmall),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                children: [
-                  for (final c in AppConstants.climas)
-                    ChoiceChip(
-                      label: Text(c),
-                      selected: _clima == c,
-                      onSelected: (_) => setState(() {
-                        _clima = c;
-                        _climaDefinido = true;
-                      }),
-                    ),
+              const SizedBox(height: Espaco.e24),
+              SeletorGrande<String>(
+                rotulo: 'Clima',
+                opcoes: [
+                  for (final clima in AppConstants.climas)
+                    OpcaoSeletor(
+                        valor: clima,
+                        rotulo: clima,
+                        icone: _iconeDoClima(clima)),
                 ],
+                selecionado: _clima,
+                aoMudar: (v) => setState(() {
+                  _clima = v;
+                  _climaDefinido = true;
+                }),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: Espaco.e24),
               if (_fotos.isNotEmpty)
                 Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.only(bottom: Espaco.e12),
                   child: SizedBox(
-                    height: 110,
+                    height: 120,
                     child: ListView.separated(
                       scrollDirection: Axis.horizontal,
                       itemCount: _fotos.length,
-                      separatorBuilder: (_, __) => const SizedBox(width: 8),
+                      separatorBuilder: (_, __) =>
+                          const SizedBox(width: Espaco.e8),
                       itemBuilder: (_, i) => ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: Raio.cantoPequeno,
                         child: Stack(
                           children: [
                             Image.file(_fotos[i],
-                                height: 110, width: 150, fit: BoxFit.cover),
+                                height: 120, width: 160, fit: BoxFit.cover),
                             Positioned(
-                              top: 4,
-                              right: 4,
+                              top: Espaco.e4,
+                              right: Espaco.e4,
                               child: IconButton.filled(
+                                tooltip: 'Tirar a foto',
                                 style: IconButton.styleFrom(
-                                    backgroundColor: Colors.black54,
-                                    minimumSize: const Size(32, 32)),
-                                icon: const Icon(Icons.close, size: 16),
+                                  backgroundColor: c.grafite,
+                                  foregroundColor: c.sobreGrafite,
+                                  minimumSize:
+                                      const Size(Alvo.minimo, Alvo.minimo),
+                                ),
+                                icon: const Icon(Icons.close),
                                 onPressed: () =>
                                     setState(() => _fotos.removeAt(i)),
                               ),
@@ -742,24 +806,24 @@ class _FormDiarioState extends State<_FormDiario> {
                     ),
                   ),
                 ),
-              OutlinedButton.icon(
-                onPressed: _analisando ? null : _analisarFoto,
-                icon: const Icon(Icons.add_a_photo),
-                label: Text(_fotos.isEmpty
+              BotaoContorno(
+                rotulo: _fotos.isEmpty
                     ? 'Anexar foto'
-                    : 'Anexar outra foto (${_fotos.length}/$_maxFotos)'),
+                    : 'Anexar outra foto (${_fotos.length}/$_maxFotos)',
+                icone: Icons.add_a_photo_outlined,
+                expandir: true,
+                aoTocar: _analisando || _fotos.length >= _maxFotos
+                    ? null
+                    : _analisarFoto,
               ),
-              const SizedBox(height: 12),
-              ElevatedButton(
-                onPressed: _salvando ? null : _salvar,
-                child: _salvando
-                    ? const SizedBox(
-                        width: 22,
-                        height: 22,
-                        child: CircularProgressIndicator(
-                            strokeWidth: 2.5, color: Colors.white),
-                      )
-                    : const Text('Salvar registro'),
+              const SizedBox(height: Espaco.entreAlvos),
+              BotaoPrincipal(
+                rotulo: 'Salvar registro',
+                icone: Icons.check,
+                grande: true,
+                expandir: true,
+                carregando: _salvando,
+                aoTocar: _salvando ? null : () => unawaited(_salvar()),
               ),
             ],
           ),

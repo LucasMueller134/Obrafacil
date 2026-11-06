@@ -71,6 +71,7 @@ do antes.
 | `depois_planta_test.dart` | `02c_obra_dono_planta` (central com a maquete da planta), `14_planta_dono`, `14b_planta_comodo_dono` (ficha do cômodo), `14c_planta_vazia_dono`, `15_vista360_quarto` (no teste, as paredes desdobradas) |
 | `depois_cliente_test.dart` | `10_cliente_obra`, `10b_cliente_obra_pronta`, `10c_cliente_comodo` |
 | `depois_planta_ia_test.dart` | `16_planta_lendo`, `16b_planta_nao_publicada`, `16c_planta_revisao`, `17_gerar_fachada` (IA falsa; no teste a maquete aparece como a planta desenhada, no celular é o 3D) |
+| `depois_restantes_test.dart` | `18_nova_obra_dono`, `19_cadastro`, `19b_cadastro_dados`, `20_verificar_email_cliente`, `21_diario_mestre`, `21b_diario_registro_mestre`, `22_estoque_mestre`, `22b_estoque_material_mestre`, `23_galeria_dono`, `24_fornecedores_dono`, `25_notificacoes_dono`, `26_relatorio_dono`, `26b_relatorio_perguntar_dono`, `27_cliente_obras` |
 
 Login e abertura não têm ninguém logado: a `Cena` delas usa
 `situacao: SituacaoLogin.deslogado` (o login falso não devolve usuário) e
@@ -97,18 +98,18 @@ teste falha e é só tirar a declaração.
 | Arquivo | Papel |
 |---|---|
 | `capturas_test.dart` | As cenas: perfil, rota e o que tocar antes da foto. |
-| `fontes_test.dart` | Roda sempre (sem `CAPTURAR`): confere que o texto sai na Poppins e nas fontes do pubspec, que o ícone Material é desenhado e que a seta cai na fonte de símbolos. |
+| `fontes_test.dart` | Roda sempre (sem `CAPTURAR`): confere que o texto do tema e as fontes do pubspec saem na fonte de verdade e que o ícone Material é desenhado. |
 | `suporte/captura.dart` | Harness: `Cena`, `capturarCena`, tamanhos, `AppDeCaptura` (o MaterialApp do `main.dart`) e gravação do PNG. |
 | `suporte/fakes.dart` | `FirestoreFalso` e `AuthServiceFalso`, por `implements` (o `FirestoreService` real cria `FirebaseFirestore.instance` num campo). O que não está implementado cai no `noSuchMethod` com uma mensagem dizendo o que acrescentar. |
 | `suporte/dados_exemplo.dart` | Dados fictícios e fixos (ver abaixo). |
 | `suporte/fontes.dart` | `carregarFontes()`: o helper único das fontes. |
 | `suporte/plataforma.dart` | Plugins de mentira: voz (speech_to_text, com `falaDoAparelho`) e ML Kit. |
-| `fontes/` | Poppins e a fonte de símbolos dos testes, com as licenças OFL. |
 
 O app é montado como no `lib/main.dart`: `AuthProvider` de verdade
 alimentado pelo `AuthServiceFalso`, `ChangeNotifierProvider<AuthProvider>`,
 `Provider<FirestoreService>.value` com o falso, o router de verdade
-(`criarRouter`, com o redirect por perfil), tema `AppTheme.dark` e
+(`criarRouter`, com o redirect por perfil), tema da prancheta
+(`TemaPrancheta.claro` e `.escuro`, pelo brilho da cena) e
 localização pt_BR (`flutter_localizations` e `initializeDateFormatting`). A
 cena entra por `router.go(rota)`, então a pilha tem as telas de cima e a
 seta de voltar aparece como no app. O teste confere que o router não
@@ -118,21 +119,16 @@ redirecionou para outro lugar.
 
 `carregarFontes()` carrega tudo de uma vez:
 
-1. **Poppins** (tema atual) pelo próprio google_fonts, com
-   `GoogleFonts.config.allowRuntimeFetching = false`. Os TTF de
-   `test/visual/fontes/` são os mesmos arquivos, byte a byte (SHA-256 da
-   tabela do google_fonts 6.3.3), que o app baixa de `fonts.gstatic.com` no
-   aparelho. O canal `flutter/assets` é interceptado para servi-los como se
-   fossem assets do app.
-2. **Fontes do pubspec** (`FontManifest.json`, via `rootBundle`): Archivo
-   600/700/800, Atkinson 400/500/700 e PlexMono 400/500, para o "depois".
-   Uma família nova no pubspec entra sem mudar o harness.
-3. **MaterialIcons**, de `bin/cache/artifacts/material_fonts/` do SDK.
-4. **Símbolos**: subconjunto da Noto Sans Math + Noto Sans Symbols 2 (OFL),
-   registrado com o nome `Poppins`. A Poppins não tem `→` nem `✕`; no
-   aparelho o Android completa com a fonte do sistema, e o google_fonts põe
-   `Poppins` no `fontFamilyFallback` de todo estilo. Emoji não está coberto
-   (nenhuma tela capturada usa).
+1. **Fontes do pubspec** (`FontManifest.json`, via `rootBundle`): Archivo
+   600/700/800, Atkinson 400/500/700 e PlexMono 400/500, as mesmas que o
+   app leva embutidas. Uma família nova no pubspec entra sem mudar o
+   harness.
+2. **MaterialIcons**, de `bin/cache/artifacts/material_fonts/` do SDK.
+
+Emoji não está coberto: no teste sai um quadradinho (ex.: no fim da
+saudação do chat); no aparelho o Android completa com a fonte do sistema.
+A série "antes" (Poppins, do tema antigo) foi gravada no commit 8ed2c5b;
+para refazê-la, rode naquele commit.
 
 ## Dados de exemplo
 
@@ -164,8 +160,6 @@ Fixos em outubro de 2026, e iguais para o antes e o depois:
   mesmo dia.
 - **Sombras.** O flutter_test troca toda sombra por um contorno preto; o
   harness desliga isso (`debugDisableShadows = false`) durante a captura.
-- **Fallback de símbolos** é uma aproximação da fonte do sistema Android:
-  os poucos símbolos que a Poppins não tem saem na Noto, não na Roboto.
 - **Modo debug.** O teste roda em debug: um overflow aparece com a faixa do
   debug (ver o defeito das cenas 08 e 09), coisa que o release não desenha.
 - **Câmera e OCR** não estão capturados: a foto da nota passa pelo

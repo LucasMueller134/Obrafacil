@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
-import '../constants/app_colors.dart';
+import '../design/design.dart';
 import '../services/ia/perguntas_obra_service.dart';
 import '../services/ia/voz_service.dart';
 
@@ -119,16 +119,13 @@ class _ChatObraState extends State<ChatObra>
       // "ouvindo" para sempre.
       onErro: (erro) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(erro.mensagem),
-          duration: Duration(seconds: erro.ofereceOnline ? 12 : 4),
-          action: erro.ofereceOnline
-              ? SnackBarAction(
-                  label: 'Usar online do Google',
-                  onPressed: () => _falar(online: true),
-                )
-              : null,
-        ));
+        unawaited(Tato.erro());
+        mostrarAviso(
+          context,
+          erro.mensagem,
+          rotuloAcao: 'Usar online do Google',
+          aoDesfazer: erro.ofereceOnline ? () => _falar(online: true) : null,
+        );
       },
       onFim: () {
         if (mounted) setState(() => _ouvindoVoz = false);
@@ -139,12 +136,14 @@ class _ChatObraState extends State<ChatObra>
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    final c = context.cores;
     return Column(
       children: [
         Expanded(
           child: ListView.builder(
             controller: _scrollCtrl,
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            padding: const EdgeInsets.fromLTRB(
+                Espaco.margem, Espaco.e16, Espaco.margem, Espaco.e8),
             itemCount: _mensagens.length,
             itemBuilder: (_, i) {
               final msg = _mensagens[i];
@@ -154,54 +153,58 @@ class _ChatObraState extends State<ChatObra>
                 onSugestao: _enviar,
               )
                   .animate()
-                  .fadeIn(duration: 220.ms)
-                  .slideY(begin: 0.08, end: 0, duration: 260.ms);
+                  .fadeIn(duration: context.duracao(Movimento.medio))
+                  .slideY(
+                      begin: 0.08,
+                      end: 0,
+                      duration: context.duracao(Movimento.medio));
             },
           ),
         ),
-        SafeArea(
-          top: false,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(12, 4, 12, 10),
-            child: Row(
-              children: [
-                IconButton.filledTonal(
-                  tooltip: _ouvindoVoz ? 'Parar' : 'Perguntar por voz',
-                  onPressed: _falar,
-                  style: IconButton.styleFrom(
-                    backgroundColor: _ouvindoVoz
-                        ? AppColors.erro.withValues(alpha: 0.25)
-                        : AppColors.superficieAlta,
+        DecoratedBox(
+          decoration: BoxDecoration(
+            color: c.papel,
+            border: Border(top: BorderSide(color: c.grade, width: Traco.fino)),
+          ),
+          child: SafeArea(
+            top: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(
+                  Espaco.e12, Espaco.e8, Espaco.e12, Espaco.e8),
+              child: Row(
+                children: [
+                  BotaoIcone(
+                    icone: _ouvindoVoz ? Icons.stop : Icons.mic_none,
+                    rotulo: _ouvindoVoz ? 'Parar' : 'Perguntar por voz',
+                    tamanho: Alvo.opcao,
+                    estilo: _ouvindoVoz
+                        ? EstiloBotaoIcone.marca
+                        : EstiloBotaoIcone.contorno,
+                    aoTocar: _falar,
                   ),
-                  icon: Icon(
-                    _ouvindoVoz ? Icons.stop : Icons.mic,
-                    color: _ouvindoVoz ? AppColors.erro : AppColors.laranja,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: TextField(
-                    controller: _campoCtrl,
-                    textInputAction: TextInputAction.send,
-                    textCapitalization: TextCapitalization.sentences,
-                    onSubmitted: _enviar,
-                    decoration: InputDecoration(
-                      hintText:
-                          _ouvindoVoz ? 'Ouvindo…' : 'Pergunte sobre a obra…',
-                      contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 12),
+                  const SizedBox(width: Espaco.e8),
+                  Expanded(
+                    child: TextField(
+                      controller: _campoCtrl,
+                      textInputAction: TextInputAction.send,
+                      textCapitalization: TextCapitalization.sentences,
+                      onSubmitted: _enviar,
+                      decoration: InputDecoration(
+                        hintText:
+                            _ouvindoVoz ? 'Ouvindo…' : 'Pergunte sobre a obra…',
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                IconButton.filled(
-                  tooltip: 'Enviar',
-                  onPressed: () => _enviar(_campoCtrl.text),
-                  style:
-                      IconButton.styleFrom(backgroundColor: AppColors.laranja),
-                  icon: const Icon(Icons.send, color: Colors.white),
-                ),
-              ],
+                  const SizedBox(width: Espaco.e8),
+                  BotaoIcone(
+                    icone: Icons.send,
+                    rotulo: 'Enviar',
+                    tamanho: Alvo.opcao,
+                    estilo: EstiloBotaoIcone.principal,
+                    aoTocar: () => _enviar(_campoCtrl.text),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -232,32 +235,30 @@ class _Bolha extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.cores;
     final bolha = Container(
       constraints:
-          BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.78),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.8),
+      padding: const EdgeInsets.symmetric(
+          horizontal: Espaco.e12, vertical: Espaco.e8 + 2),
       decoration: BoxDecoration(
-        color: msg.deUsuario ? AppColors.laranja : AppColors.superficie,
-        border: msg.deUsuario ? null : Border.all(color: AppColors.borda),
-        borderRadius: BorderRadius.only(
-          topLeft: const Radius.circular(16),
-          topRight: const Radius.circular(16),
-          bottomLeft: Radius.circular(msg.deUsuario ? 16 : 4),
-          bottomRight: Radius.circular(msg.deUsuario ? 4 : 16),
-        ),
+        color: msg.deUsuario ? c.grafite : c.folha,
+        border: msg.deUsuario
+            ? null
+            : Border.all(color: c.traco, width: Traco.fino),
+        borderRadius: Raio.cantoPequeno,
       ),
       child: Text(
         msg.texto,
-        style: TextStyle(
-          color: msg.deUsuario ? Colors.white : AppColors.textoPrimario,
-          fontSize: 14,
-          height: 1.45,
+        style: Tipografia.corpo.copyWith(
+          color: msg.deUsuario ? c.sobreGrafite : c.grafite,
+          height: 1.4,
         ),
       ),
     );
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.only(bottom: Espaco.e12),
       child: Column(
         crossAxisAlignment:
             msg.deUsuario ? CrossAxisAlignment.end : CrossAxisAlignment.start,
@@ -265,36 +266,37 @@ class _Bolha extends StatelessWidget {
           Row(
             mainAxisAlignment:
                 msg.deUsuario ? MainAxisAlignment.end : MainAxisAlignment.start,
-            crossAxisAlignment: CrossAxisAlignment.end,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               if (!msg.deUsuario) ...[
-                Container(
-                  width: 28,
-                  height: 28,
-                  decoration: const BoxDecoration(
-                    color: AppColors.laranja,
-                    shape: BoxShape.circle,
+                ExcludeSemantics(
+                  child: Container(
+                    width: 32,
+                    height: 32,
+                    decoration:
+                        BoxDecoration(color: c.marca, shape: BoxShape.circle),
+                    child: Icon(Icons.engineering_outlined,
+                        size: 20, color: c.sobreMarca),
                   ),
-                  child: const Icon(Icons.engineering,
-                      size: 16, color: Colors.white),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: Espaco.e8),
               ],
               Flexible(child: bolha),
             ],
           ),
           if (mostrarSugestoes && msg.sugestoes.isNotEmpty)
             Padding(
-              padding: EdgeInsets.only(top: 8, left: msg.deUsuario ? 0 : 36),
+              padding:
+                  EdgeInsets.only(top: Espaco.e8, left: msg.deUsuario ? 0 : 40),
               child: Wrap(
-                spacing: 8,
-                runSpacing: 8,
+                spacing: Espaco.e8,
+                runSpacing: Espaco.e8,
                 children: [
                   for (final s in msg.sugestoes)
                     ActionChip(
-                      label: Text(s, style: const TextStyle(fontSize: 12)),
-                      avatar: const Icon(Icons.bolt,
-                          size: 14, color: AppColors.amareloCapacete),
+                      label: Text(s,
+                          style: Tipografia.apoio.copyWith(color: c.grafite)),
+                      avatar: Icon(Icons.bolt, size: 18, color: c.marcaTexto),
                       onPressed: () => onSugestao(s),
                     ),
                 ],

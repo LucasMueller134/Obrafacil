@@ -1,7 +1,8 @@
 // Tema Material 3 da prancheta, claro e escuro.
 //
-// As telas redesenhadas se envolvem com [TemaPrancheta]; o tema global do
-// app continua o antigo até todas as telas mudarem. Regras que valem aqui:
+// É o tema global do app (main.dart: claro e escuro, pelo sistema) e cada
+// tela ainda se envolve com [TemaPrancheta], que acerta também as barras
+// do sistema e o texto padrão. Regras que valem aqui:
 // nenhuma sombra nas superfícies (hierarquia por papel/folha + borda; só a
 // folha que sobe de baixo tem uma curta), cantos quase retos e o estado
 // pressionado em cor sólida ou forma nos componentes da prancheta e nos

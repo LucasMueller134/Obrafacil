@@ -1,7 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
-import '../constants/app_colors.dart';
+import '../design/design.dart';
 import '../services/imagem_service.dart';
 
 /// Exibe uma foto vinda do Firestore: aceita data URI (base64) ou URL http.
@@ -50,12 +50,13 @@ class _Placeholder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.cores;
     return Container(
-      color: AppColors.superficieAlta,
+      color: c.folhaRebaixada,
       alignment: Alignment.center,
       child: Icon(
-        erro ? Icons.broken_image : Icons.image,
-        color: AppColors.textoDesabilitado,
+        erro ? Icons.broken_image_outlined : Icons.image_outlined,
+        color: c.grafite2,
       ),
     );
   }
