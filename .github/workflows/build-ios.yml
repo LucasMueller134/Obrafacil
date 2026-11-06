@@ -24,7 +24,9 @@ concurrency:
 
 jobs:
   build:
-    runs-on: macos-15
+    # macOS 26 (Xcode 26): o workmanager_apple usa a API de tarefa em
+    # segundo plano do iOS 26 e não compila com o Xcode 16 do macos-15.
+    runs-on: macos-26
     timeout-minutes: 90
     defaults:
       run:
@@ -41,6 +43,7 @@ jobs:
 
       - name: Gerar o projeto iOS
         run: |
+          xcodebuild -version
           # O flutter create reescreve o pubspec.lock: guarda e devolve o
           # versionado (mesmas versões de plugin do APK).
           cp pubspec.lock "$RUNNER_TEMP/pubspec.lock"
