@@ -11,6 +11,8 @@ class DefaultFirebaseOptions {
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
         return android;
+      case TargetPlatform.iOS when ios != null:
+        return ios!;
       default:
         throw UnsupportedError(
             'Obra na Mão é Android-first: plataforma não suportada.');
@@ -18,7 +20,17 @@ class DefaultFirebaseOptions {
   }
 
   /// True quando as chaves reais do projeto já estão configuradas.
-  static bool get configurado => !android.apiKey.contains('PLACEHOLDER');
+  static bool get configurado => switch (defaultTargetPlatform) {
+        TargetPlatform.android => !android.apiKey.contains('PLACEHOLDER'),
+        TargetPlatform.iOS => ios != null,
+        _ => false,
+      };
+
+  /// O app de iPhone (br.com.obrafacil.obraFacil) no Firebase: vem do
+  /// GoogleService-Info.plist depois de cadastrar o app iOS no console
+  /// (Configurações do projeto → Adicionar app → iOS). Nulo: o iPhone abre
+  /// na tela de configuração pendente (com a demonstração das IAs).
+  static FirebaseOptions? get ios => null;
 
   /// ID do cliente "web" do login com Google (no Firebase: Authentication →
   /// Sign-in method → Google → Configuração do SDK da Web). Não é segredo:

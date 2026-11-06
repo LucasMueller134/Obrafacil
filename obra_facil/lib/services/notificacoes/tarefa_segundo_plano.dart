@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart';
 import 'package:workmanager/workmanager.dart';
 
 import '../../firebase_options.dart';
@@ -93,7 +94,12 @@ Future<void> _verificar() async {
 
 /// Liga/desliga o verificador periódico.
 abstract class VerificadorSegundoPlano {
+  /// Só no Android: no iPhone o segundo plano pede o BGTaskScheduler
+  /// configurado no Xcode (os lembretes agendados funcionam igual).
+  static bool get _suportado => defaultTargetPlatform == TargetPlatform.android;
+
   static Future<void> registrar() async {
+    if (!_suportado) return;
     await Workmanager().initialize(notificacoesCallbackDispatcher);
     await Workmanager().registerPeriodicTask(
       'verificador_obra',
@@ -103,8 +109,10 @@ abstract class VerificadorSegundoPlano {
     );
   }
 
-  static Future<void> cancelar() =>
-      Workmanager().cancelByUniqueName('verificador_obra');
+  static Future<void> cancelar() async {
+    if (!_suportado) return;
+    await Workmanager().cancelByUniqueName('verificador_obra');
+  }
 }
 
 /// Configuração única após o login: permissão, lembretes e verificador.

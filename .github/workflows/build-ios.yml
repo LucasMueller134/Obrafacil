@@ -1,0 +1,170 @@
+# Gera o app de iPhone (.ipa sem assinatura) numa máquina Mac do GitHub.
+#
+# O .ipa sai na aba Releases ("Obra na Mão iOS build N", sem virar a
+# release mais recente: o APK continua sendo o "Latest") e é instalado pelo
+# computador com o Sideloadly, assinado com o Apple ID da pessoa. É grátis;
+# com Apple ID comum o app vale 7 dias e depois é só instalar de novo. Passo
+# a passo em obra_facil/SETUP.md, "iPhone".
+#
+# Como no Android, o projeto iOS é gerado aqui (flutter create) e não fica
+# no repositório.
+name: Build iOS
+
+on:
+  push:
+    branches: [main, 'claude/**']
+  workflow_dispatch: {}
+
+permissions:
+  contents: write # publicar a release com o .ipa
+
+concurrency:
+  group: build-ios-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 90
+    defaults:
+      run:
+        working-directory: obra_facil
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          # A mesma versão do Android (3.47+ pelo flutter_scene).
+          flutter-version: '3.47.7'
+          channel: stable
+          cache: true
+
+      - name: Gerar o projeto iOS
+        run: |
+          # O flutter create reescreve o pubspec.lock: guarda e devolve o
+          # versionado (mesmas versões de plugin do APK).
+          cp pubspec.lock "$RUNNER_TEMP/pubspec.lock"
+          flutter create . --platforms ios --org br.com.obrafacil --project-name obra_facil
+          cp "$RUNNER_TEMP/pubspec.lock" pubspec.lock
+          rm -f test/widget_test.dart
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' ios/Runner/Info.plist || true
+          grep -m1 'PRODUCT_BUNDLE_IDENTIFIER' ios/Runner.xcodeproj/project.pbxproj
+
+      - name: Nome, permissões, Flutter GPU e iOS 15.5
+        run: |
+          P=ios/Runner/Info.plist
+          plutil -replace CFBundleDisplayName -string "Obra na Mão" "$P"
+          plutil -replace CFBundleName -string "Obra na Mão" "$P"
+          # Maquete 3D (flutter_scene): o Flutter GPU vem desligado.
+          plutil -replace FLTEnableFlutterGPU -bool true "$P"
+          # Os textos que o iPhone mostra ao pedir cada permissão.
+          plutil -replace NSCameraUsageDescription -string "Para fotografar a obra, as notas fiscais e o andamento do canteiro." "$P"
+          plutil -replace NSPhotoLibraryUsageDescription -string "Para escolher fotos da obra, das notas fiscais e da planta." "$P"
+          plutil -replace NSMicrophoneUsageDescription -string "Para lançar gastos e registrar o diário da obra falando." "$P"
+          plutil -replace NSSpeechRecognitionUsageDescription -string "Para transformar a sua fala em lançamentos e anotações do diário." "$P"
+          plutil -lint "$P"
+          # ML Kit (OCR, etiquetas, código de barras) pede iOS 15.5.
+          sed -i '' 's/IPHONEOS_DEPLOYMENT_TARGET = [0-9.]*;/IPHONEOS_DEPLOYMENT_TARGET = 15.5;/g' ios/Runner.xcodeproj/project.pbxproj
+          grep -q 'IPHONEOS_DEPLOYMENT_TARGET = 15.5;' ios/Runner.xcodeproj/project.pbxproj
+          # Podfile do Flutter com o iOS mínimo do ML Kit em todos os pods.
+          cat > ios/Podfile <<'EOF'
+          platform :ios, '15.5'
+          $iOSVersion = '15.5'
+
+          ENV['COCOAPODS_DISABLE_STATS'] = 'true'
+
+          project 'Runner', {
+            'Debug' => :debug,
+            'Profile' => :release,
+            'Release' => :release,
+          }
+
+          def flutter_root
+            generated_xcode_build_settings_path = File.expand_path(File.join('..', 'Flutter', 'Generated.xcconfig'), __FILE__)
+            unless File.exist?(generated_xcode_build_settings_path)
+              raise "#{generated_xcode_build_settings_path} must exist. Run flutter pub get first"
+            end
+            File.foreach(generated_xcode_build_settings_path) do |line|
+              matches = line.match(/FLUTTER_ROOT\=(.*)/)
+              return matches[1].strip if matches
+            end
+            raise "FLUTTER_ROOT not found in #{generated_xcode_build_settings_path}"
+          end
+
+          require File.expand_path(File.join('packages', 'flutter_tools', 'bin', 'podhelper'), flutter_root)
+
+          flutter_ios_podfile_setup
+
+          target 'Runner' do
+            use_frameworks!
+            flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
+            target 'RunnerTests' do
+              inherit! :search_paths
+            end
+          end
+
+          post_install do |installer|
+            installer.pods_project.build_configurations.each do |config|
+              config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = $iOSVersion
+            end
+            installer.pods_project.targets.each do |target|
+              flutter_additional_ios_build_settings(target)
+              target.build_configurations.each do |config|
+                if Gem::Version.new($iOSVersion) > Gem::Version.new(config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] || '0')
+                  config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = $iOSVersion
+                end
+              end
+            end
+          end
+          EOF
+
+      - name: Dependências
+        run: flutter pub get
+
+      - name: Ícone e splash do iPhone
+        run: |
+          # O pubspec gera só o ícone do Android (no build do APK não existe
+          # a pasta ios); aqui, o do iPhone, sem transparência.
+          cat > flutter_launcher_icons-ios.yaml <<'EOF'
+          flutter_launcher_icons:
+            android: false
+            ios: true
+            image_path: assets/icone/icon.png
+            remove_alpha_ios: true
+            background_color_ios: '#F4F5F3'
+          EOF
+          dart run flutter_launcher_icons -f flutter_launcher_icons-ios.yaml
+          dart run flutter_native_splash:create
+
+      - name: Build iOS (release, sem assinatura)
+        run: flutter build ios --release --no-codesign
+
+      - name: Empacotar o .ipa
+        run: |
+          IPA="$GITHUB_WORKSPACE/obra_facil/obra-na-mao-ios-${{ github.run_number }}.ipa"
+          cd build/ios/iphoneos
+          test -d Runner.app
+          rm -rf Payload && mkdir Payload
+          cp -R Runner.app Payload/
+          zip -qry "$IPA" Payload
+          ls -lh "$IPA"
+
+      - name: Publicar na aba Releases
+        if: github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ios-build-${{ github.run_number }}
+          target_commitish: ${{ github.sha }}
+          name: 'Obra na Mão iOS build ${{ github.run_number }}'
+          make_latest: 'false'
+          body: |
+            App de iPhone sem assinatura, para instalar pelo computador com o Sideloadly e o seu Apple ID (passo a passo em obra_facil/SETUP.md, "iPhone"). Com Apple ID comum o app vale 7 dias; depois é só instalar de novo.
+
+            Commit ${{ github.sha }}
+          files: obra_facil/obra-na-mao-ios-${{ github.run_number }}.ipa
+
+      - name: Guardar o .ipa como artefato
+        uses: actions/upload-artifact@v4
+        with:
+          name: obra-na-mao-ios-ipa
+          path: obra_facil/obra-na-mao-ios-${{ github.run_number }}.ipa

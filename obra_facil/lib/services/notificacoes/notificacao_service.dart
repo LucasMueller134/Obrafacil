@@ -33,6 +33,12 @@ abstract class NotificacaoService {
     await _plugin.initialize(
       const InitializationSettings(
         android: AndroidInitializationSettings('ic_stat_obrafacil'),
+        // No iPhone a permissão é pedida depois do login (pedirPermissao).
+        iOS: DarwinInitializationSettings(
+          requestAlertPermission: false,
+          requestBadgePermission: false,
+          requestSoundPermission: false,
+        ),
       ),
     );
     _inicializado = true;
@@ -43,6 +49,10 @@ abstract class NotificacaoService {
         .resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin>()
         ?.requestNotificationsPermission();
+    await _plugin
+        .resolvePlatformSpecificImplementation<
+            IOSFlutterLocalNotificationsPlugin>()
+        ?.requestPermissions(alert: true, badge: true, sound: true);
   }
 
   static NotificationDetails _detalhes(String canal) {
@@ -61,6 +71,7 @@ abstract class NotificacaoService {
         priority: Priority.high,
         color: _laranja,
       ),
+      iOS: const DarwinNotificationDetails(),
     );
   }
 
