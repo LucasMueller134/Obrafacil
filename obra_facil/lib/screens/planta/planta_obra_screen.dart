@@ -14,6 +14,7 @@ import '../../services/firestore_service.dart';
 import 'como_vai_ficar.dart';
 import 'enviar_planta.dart';
 import 'ficha_comodo.dart';
+import 'modelo_planta.dart';
 
 /// A planta de exemplo que vem no app (uma casa térrea de 7 x 20 m, do
 /// projeto aberto casa-3d, licença MIT): serve para ver a maquete gerada
@@ -58,6 +59,21 @@ class _PlantaDaObraState extends State<_PlantaDaObra> {
   bool _salvando = false;
   final _chaveFicha = GlobalKey();
 
+  /// O pavimento que aparece (0 = térreo).
+  int _andar = 0;
+
+  void _montarPeloModelo(BuildContext context, PlantaObra? atual) {
+    final modelo = atual?.modelo;
+    unawaited(Navigator.of(context).push(MaterialPageRoute<void>(
+      builder: (_) => TemaPrancheta(
+        child: ModeloPlantaScreen(
+          obraId: widget.obraId,
+          inicial: modelo == null ? null : PedidoModelo.fromMap(modelo),
+        ),
+      ),
+    )));
+  }
+
   /// Escolhe o cômodo e, depois do quadro, rola até a ficha dele.
   void _escolher(String? id, {bool rolar = false}) {
     unawaited(Tato.leve());
@@ -91,13 +107,21 @@ class _PlantaDaObraState extends State<_PlantaDaObra> {
                   PopupMenuButton<String>(
                     tooltip: 'Ações da planta',
                     icon: const Icon(Icons.more_vert),
-                    onSelected: (acao) => acao == 'enviar'
-                        ? unawaited(enviarPlanta(context, widget.obraId))
-                        : _remover(context, planta),
-                    itemBuilder: (_) => const [
+                    onSelected: (acao) => switch (acao) {
+                      'enviar' =>
+                        unawaited(enviarPlanta(context, widget.obraId)),
+                      'modelo' => _montarPeloModelo(context, planta),
+                      _ => _remover(context, planta),
+                    },
+                    itemBuilder: (_) => [
                       PopupMenuItem(
+                          value: 'modelo',
+                          child: Text(planta.modelo == null
+                              ? 'Montar pelo modelo'
+                              : 'Trocar o modelo')),
+                      const PopupMenuItem(
                           value: 'enviar', child: Text('Enviar outra planta')),
-                      PopupMenuItem(
+                      const PopupMenuItem(
                           value: 'remover', child: Text('Remover a planta')),
                     ],
                   ),
@@ -120,7 +144,8 @@ class _PlantaDaObraState extends State<_PlantaDaObra> {
                       icone: Icons.upload_file_outlined,
                       grande: true,
                       expandir: true,
-                      aoTocar: () => unawaited(enviarPlanta(context, widget.obraId)),
+                      aoTocar: () =>
+                          unawaited(enviarPlanta(context, widget.obraId)),
                     ),
                   )
                 : null,
@@ -159,6 +184,13 @@ class _PlantaDaObraState extends State<_PlantaDaObra> {
             valor: '${_m(planta.largura)} × ${_m(planta.profundidade)} m',
           ),
         ],
+      if (planta?.modelo != null)
+        [
+          CelulaCarimbo(
+            rotulo: 'Modelo',
+            valor: PedidoModelo.fromMap(planta!.modelo!).resumo,
+          ),
+        ],
     ]);
 
     if (planta == null) {
@@ -173,15 +205,27 @@ class _PlantaDaObraState extends State<_PlantaDaObra> {
             titulo: 'Sem planta ainda',
             texto: ehDono
                 ? 'Com a planta, a maquete da central fica igual à sua obra '
-                    'e o cliente vê cada cômodo, até em 360°. Qualquer '
-                    'formato serve: foto, PDF ou o arquivo do CAD.'
+                    'e o cliente vê cada cômodo, até em 360°. Monte pelo '
+                    'modelo (casa, geminado ou prédio) ou envie o projeto '
+                    'de verdade: foto, PDF ou o arquivo do CAD.'
                 : 'O dono da obra ainda não enviou a planta.',
             acao: ehDono
-                ? BotaoContorno(
-                    rotulo: 'Usar a casa de exemplo (7 × 20 m)',
-                    expandir: true,
-                    carregando: _salvando,
-                    aoTocar: _salvando ? null : () => _usarExemplo(context),
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      BotaoContorno(
+                        rotulo: 'Montar pelo modelo',
+                        icone: Icons.auto_fix_high_outlined,
+                        expandir: true,
+                        aoTocar: () => _montarPeloModelo(context, null),
+                      ),
+                      const SizedBox(height: Espaco.e8),
+                      TextButton(
+                        onPressed:
+                            _salvando ? null : () => _usarExemplo(context),
+                        child: const Text('Usar a casa de exemplo (7 × 20 m)'),
+                      ),
+                    ],
                   )
                 : null,
           ),
@@ -189,27 +233,39 @@ class _PlantaDaObraState extends State<_PlantaDaObra> {
       );
     }
 
-    final comodos = [...planta.comodos]
-      ..sort((a, b) => (b.coberto ? 1 : 0).compareTo(a.coberto ? 1 : 0));
+    final andar = _andar.clamp(0, planta.totalPlantas - 1);
+    final todaPlanta = planta;
+    // O pavimento escolhido: é o que se desenha e se lista.
+    final vista = planta.planta(andar);
+    final comodos = comodosParaMostrar(vista, soCobertos: false);
     // A legenda: o mesmo número na planta e na lista.
     final numeros = {
       for (var i = 0; i < comodos.length; i++) comodos[i].id: i + 1,
     };
     final selecionado =
-        planta.comodos.where((x) => x.id == _selecionado).firstOrNull;
+        vista.comodos.where((x) => x.id == _selecionado).firstOrNull;
+    final avisoUnidade = avisoDaUnidadeTipo(vista);
     return ListView(
       padding: const EdgeInsets.fromLTRB(
           Espaco.margem, Espaco.e4, Espaco.margem, Espaco.e32),
       children: [
         cabecalho,
         const SizedBox(height: Espaco.e16),
+        SeletorDeAndar(
+          planta: todaPlanta,
+          selecionado: andar,
+          aoMudar: (v) => setState(() {
+            _andar = v;
+            _selecionado = null;
+          }),
+        ),
         Folha(
           preenchimento: EdgeInsets.zero,
           child: LayoutBuilder(
             builder: (context, caixa) => SizedBox(
-              height: PlantaDesenhada.alturaPara(planta, caixa.maxWidth),
+              height: PlantaDesenhada.alturaPara(vista, caixa.maxWidth),
               child: PlantaDesenhada(
-                planta: planta,
+                planta: vista,
                 numeros: numeros,
                 selecionado: _selecionado,
                 aoTocarComodo: (comodo) => _escolher(
@@ -221,14 +277,15 @@ class _PlantaDaObraState extends State<_PlantaDaObra> {
         ),
         const SizedBox(height: Espaco.e8),
         Text(
-          'Toque num cômodo para ver as medidas. Os números são os da lista.',
+          'Toque num cômodo para ver as medidas. Os números são os da lista.'
+          '${avisoUnidade == null ? '' : ' $avisoUnidade'}',
           style: Tipografia.apoio.copyWith(color: c.grafite2),
         ),
         if (selecionado != null) ...[
           const SizedBox(height: Espaco.e16),
           FichaComodo(
             key: _chaveFicha,
-            planta: planta,
+            planta: vista,
             comodo: selecionado,
             acao: BotaoPrincipal(
               rotulo: 'Ver em 360°',
@@ -266,7 +323,7 @@ class _PlantaDaObraState extends State<_PlantaDaObra> {
                   valor: areaDoComodo(comodos[i]),
                   margemHorizontal: Espaco.e12,
                   divisoria: i < comodos.length - 1,
-                  aoTocar: () => _abrirFicha(context, planta, comodos[i]),
+                  aoTocar: () => _abrirFicha(context, vista, comodos[i]),
                 ),
             ],
           ),

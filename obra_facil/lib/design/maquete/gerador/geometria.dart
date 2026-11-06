@@ -109,6 +109,24 @@ class MalhaGerada {
 
   int get triangulos => lotes.values.fold(0, (s, l) => s + l.triangulos);
 
+  /// Junta os triângulos de [outra], subindo [dy] (os andares do prédio).
+  void anexar(MalhaGerada outra, {double dy = 0}) {
+    for (final MapEntry(key: material, value: origem) in outra.lotes.entries) {
+      if (origem.triangulos == 0) continue;
+      final destino = lote(material);
+      final base = destino.vertices;
+      final p = origem.posicoes;
+      for (var i = 0; i < p.length; i += 3) {
+        destino.posicoes
+          ..add(p[i])
+          ..add(p[i + 1] + dy)
+          ..add(p[i + 2]);
+      }
+      destino.normais.addAll(origem.normais);
+      destino.indices.addAll([for (final i in origem.indices) i + base]);
+    }
+  }
+
   /// Caixa alinhada aos eixos.
   void caixa(String material, P3 min, P3 max, {bool semBase = false}) {
     if (max.$1 - min.$1 < 1e-5 ||

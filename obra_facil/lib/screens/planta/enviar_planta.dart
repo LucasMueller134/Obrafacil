@@ -65,7 +65,8 @@ class _EscolherArquivoState extends State<_EscolherArquivo> {
       if (foto == null || !mounted) return;
       final bytes = await foto.readAsBytes();
       if (mounted) {
-        Navigator.pop(context, ArquivoPlanta(bytes, foto.name, tipo: 'image/jpeg'));
+        Navigator.pop(
+            context, ArquivoPlanta(bytes, foto.name, tipo: 'image/jpeg'));
       }
     } finally {
       if (mounted) setState(() => _abrindo = false);
@@ -201,8 +202,8 @@ class _LeituraPlantaScreenState extends State<LeituraPlantaScreen> {
     } catch (e) {
       unawaited(Tato.erro());
       if (mounted) {
-        setState(() => _falha =
-            const FalhaIaPlanta('A leitura falhou. Confira a internet e tente de novo.'));
+        setState(() => _falha = const FalhaIaPlanta(
+            'A leitura falhou. Confira a internet e tente de novo.'));
       }
     }
   }
@@ -304,18 +305,7 @@ class _RevisaoPlantaScreenState extends State<RevisaoPlantaScreen> {
   bool _salvando = false;
 
   PlantaObra _com({AlturasPlanta? alturas, List<ComodoPlanta>? comodos}) =>
-      PlantaObra(
-        versao: _planta.versao,
-        nome: _planta.nome,
-        fonte: _planta.fonte,
-        largura: _planta.largura,
-        profundidade: _planta.profundidade,
-        alturas: alturas ?? _planta.alturas,
-        cobertura: _planta.cobertura,
-        paredes: _planta.paredes,
-        pilares: _planta.pilares,
-        comodos: comodos ?? _planta.comodos,
-      );
+      _planta.copiar(alturas: alturas, comodos: comodos);
 
   void _peDireito(double delta) {
     final a = _planta.alturas;
@@ -345,8 +335,8 @@ class _RevisaoPlantaScreenState extends State<RevisaoPlantaScreen> {
       await db.salvarPlanta(widget.obraId, _planta);
       unawaited(Tato.confirmar());
       if (!mounted) return;
-      mostrarAviso(context,
-          'Planta confirmada. A maquete da obra já é esta casa.');
+      mostrarAviso(
+          context, 'Planta confirmada. A maquete da obra já é esta casa.');
       Navigator.of(context).pop();
     } finally {
       if (mounted) setState(() => _salvando = false);
@@ -360,7 +350,9 @@ class _RevisaoPlantaScreenState extends State<RevisaoPlantaScreen> {
     final vaos = _planta.paredes.fold<int>(0, (s, w) => s + w.aberturas.length);
     final comodos = [..._planta.comodos]
       ..sort((a, b) => (b.coberto ? 1 : 0).compareTo(a.coberto ? 1 : 0));
-    final numeros = {for (var i = 0; i < comodos.length; i++) comodos[i].id: i + 1};
+    final numeros = {
+      for (var i = 0; i < comodos.length; i++) comodos[i].id: i + 1
+    };
     String m(double v) => v.toStringAsFixed(2).replaceAll('.', ',');
 
     final Widget vista = switch (_vista) {
@@ -379,7 +371,8 @@ class _RevisaoPlantaScreenState extends State<RevisaoPlantaScreen> {
           child: widget.arquivo?.ehImagem == true
               ? InteractiveViewer(
                   maxScale: 5,
-                  child: Image.memory(widget.arquivo!.bytes, fit: BoxFit.contain),
+                  child:
+                      Image.memory(widget.arquivo!.bytes, fit: BoxFit.contain),
                 )
               : Center(
                   child: Text(widget.arquivo?.nome ?? 'Arquivo enviado',
@@ -422,7 +415,8 @@ class _RevisaoPlantaScreenState extends State<RevisaoPlantaScreen> {
               ),
             ],
             [
-              CelulaCarimbo(rotulo: 'Cômodos', valor: '${_planta.comodos.length}'),
+              CelulaCarimbo(
+                  rotulo: 'Cômodos', valor: '${_planta.comodos.length}'),
               CelulaCarimbo(
                 rotulo: 'Paredes e vãos',
                 valor: '${_planta.paredes.length} · $vaos',
@@ -616,15 +610,12 @@ class _EditarComodoState extends State<_EditarComodo> {
               expandir: true,
               aoTocar: () => Navigator.pop(
                 context,
-                ComodoPlanta(
-                  id: widget.comodo.id,
+                widget.comodo.copiar(
                   nome: _nome.text.trim().isEmpty
                       ? widget.comodo.nome
                       : _nome.text.trim(),
-                  tipo: widget.comodo.tipo,
                   coberto: _coberto,
                   piso: _piso,
-                  retangulos: widget.comodo.retangulos,
                 ),
               ),
             ),

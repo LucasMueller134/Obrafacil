@@ -6,6 +6,7 @@ export 'foto_obra_model.dart';
 export 'imagem_ia_model.dart';
 export 'item_material_model.dart';
 export 'lancamento_model.dart';
+export 'modelos_planta.dart';
 export 'movimento_estoque_model.dart';
 export 'obra_model.dart';
 export 'planta_obra.dart';

@@ -126,3 +126,69 @@ class NumeroDeLegenda extends StatelessWidget {
     );
   }
 }
+
+/// No geminado e no prédio as unidades são iguais: a primeira serve de
+/// "unidade-tipo" no "por dentro". Nula: a planta não tem unidades.
+String? unidadeTipo(PlantaObra andar) {
+  final unidades = {
+    for (final c in andar.comodos)
+      if (c.unidade != null) c.unidade!,
+  }.toList()
+    ..sort((a, b) =>
+        a.length != b.length ? a.length.compareTo(b.length) : a.compareTo(b));
+  return unidades.firstOrNull;
+}
+
+/// Os cômodos que o "por dentro" lista: os da unidade-tipo (ou todos, sem
+/// unidades) e as áreas comuns do prédio. Com [soCobertos], só os que têm
+/// laje.
+List<ComodoPlanta> comodosParaMostrar(PlantaObra andar,
+    {bool soCobertos = true}) {
+  final tipo = unidadeTipo(andar);
+  return [
+    for (final c in andar.comodos)
+      if ((!soCobertos || c.coberto) &&
+          (c.unidade == null || c.unidade == tipo))
+        c,
+  ]..sort((a, b) => (b.coberto ? 1 : 0).compareTo(a.coberto ? 1 : 0));
+}
+
+/// Térreo, superior, andar-tipo: escolhe a planta que aparece. Some quando
+/// a planta tem um pavimento só.
+class SeletorDeAndar extends StatelessWidget {
+  const SeletorDeAndar({
+    super.key,
+    required this.planta,
+    required this.selecionado,
+    required this.aoMudar,
+  });
+
+  final PlantaObra planta;
+  final int selecionado;
+  final ValueChanged<int> aoMudar;
+
+  @override
+  Widget build(BuildContext context) {
+    if (planta.totalPlantas < 2) return const SizedBox.shrink();
+    final nomes = planta.nomesDasPlantas;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: Espaco.e12),
+      child: SeletorGrande<int>(
+        rotulo: 'Pavimento',
+        opcoes: [
+          for (var i = 0; i < nomes.length && i < 4; i++)
+            OpcaoSeletor(valor: i, rotulo: nomes[i]),
+        ],
+        selecionado: selecionado.clamp(0, nomes.length - 1),
+        aoMudar: aoMudar,
+      ),
+    );
+  }
+}
+
+/// "A unidade-tipo: Casa 1. As outras são iguais." (nula sem unidades).
+String? avisoDaUnidadeTipo(PlantaObra andar) {
+  final tipo = unidadeTipo(andar);
+  if (tipo == null) return null;
+  return 'Mostrando: $tipo. As outras unidades são iguais.';
+}

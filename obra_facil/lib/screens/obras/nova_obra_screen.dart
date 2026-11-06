@@ -12,6 +12,11 @@ import '../../services/cep_service.dart';
 import '../../services/firestore_service.dart';
 import '../../utils/formatters.dart';
 import '../../utils/validators.dart';
+import '../planta/modelo_planta.dart';
+
+/// De onde vem a planta da obra nova: um modelo pronto ou o projeto real
+/// (enviado depois, na tela da planta).
+enum _Construcao { casa, geminado, predio, projeto }
 
 /// Cadastrar uma obra: nome e cliente, endereço (com o CEP conferido nos
 /// Correios), orçamento, prazo e o cronograma com as fases padrão.
@@ -40,6 +45,27 @@ class _NovaObraScreenState extends State<_NovaObra> {
   DateTime _dataInicio = DateTime.now();
   DateTime _previsaoTermino = DateTime.now().add(const Duration(days: 180));
   bool _criarCronograma = true;
+  _Construcao _construcao = _Construcao.casa;
+  PedidoModelo _pedido = pedidoInicial(TipoModelo.casa);
+
+  /// O modelo escolhido (nulo: projeto real).
+  PedidoModelo? get _modelo =>
+      _construcao == _Construcao.projeto ? null : _pedido;
+
+  void _escolherConstrucao(_Construcao c) {
+    setState(() {
+      _construcao = c;
+      final tipo = switch (c) {
+        _Construcao.geminado => TipoModelo.geminado,
+        _Construcao.predio => TipoModelo.predio,
+        _ => TipoModelo.casa,
+      };
+      if (c != _Construcao.projeto && _pedido.tipo != tipo) {
+        _pedido = pedidoInicial(tipo);
+      }
+    });
+  }
+
   bool _salvando = false;
   bool _consultandoCep = false;
   ResultadoCep? _resultadoCep;
@@ -132,6 +158,12 @@ class _NovaObraScreenState extends State<_NovaObra> {
       mostrarAviso(context, 'A previsão de término deve ser após o início.');
       return;
     }
+    final problemaDoModelo = _modelo?.problema;
+    if (problemaDoModelo != null) {
+      unawaited(Tato.erro());
+      mostrarAviso(context, 'A construção: $problemaDoModelo');
+      return;
+    }
     // Quem não tocou no botão de conferir tem o CEP conferido agora: é
     // aqui que um endereço inventado é barrado.
     if (_resultadoCep == null) {
@@ -166,9 +198,16 @@ class _NovaObraScreenState extends State<_NovaObra> {
       if (_criarCronograma) {
         await _gerarCronogramaPadrao(db, obraId);
       }
+      // A planta do modelo: a maquete e o "por dentro" já nascem com ela.
+      final modelo = _modelo;
+      if (modelo != null) {
+        await db.salvarPlanta(obraId, ModelosPlanta.montar(modelo));
+      }
       if (!mounted) return;
       unawaited(Tato.confirmar());
       context.go('/obras/$obraId');
+      // Projeto real: abre a planta, que é onde ele é enviado.
+      if (modelo == null) unawaited(context.push('/obras/$obraId/planta'));
     } catch (e) {
       if (!mounted) return;
       setState(() => _salvando = false);
@@ -307,6 +346,54 @@ class _NovaObraScreenState extends State<_NovaObra> {
                     labelText: 'Número e complemento (opcional)',
                   ),
                 ),
+                const SizedBox(height: Espaco.e24),
+                const LinhaCota(legenda: 'A construção'),
+                const SizedBox(height: Espaco.e16),
+                SeletorGrande<_Construcao>(
+                  opcoes: const [
+                    OpcaoSeletor(
+                        valor: _Construcao.casa,
+                        rotulo: 'Casa',
+                        icone: Icons.house_outlined),
+                    OpcaoSeletor(
+                        valor: _Construcao.geminado,
+                        rotulo: 'Geminado',
+                        icone: Icons.holiday_village_outlined),
+                    OpcaoSeletor(
+                        valor: _Construcao.predio,
+                        rotulo: 'Prédio',
+                        icone: Icons.apartment_outlined),
+                    OpcaoSeletor(
+                        valor: _Construcao.projeto,
+                        rotulo: 'Projeto real',
+                        icone: Icons.architecture_outlined),
+                  ],
+                  selecionado: _construcao,
+                  aoMudar: _escolherConstrucao,
+                ),
+                const SizedBox(height: Espaco.e16),
+                if (_construcao == _Construcao.projeto)
+                  Text(
+                    'Depois de criar a obra, envie a planta (foto, PDF ou o '
+                    'arquivo do CAD). A IA lê e você confere antes de '
+                    'confirmar.',
+                    style: Tipografia.corpo.copyWith(color: c.grafite2),
+                  )
+                else ...[
+                  FormularioModelo(
+                    pedido: _pedido,
+                    aoMudar: (p) => setState(() => _pedido = p),
+                  ),
+                  const SizedBox(height: Espaco.e16),
+                  PreviaModelo(pedido: _pedido, desenho: false),
+                  const SizedBox(height: Espaco.e8),
+                  Text(
+                    'O app monta uma planta típica com esses números, para a '
+                    'maquete e o "por dentro". Dá para trocar depois ou '
+                    'enviar o projeto de verdade.',
+                    style: Tipografia.apoio.copyWith(color: c.grafite2),
+                  ),
+                ],
                 const SizedBox(height: Espaco.e24),
                 const LinhaCota(legenda: 'Orçamento e prazo'),
                 const SizedBox(height: Espaco.e16),

@@ -74,8 +74,10 @@ funciona igual e, na planta, oferece a casa de exemplo.
 4. Como mestre: lance um gasto **tirando foto de uma nota fiscal** (OCR preenche) e outro **por voz**.
 5. Como dono: **aprove/rejeite** os lançamentos pendentes e veja os gráficos atualizarem.
 6. Abra o **Relatório semanal (IA)** e a **previsão de estouro** na central da obra.
-7. Na central, abra **Planta da obra** e use a casa de exemplo (ou envie uma
-   planta, se a IA da planta estiver publicada). A maquete passa a ser a casa
+7. Na central, abra **Planta da obra** e toque em **Montar pelo modelo**
+   (casa, geminado ou prédio), use a casa de exemplo ou envie uma planta
+   (se a IA da planta estiver publicada). Num sobrado ou prédio, troque o
+   pavimento no seletor. A maquete passa a ser a casa
    da planta; toque num cômodo e abra a **vista 360°**.
 8. Atualize uma fase no **Cronograma** e veja a maquete crescer.
 9. Como cliente (código de acompanhamento): veja a casa **hoje** e **pronta**

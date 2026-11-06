@@ -86,9 +86,9 @@ class DadosExemplo {
   });
 
   /// A planta de exemplo do app (a casa 7 x 20, assets/plantas/).
-  static PlantaObra plantaExemplo() => PlantaObra.fromMap(jsonDecode(
-          File('assets/plantas/casa_7x20.json').readAsStringSync())
-      as Map<String, dynamic>);
+  static PlantaObra plantaExemplo() => PlantaObra.fromMap(
+      jsonDecode(File('assets/plantas/casa_7x20.json').readAsStringSync())
+          as Map<String, dynamic>);
 
   /// Os mesmos dados, com a planta de exemplo na obra principal.
   DadosExemplo comPlanta() => DadosExemplo(
@@ -101,6 +101,20 @@ class DadosExemplo {
         fotos: fotos,
         fornecedores: fornecedores,
         plantas: {...plantas, IdsExemplo.obra: plantaExemplo()},
+        imagens: imagens,
+      );
+
+  /// Os mesmos dados, com [planta] na obra principal (ex.: um modelo).
+  DadosExemplo comPlantaDe(PlantaObra planta) => DadosExemplo(
+        obras: obras,
+        lancamentos: lancamentos,
+        cronograma: cronograma,
+        diario: diario,
+        estoque: estoque,
+        movimentos: movimentos,
+        fotos: fotos,
+        fornecedores: fornecedores,
+        plantas: {...plantas, IdsExemplo.obra: planta},
         imagens: imagens,
       );
 

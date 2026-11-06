@@ -10,6 +10,7 @@ import 'dart:math' as math;
 
 import '../../../models/planta_obra.dart';
 import '../plano_maquete.dart';
+import '../progresso_maquete.dart';
 import 'area_coberta.dart';
 import 'geometria.dart';
 
@@ -160,9 +161,50 @@ class MaqueteGerada {
 }
 
 class GeradorMaquete {
-  GeradorMaquete._(this.planta)
-      : niveis = NiveisMaquete(planta.alturas),
+  GeradorMaquete._(
+    this.planta, {
+    this.terreo = true,
+    this.topo = true,
+    this.furoNaEscada = false,
+    this.blocosSimples = false,
+    this.andarSimples = false,
+  })  : niveis = NiveisMaquete(planta.alturas),
         centro = centroDe(planta);
+
+  /// Pavimento do chão: fundação, muros, poste, calçada, árvores.
+  final bool terreo;
+
+  /// Último pavimento: platibanda, telhado e caixa d'água.
+  final bool topo;
+
+  /// Tem andar em cima: a laje fica aberta sobre a escada e os degraus
+  /// sobem até o andar de cima.
+  final bool furoNaEscada;
+
+  /// Alvenaria em fiadas inteiras, sem os blocos um a um (prédio grande:
+  /// mantém a maquete leve no celular).
+  final bool blocosSimples;
+
+  /// Andar de cima de prédio: só a casca de fora (paredes externas
+  /// inteiras, laje, janelas simples). O "por dentro" fica no térreo.
+  final bool andarSimples;
+
+  /// As paredes que entram na maquete deste pavimento.
+  late final List<ParedePlanta> _paredes = andarSimples
+      ? [
+          for (final w in planta.paredes)
+            if (_ehExterna(w)) w
+        ]
+      : planta.paredes;
+
+  /// Parede com a laje de um lado só (a de fora).
+  bool _ehExterna(ParedePlanta w) {
+    final (mx, my) = w.pontoEm(w.comprimento / 2);
+    final (dx, dy) = w.direcao;
+    final d = w.espessura / 2 + 0.15;
+    return !(_coberta.contem(mx - dy * d, my + dx * d) &&
+        _coberta.contem(mx + dy * d, my - dx * d));
+  }
 
   /// O ponto da planta que vira a origem da cena: o meio do tabuleiro (que
   /// tem mais margem na frente, para a calçada e a cota).
@@ -187,7 +229,173 @@ class GeradorMaquete {
     if (problemas.isNotEmpty) {
       throw ArgumentError('Planta com problemas: ${problemas.join(' ')}');
     }
-    return GeradorMaquete._(planta)._gerar();
+    if (planta.andares.isEmpty) {
+      return GeradorMaquete._(planta, blocosSimples: _muitosBlocos(planta))
+          ._gerar();
+    }
+    return _gerarAndares(planta);
+  }
+
+  /// Blocos um a um passariam do que o celular desenha com folga: vira
+  /// fiada inteira.
+  static bool _muitosBlocos(PlantaObra planta) {
+    var metros = 0.0;
+    for (var i = 0; i < planta.totalPlantas; i++) {
+      final rep = i == 0 ? 1 : planta.andares[i - 1].repeticoes;
+      for (final w in planta.planta(i).paredes) {
+        if (w.tipo == TipoParede.alvenaria) metros += w.comprimento * rep;
+      }
+    }
+    return metros / 0.4 * NosMaquete.totalFiadasParede > 5000;
+  }
+
+  /// A raiz com o tabuleiro, as cotas, as fases, as peças e os fantasmas.
+  static (NoGerado, NoGerado, NoGerado, Map<String, NoGerado>, List<NoGerado>)
+      _arvore() {
+    final raiz = NoGerado(NosMaquete.raiz);
+    final base = raiz.filho(NoGerado(NosMaquete.base));
+    final cotas = raiz.filho(NoGerado(NosMaquete.cotas));
+    const nomesDasFases = [
+      'fase_00_fundacao',
+      'fase_01_estrutura',
+      'fase_02_alvenaria',
+      'fase_03_cobertura',
+      'fase_04_eletrica',
+      'fase_05_hidraulica',
+      'fase_06_reboco',
+      'fase_07_revestimentos',
+      'fase_08_pintura',
+      'fase_09_acabamento',
+    ];
+    final fases = [
+      for (var i = 0; i < nomesDasFases.length; i++)
+        raiz.filho(NoGerado(nomesDasFases[i], extras: {'fase': i})),
+    ];
+    final pecas = <String, NoGerado>{};
+    for (var f = 0; f < PlanoMaquete.etapasPorFase.length; f++) {
+      for (final e in PlanoMaquete.etapasPorFase[f]) {
+        pecas[e.no] = fases[f].filho(NoGerado(e.no));
+      }
+    }
+    final fantasmas = [
+      for (var f = 0; f < nomesDasFases.length; f++)
+        raiz.filho(NoGerado(NosMaquete.fantasma(f), extras: {'fase': f})),
+    ];
+    return (raiz, base, cotas, pecas, fantasmas);
+  }
+
+  /// As peças de um pavimento, na altura dele como se fosse o térreo.
+  static (Map<String, NoGerado>, List<NoGerado>) _pavimento(PlantaObra vista,
+      {required bool terreo,
+      required bool topo,
+      required bool simples,
+      bool andarSimples = false}) {
+    final g = GeradorMaquete._(vista,
+        terreo: terreo,
+        topo: topo,
+        furoNaEscada: !topo,
+        blocosSimples: simples,
+        andarSimples: andarSimples);
+    final pecas = <String, NoGerado>{
+      for (final etapas in PlanoMaquete.etapasPorFase)
+        for (final e in etapas) e.no: NoGerado(e.no),
+    };
+    final fantasmas = [
+      for (var f = 0; f < ProgressoMaquete.totalFases; f++)
+        NoGerado(NosMaquete.fantasma(f)),
+    ];
+    g._construir(pecas, fantasmas);
+    return (pecas, fantasmas);
+  }
+
+  /// Sobrado e prédio: cada pavimento é montado na altura local e empilhado.
+  /// As fiadas de todos os pavimentos são repartidas nas 15 etapas da
+  /// alvenaria, de baixo para cima.
+  static MaqueteGerada _gerarAndares(PlantaObra planta) {
+    final simples = _muitosBlocos(planta);
+    final predio = planta.modelo?['tipo'] == 'predio';
+    final terreo = planta.planta(0);
+    final mestre = GeradorMaquete._(terreo);
+    final (raiz, base, cotas, pecas, fantasmas) = _arvore();
+    mestre._tabuleiro(base.malha);
+    mestre._cotas(cotas.malha);
+
+    final total = planta.totalPavimentos;
+    final andar = planta.alturas.peDireito + NiveisMaquete.espessuraLaje;
+    final cursos =
+        total * NosMaquete.totalFiadasParede + NosMaquete.totalFiadasPlatibanda;
+    final pivos = <String, P3>{};
+    var n = 0;
+    for (var i = 0; i < planta.totalPlantas; i++) {
+      final vista = planta.planta(i);
+      final repeticoes = i == 0 ? 1 : planta.andares[i - 1].repeticoes;
+      (Map<String, NoGerado>, List<NoGerado>)? meio, alto;
+      for (var r = 0; r < repeticoes; r++, n++) {
+        final ehTopo = n == total - 1;
+        final casca = predio && n > 0;
+        final (local, fantasmasLocais) = ehTopo
+            ? (alto ??= _pavimento(vista,
+                terreo: n == 0,
+                topo: true,
+                simples: simples,
+                andarSimples: casca))
+            : (meio ??= _pavimento(vista,
+                terreo: n == 0,
+                topo: false,
+                simples: simples,
+                andarSimples: casca));
+        final dy = n * andar;
+        for (final MapEntry(key: nome, value: origem) in local.entries) {
+          var destino = pecas[nome]!;
+          final k = _indiceDaFiada(nome);
+          if (k != null) {
+            final g = k < NosMaquete.totalFiadasParede
+                ? n * NosMaquete.totalFiadasParede + k
+                : total * NosMaquete.totalFiadasParede +
+                    (k - NosMaquete.totalFiadasParede);
+            destino = pecas[NosMaquete.fiada(
+                (g * NosMaquete.totalFiadas / cursos)
+                    .floor()
+                    .clamp(0, NosMaquete.totalFiadas - 1))]!;
+          }
+          if (origem.malha.vazia) continue;
+          destino.malha.anexar(origem.malha, dy: dy);
+          if (!pivos.containsKey(destino.nome)) {
+            final (x, y, z) = origem.translacao;
+            pivos[destino.nome] = k != null ? (0, 0, 0) : (x, y + dy, z);
+          }
+        }
+        for (var f = 0; f < fantasmas.length; f++) {
+          fantasmas[f].malha.anexar(fantasmasLocais[f].malha, dy: dy);
+        }
+      }
+    }
+    for (final MapEntry(key: nome, value: no) in pecas.entries) {
+      no.translacao = pivos[nome] ?? (0, 0, 0);
+    }
+    for (final no in raiz.todos) {
+      no.centrarNoPivo();
+    }
+    final niveis = mestre.niveis;
+    final (xa, za) = mestre._xz(-margem, -margem);
+    final (xb, zb) =
+        mestre._xz(planta.largura + margem, planta.profundidade + margemFrente);
+    final modelo = ModeloGerado(
+      raiz: raiz,
+      materiais: MateriaisMaquete.todos,
+      limites: (
+        (xa, -0.3, za),
+        (xb, (total - 1) * andar + niveis.platibandaTopo + 1.0, zb),
+      ),
+    );
+    return MaqueteGerada(modelo, planta, niveis, mestre.centro);
+  }
+
+  static int? _indiceDaFiada(String nome) {
+    for (var k = 0; k < NosMaquete.totalFiadas; k++) {
+      if (NosMaquete.fiada(k) == nome) return k;
+    }
+    return null;
   }
 
   // ------------------------------------------------------------ apoio
@@ -197,7 +405,10 @@ class GeradorMaquete {
   (double, double) _xz(double x, double y) => (x - centro.$1, y - centro.$2);
 
   late final AreaCoberta _coberta = AreaCoberta.dos(
-    [for (final c in planta.comodosCobertos) ...c.retangulos],
+    [
+      for (final c in planta.comodosCobertos)
+        if (!furoNaEscada || c.tipo != 'escada') ...c.retangulos,
+    ],
     largura: planta.largura,
     profundidade: planta.profundidade,
     expandir: 0.065,
@@ -299,7 +510,7 @@ class GeradorMaquete {
       lista.add((p, dir));
     }
 
-    for (final w in planta.paredes) {
+    for (final w in _paredes) {
       if (w.tipo != TipoParede.alvenaria) continue;
       final c = w.comprimento;
       final vaos = _vaos(w);
@@ -375,49 +586,10 @@ class GeradorMaquete {
   // ------------------------------------------------------------ montagem
 
   MaqueteGerada _gerar() {
-    final raiz = NoGerado(NosMaquete.raiz);
-    final base = raiz.filho(NoGerado(NosMaquete.base));
-    final cotas = raiz.filho(NoGerado(NosMaquete.cotas));
+    final (raiz, base, cotas, pecas, fantasmas) = _arvore();
     _tabuleiro(base.malha);
     _cotas(cotas.malha);
-
-    final fases = <NoGerado>[];
-    const nomesDasFases = [
-      'fase_00_fundacao',
-      'fase_01_estrutura',
-      'fase_02_alvenaria',
-      'fase_03_cobertura',
-      'fase_04_eletrica',
-      'fase_05_hidraulica',
-      'fase_06_reboco',
-      'fase_07_revestimentos',
-      'fase_08_pintura',
-      'fase_09_acabamento',
-    ];
-    for (var i = 0; i < nomesDasFases.length; i++) {
-      fases.add(raiz.filho(NoGerado(nomesDasFases[i], extras: {'fase': i})));
-    }
-    final pecas = <String, NoGerado>{};
-    for (var f = 0; f < PlanoMaquete.etapasPorFase.length; f++) {
-      for (final e in PlanoMaquete.etapasPorFase[f]) {
-        pecas[e.no] = fases[f].filho(NoGerado(e.no));
-      }
-    }
-    final fantasmas = [
-      for (var f = 0; f < nomesDasFases.length; f++)
-        raiz.filho(NoGerado(NosMaquete.fantasma(f), extras: {'fase': f})),
-    ];
-
-    _fundacao(pecas['fundacao_radier']!);
-    _estrutura(pecas);
-    _alvenaria(pecas);
-    _cobertura(pecas);
-    _eletrica(pecas);
-    _hidraulica(pecas);
-    _rebocoEPintura(pecas);
-    _revestimentos(pecas);
-    _acabamento(pecas);
-    _fantasmas(fantasmas);
+    _construir(pecas, fantasmas);
 
     for (final no in raiz.todos) {
       no.centrarNoPivo();
@@ -431,6 +603,64 @@ class GeradorMaquete {
       limites: ((xa, -0.3, za), (xb, niveis.platibandaTopo + 1.0, zb)),
     );
     return MaqueteGerada(modelo, planta, niveis, centro);
+  }
+
+  /// Todas as peças deste pavimento.
+  void _construir(Map<String, NoGerado> pecas, List<NoGerado> fantasmas) {
+    if (terreo) _fundacao(pecas['fundacao_radier']!);
+    _estrutura(pecas);
+    if (furoNaEscada) _escadas(pecas['estrutura_laje']!);
+    _alvenaria(pecas);
+    if (topo) _cobertura(pecas);
+    if (terreo) _eletrica(pecas);
+    if (topo) _hidraulica(pecas);
+    _rebocoEPintura(pecas);
+    _revestimentos(pecas);
+    _acabamento(pecas);
+    _fantasmas(fantasmas);
+  }
+
+  /// Escada em U dentro de cada cômodo "escada": dois lances de concreto,
+  /// do piso deste pavimento ao piso do de cima, com o patamar no fundo.
+  void _escadas(NoGerado no) {
+    final mat = MateriaisMaquete.concreto.nome;
+    final subir = planta.alturas.peDireito + NiveisMaquete.espessuraLaje;
+    const degraus = 9;
+    for (final c in planta.comodos.where((c) => c.tipo == 'escada')) {
+      final r = c.principal;
+      // Os lances correm no lado mais comprido do cômodo.
+      final aoLongoDeY = r.profundidade >= r.largura;
+      final comprido = aoLongoDeY ? r.profundidade : r.largura;
+      final largo = aoLongoDeY ? r.largura : r.profundidade;
+      final lance = math.min(1.2, largo / 2 - 0.03);
+      const patamar = 1.0;
+      final passo = (comprido - patamar) / degraus;
+      final h = subir / 2 / degraus;
+      void caixa(double u0, double u1, double v0, double v1, double y1) {
+        // u ao longo dos lances, v de lado.
+        final (x0, y0, x1, y1p) = aoLongoDeY
+            ? (r.x + v0, r.y + u0, r.x + v1, r.y + u1)
+            : (r.x + u0, r.y + v0, r.x + u1, r.y + v1);
+        final (ax, az) = _xz(x0, y0);
+        final (bx, bz) = _xz(x1, y1p);
+        no.malha.caixa(mat, (ax, NiveisMaquete.piso, az), (bx, y1, bz));
+      }
+
+      for (var k = 0; k < degraus; k++) {
+        // Primeiro lance: sobe indo para o fundo do cômodo.
+        caixa(k * passo, (k + 1) * passo, 0, lance,
+            NiveisMaquete.piso + (k + 1) * h);
+        // Segundo lance: volta, do patamar ao andar de cima.
+        caixa(
+            comprido - patamar - (k + 1) * passo,
+            comprido - patamar - k * passo,
+            largo - lance,
+            largo,
+            NiveisMaquete.piso + subir / 2 + (k + 1) * h);
+      }
+      caixa(comprido - patamar, comprido, 0, largo,
+          NiveisMaquete.piso + subir / 2);
+    }
   }
 
   // ------------------------------------------------------------ tabuleiro
@@ -587,7 +817,7 @@ class GeradorMaquete {
     pilares.translacao = (0, NiveisMaquete.piso, 0);
 
     final vigas = pecas['estrutura_vigas']!;
-    for (final w in planta.paredes) {
+    for (final w in _paredes) {
       if (w.tipo != TipoParede.alvenaria) continue;
       _naParede(
           vigas.malha,
@@ -629,9 +859,17 @@ class GeradorMaquete {
           (0, niveis.lajeTopo + k * NiveisMaquete.fiadaPlatibanda, 0);
     }
 
-    for (final w in planta.paredes) {
+    for (final w in _paredes) {
       final base = _baseParede(w);
       final topo = _topoBlocos(w);
+      if (andarSimples) {
+        // A parede inteira de uma vez, sem os vãos: o andar aparece junto.
+        for (final (u0, u1, v0, v1) in _faces(w, base, topo)) {
+          _naParede(fiadas[NosMaquete.totalFiadasParede ~/ 2].malha,
+              MateriaisMaquete.bloco.nome, w, u0, u1, w.espessura / 2, v0, v1);
+        }
+        continue;
+      }
       final vaos = _vaos(w);
       final pilares = w.tipo == TipoParede.alvenaria
           ? _trechosDePilar(w)
@@ -668,7 +906,7 @@ class GeradorMaquete {
     }
 
     // Platibanda: 3 fiadas em volta da laje, por cima da borda.
-    final bordas = _coberta.bordas();
+    final bordas = topo ? _coberta.bordas() : const <BordaCoberta>[];
     for (var k = 0; k < NosMaquete.totalFiadasPlatibanda; k++) {
       final y0 = niveis.lajeTopo + k * NiveisMaquete.fiadaPlatibanda;
       final m = fiadas[NosMaquete.totalFiadasParede + k].malha;
@@ -704,6 +942,13 @@ class GeradorMaquete {
       {bool topoAVista = false}) {
     const modulo = 0.40, bloco = 0.39;
     final e = w.espessura / 2;
+    if (blocosSimples) {
+      for (final (a, b) in trechos) {
+        _naParede(m, MateriaisMaquete.bloco.nome, w, a, b, e, y0, y1 - 0.01,
+            semTopoNemBase: !topoAVista);
+      }
+      return;
+    }
     for (final (a, b) in trechos) {
       _naParede(
           m, MateriaisMaquete.argamassa.nome, w, a, b, e * 0.86, y0, y1 - 0.004,
@@ -875,21 +1120,29 @@ class GeradorMaquete {
       }
     }
 
-    for (final w in planta.paredes) {
+    for (final w in _paredes) {
       final topo = switch (w.tipo) {
         TipoParede.alvenaria => niveis.lajeFundo,
         _ => _topoBlocos(w),
       };
       casca(w, _baseParede(w), topo);
     }
-    for (final b in _coberta.bordas()) {
-      final w = _paredeDaBorda(b);
-      casca(w, niveis.lajeFundo, niveis.platibandaTopo, pontas: false);
+    if (topo) {
+      for (final b in _coberta.bordas()) {
+        final w = _paredeDaBorda(b);
+        casca(w, niveis.lajeFundo, niveis.platibandaTopo, pontas: false);
+      }
     }
     // Contrapiso dos cômodos cobertos.
     final contrapiso = pecas['reboco_contrapiso']!;
-    for (final c in planta.comodosCobertos) {
-      for (final r in c.retangulos) {
+    final retangulos = andarSimples
+        ? [
+            for (final (x0, y0, x1, y1) in _coberta.retangulos())
+              RetanguloPlanta(x0, y0, x1 - x0, y1 - y0),
+          ]
+        : [for (final c in planta.comodosCobertos) ...c.retangulos];
+    {
+      for (final r in retangulos) {
         final (ax, az) = _xz(r.x, r.y);
         final (bx, bz) = _xz(r.x1, r.y1);
         contrapiso.malha.caixa(MateriaisMaquete.argamassa.nome,
@@ -905,8 +1158,9 @@ class GeradorMaquete {
   void _revestimentos(Map<String, NoGerado> pecas) {
     final calcada = pecas['revestimentos_calcada']!.malha;
     // Pisos dos cômodos (os cobertos sobre o contrapiso; cimentado e
-    // garagem descobertos no chão).
-    for (final c in planta.comodos) {
+    // garagem descobertos no chão). No andar de cima do prédio, só o
+    // contrapiso.
+    for (final c in andarSimples ? const <ComodoPlanta>[] : planta.comodos) {
       if (c.piso == PisoComodo.grama) continue;
       final y0 = c.coberto ? NiveisMaquete.piso + 0.03 : 0.0;
       final y1 = c.coberto ? NiveisMaquete.piso + 0.045 : 0.05;
@@ -919,14 +1173,16 @@ class GeradorMaquete {
       }
     }
     // Calçada da rua.
-    final (ax, az) = _xz(-0.12, planta.profundidade + 0.12);
-    final (bx, bz) = _xz(planta.largura + 0.12, planta.profundidade + 1.5);
-    calcada.caixa(MateriaisMaquete.calcada.nome, (ax, 0, az), (bx, 0.06, bz),
-        semBase: true);
+    if (terreo) {
+      final (ax, az) = _xz(-0.12, planta.profundidade + 0.12);
+      final (bx, bz) = _xz(planta.largura + 0.12, planta.profundidade + 1.5);
+      calcada.caixa(MateriaisMaquete.calcada.nome, (ax, 0, az), (bx, 0.06, bz),
+          semBase: true);
+    }
 
     // Pingadeira: o topo da platibanda.
     final pingadeira = pecas['revestimentos_pingadeira']!;
-    for (final b in _coberta.bordas()) {
+    for (final b in topo ? _coberta.bordas() : const <BordaCoberta>[]) {
       final w = _paredeDaBorda(b);
       _naParede(
           pingadeira.malha,
@@ -942,7 +1198,7 @@ class GeradorMaquete {
 
     // Peitoris das janelas e soleiras das portas.
     final peitoris = pecas['revestimentos_peitoris']!.malha;
-    for (final w in planta.paredes) {
+    for (final w in _paredes) {
       final base = _baseParede(w);
       for (final a in w.aberturas) {
         final u0 = a.inicio, u1 = a.inicio + a.largura;
@@ -966,7 +1222,7 @@ class GeradorMaquete {
     final portas = pecas['acabamento_porta']!.malha;
     final al = MateriaisMaquete.aluminio.nome;
     final vidro = MateriaisMaquete.vidro.nome;
-    for (final w in planta.paredes) {
+    for (final w in _paredes) {
       final base = _baseParede(w);
       for (final a in w.aberturas) {
         final u0 = a.inicio, u1 = a.inicio + a.largura;
@@ -975,8 +1231,10 @@ class GeradorMaquete {
         switch (a.tipo) {
           case TipoAbertura.janela:
           case TipoAbertura.portaCorrer:
-            _caixilho(esquadrias, w, u0, u1, y0, y1, al, vidro);
+            _caixilho(esquadrias, w, u0, u1, y0, y1, al, vidro,
+                simples: andarSimples);
           case TipoAbertura.porta:
+            if (andarSimples) break;
             _naParede(portas, MateriaisMaquete.madeiraPorta.nome, w, u0 + 0.02,
                 u1 - 0.02, 0.02, y0, y1 - 0.01);
           case TipoAbertura.portao:
@@ -1028,8 +1286,14 @@ class GeradorMaquete {
   /// Caixilho de alumínio com vidro (janela, porta de correr, vidro da
   /// área de sol).
   void _caixilho(MalhaGerada m, ParedePlanta w, double u0, double u1, double y0,
-      double y1, String al, String vidro) {
+      double y1, String al, String vidro,
+      {bool simples = false}) {
     const b = 0.045;
+    if (simples) {
+      _naParede(m, al, w, u0, u1, 0.035, y0, y0 + b);
+      _naParede(m, vidro, w, u0, u1, 0.006, y0 + b, y1);
+      return;
+    }
     _naParede(m, al, w, u0, u0 + b, 0.035, y0, y1);
     _naParede(m, al, w, u1 - b, u1, 0.035, y0, y1);
     _naParede(m, al, w, u0, u1, 0.035, y0, y0 + b);
@@ -1045,17 +1309,22 @@ class GeradorMaquete {
 
   void _fantasmas(List<NoGerado> fantasmas) {
     final mat = MateriaisMaquete.fantasma.nome;
+    // Nos andares de cima, traço mais espaçado: o prédio inteiro
+    // tracejado fino pesaria demais.
+    final traco = terreo ? 0.16 : 0.45, vazio = terreo ? 0.1 : 0.45;
     void contorno(MalhaGerada m, AreaCoberta area, double y) {
       for (final b in area.bordas()) {
-        m.tracejado(mat, _p(b.de.$1, b.de.$2, y), _p(b.ate.$1, b.ate.$2, y));
+        m.tracejado(mat, _p(b.de.$1, b.de.$2, y), _p(b.ate.$1, b.ate.$2, y),
+            traco: traco, vazio: vazio);
       }
     }
 
     // 00: o contorno do radier.
-    contorno(fantasmas[0].malha, _radier, NiveisMaquete.piso);
+    if (terreo) contorno(fantasmas[0].malha, _radier, NiveisMaquete.piso);
     // 01: os pilares e o contorno da laje.
     // Os pilares da borda da laje (os de dentro, de fora, somem atrás).
-    for (final (p, _) in _pilares) {
+    for (final (p, _)
+        in terreo ? _pilares : const <((double, double), (double, double))>[]) {
       if (!_coberta.contem(p.$1 + 0.3, p.$2) ||
           !_coberta.contem(p.$1 - 0.3, p.$2) ||
           !_coberta.contem(p.$1, p.$2 + 0.3) ||
@@ -1067,7 +1336,8 @@ class GeradorMaquete {
     contorno(fantasmas[1].malha, _coberta, niveis.lajeTopo);
     // 02: topo e pontas das paredes, os vãos e a platibanda.
     final f2 = fantasmas[2].malha;
-    for (final w in planta.paredes) {
+    // Andar de cima: só o contorno, para não virar um rabisco.
+    for (final w in terreo ? planta.paredes : const <ParedePlanta>[]) {
       final topo = _topoBlocos(w);
       final base = _baseParede(w);
       // O topo da parede e, nas pontas, a altura: o desenho do que falta
@@ -1079,21 +1349,24 @@ class GeradorMaquete {
         f2.tracejado(mat, _p(b.$1, b.$2, base), _p(b.$1, b.$2, topo));
       }
     }
-    contorno(f2, _coberta, niveis.platibandaTopo);
+    if (topo) contorno(f2, _coberta, niveis.platibandaTopo);
     // 03: o contorno do telhado.
-    contorno(fantasmas[3].malha, _telhado, niveis.lajeTopo + 0.35);
+    if (topo) contorno(fantasmas[3].malha, _telhado, niveis.lajeTopo + 0.35);
     // 04: o poste.
     final (px, py) = _posicaoPoste;
-    fantasmas[4].malha.tracejado(mat, _p(px, py, 0), _p(px, py, 3.6));
+    if (terreo) {
+      fantasmas[4].malha.tracejado(mat, _p(px, py, 0), _p(px, py, 3.6));
+    }
     // 05: a caixa d'água.
     final caixa = _posicaoCaixa;
-    if (caixa != null) {
+    if (topo && caixa != null) {
       final (x, z) = _xz(caixa.$1, caixa.$2);
       final t0 = niveis.lajeTopo;
       fantasmas[5].malha.anelTracejado(mat, (x, t0 + 1.36, z), 0.6);
       fantasmas[5].malha.anelTracejado(mat, (x, t0 + 0.6, z), 0.52);
     }
     // 07: a calçada da rua.
+    if (!terreo) return;
     fantasmas[7].malha.contornoTracejado(
         mat,
         [

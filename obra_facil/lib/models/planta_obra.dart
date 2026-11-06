@@ -17,6 +17,10 @@ import 'package:flutter/foundation.dart';
 /// * vãos pela distância ao longo da parede, a partir do ponto `de`;
 /// * cômodos como um ou mais retângulos (o primeiro dá o nome e as medidas),
 ///   cobertos (com laje) ou não.
+///
+/// As [paredes] e os [comodos] são os do térreo. Sobrado e prédio têm os
+/// andares de cima em [andares], cada um com a sua planta (e quantas vezes
+/// ela se repete, no prédio).
 @immutable
 class PlantaObra {
   const PlantaObra({
@@ -30,6 +34,9 @@ class PlantaObra {
     required this.paredes,
     this.pilares = const [],
     required this.comodos,
+    this.nomeTerreo = 'Térreo',
+    this.andares = const [],
+    this.modelo,
   });
 
   final int versao;
@@ -53,12 +60,128 @@ class PlantaObra {
   final List<PilarPlanta> pilares;
   final List<ComodoPlanta> comodos;
 
-  /// Cômodos com laje (é a área construída).
+  /// Nome do pavimento de baixo ("Térreo").
+  final String nomeTerreo;
+
+  /// Os andares acima do térreo, de baixo para cima.
+  final List<AndarPlanta> andares;
+
+  /// Os números do modelo pronto que gerou a planta (tipo, m², quartos...),
+  /// para mostrar e refazer. Nulo: planta de verdade (lida ou de exemplo).
+  final Map<String, dynamic>? modelo;
+
+  /// Cômodos do térreo com laje.
   Iterable<ComodoPlanta> get comodosCobertos => comodos.where((c) => c.coberto);
 
-  /// Área construída (soma dos cômodos cobertos), em m².
+  /// Pavimentos ao todo (o térreo e os andares, com as repetições).
+  int get totalPavimentos =>
+      1 + andares.fold<int>(0, (s, a) => s + a.repeticoes);
+
+  /// As plantas diferentes, de baixo para cima: o térreo e cada andar.
+  int get totalPlantas => 1 + andares.length;
+
+  /// Nome de cada planta ("Térreo", "Superior", "1º ao 3º andar").
+  List<String> get nomesDasPlantas =>
+      [nomeTerreo, for (final a in andares) a.nome];
+
+  /// A planta [i] (0 = térreo) sozinha, sem os outros andares: é o que a
+  /// planta desenhada, a ficha do cômodo e o 360° usam.
+  PlantaObra planta(int i) {
+    if (i <= 0) {
+      return andares.isEmpty ? this : _com(andares: const []);
+    }
+    final a = andares[i - 1];
+    return _com(
+      paredes: a.paredes,
+      pilares: a.pilares,
+      comodos: a.comodos,
+      nomeTerreo: a.nome,
+      andares: const [],
+    );
+  }
+
+  /// Em que pavimento (0 = térreo) começa a planta [i].
+  int pavimentoDaPlanta(int i) {
+    var nivel = 1;
+    for (var k = 0; k < i - 1 && k < andares.length; k++) {
+      nivel += andares[k].repeticoes;
+    }
+    return i <= 0 ? 0 : nivel;
+  }
+
+  /// A planta (0 = térreo) que tem o cômodo [id], ou -1.
+  int plantaDoComodo(String id) {
+    if (comodos.any((c) => c.id == id)) return 0;
+    for (var i = 0; i < andares.length; i++) {
+      if (andares[i].comodos.any((c) => c.id == id)) return i + 1;
+    }
+    return -1;
+  }
+
+  /// Todos os cômodos, de todas as plantas.
+  Iterable<ComodoPlanta> get todosOsComodos sync* {
+    yield* comodos;
+    for (final a in andares) {
+      yield* a.comodos;
+    }
+  }
+
+  /// Área construída (os cômodos cobertos de todos os pavimentos), em m².
   double get areaConstruida =>
-      comodosCobertos.fold<double>(0, (s, c) => s + c.area);
+      comodosCobertos.fold<double>(0, (s, c) => s + c.area) +
+      andares.fold<double>(
+          0,
+          (s, a) =>
+              s +
+              a.repeticoes *
+                  a.comodos
+                      .where((c) => c.coberto)
+                      .fold<double>(0, (t, c) => t + c.area));
+
+  /// Uma cópia com outras partes.
+  PlantaObra copiar({
+    String? nome,
+    String? fonte,
+    AlturasPlanta? alturas,
+    List<ComodoPlanta>? comodos,
+    List<AndarPlanta>? andares,
+    Map<String, dynamic>? modelo,
+  }) =>
+      _com(
+        nome: nome,
+        fonte: fonte,
+        alturas: alturas,
+        comodos: comodos,
+        andares: andares,
+        modelo: modelo,
+      );
+
+  PlantaObra _com({
+    String? nome,
+    String? fonte,
+    AlturasPlanta? alturas,
+    List<ParedePlanta>? paredes,
+    List<PilarPlanta>? pilares,
+    List<ComodoPlanta>? comodos,
+    String? nomeTerreo,
+    List<AndarPlanta>? andares,
+    Map<String, dynamic>? modelo,
+  }) =>
+      PlantaObra(
+        versao: versao,
+        nome: nome ?? this.nome,
+        fonte: fonte ?? this.fonte,
+        largura: largura,
+        profundidade: profundidade,
+        alturas: alturas ?? this.alturas,
+        cobertura: cobertura,
+        paredes: paredes ?? this.paredes,
+        pilares: pilares ?? this.pilares,
+        comodos: comodos ?? this.comodos,
+        nomeTerreo: nomeTerreo ?? this.nomeTerreo,
+        andares: andares ?? this.andares,
+        modelo: modelo ?? this.modelo,
+      );
 
   /// O cômodo que contém o ponto (x, y) da planta, ou nulo. Cômodos
   /// cobertos ganham dos descobertos onde se sobrepõem.
@@ -96,12 +219,28 @@ class PlantaObra {
     if (!(largura > 0) || !(profundidade > 0)) {
       p.add('O terreno precisa ter largura e profundidade.');
     }
-    if (paredes.isEmpty) p.add('A planta não tem paredes.');
-    if (comodos.isEmpty) p.add('A planta não tem cômodos.');
     if (!(alturas.peDireito >= 2.2 && alturas.peDireito <= 4.5)) {
       p.add('O pé-direito de ${alturas.peDireito} m está fora do comum '
           '(2,20 a 4,50 m).');
     }
+    _problemasDaPlanta(p, paredes, comodos, '');
+    for (final a in andares) {
+      if (a.repeticoes < 1) {
+        p.add('O andar ${a.nome} não se repete nenhuma vez.');
+      }
+      _problemasDaPlanta(p, a.paredes, a.comodos, ' (${a.nome})');
+    }
+    final ids = <String>{};
+    for (final c in todosOsComodos) {
+      if (!ids.add(c.id)) p.add('Dois cômodos com o mesmo código: ${c.id}.');
+    }
+    return p;
+  }
+
+  void _problemasDaPlanta(List<String> p, List<ParedePlanta> paredes,
+      List<ComodoPlanta> comodos, String onde) {
+    if (paredes.isEmpty) p.add('A planta$onde não tem paredes.');
+    if (comodos.isEmpty) p.add('A planta$onde não tem cômodos.');
     for (final w in paredes) {
       if (w.comprimento < 0.05) {
         p.add('A parede ${w.id} não tem comprimento.');
@@ -110,7 +249,8 @@ class PlantaObra {
       if (!(w.espessura >= 0.05 && w.espessura <= 0.6)) {
         p.add('A parede ${w.id} tem espessura de ${w.espessura} m.');
       }
-      final vaos = [...w.aberturas]..sort((a, b) => a.inicio.compareTo(b.inicio));
+      final vaos = [...w.aberturas]
+        ..sort((a, b) => a.inicio.compareTo(b.inicio));
       for (var i = 0; i < vaos.length; i++) {
         final a = vaos[i];
         if (a.largura <= 0 ||
@@ -135,7 +275,6 @@ class PlantaObra {
         p.add('O cômodo ${c.nome} não tem medidas.');
       }
     }
-    return p;
   }
 
   Map<String, dynamic> toMap() => {
@@ -149,6 +288,9 @@ class PlantaObra {
         'paredes': [for (final w in paredes) w.toMap()],
         'pilares': [for (final p in pilares) p.toMap()],
         'comodos': [for (final c in comodos) c.toMap()],
+        if (nomeTerreo != 'Térreo') 'nomeTerreo': nomeTerreo,
+        if (andares.isNotEmpty) 'andares': [for (final a in andares) a.toMap()],
+        if (modelo != null) 'modelo': modelo,
       };
 
   factory PlantaObra.fromMap(Map<String, dynamic> m) {
@@ -165,13 +307,66 @@ class PlantaObra {
         for (final (i, w) in _lista(m['paredes']).indexed)
           ParedePlanta.fromMap(_mapa(w), indice: i),
       ],
-      pilares: [for (final p in _lista(m['pilares'])) PilarPlanta.fromMap(_mapa(p))],
+      pilares: [
+        for (final p in _lista(m['pilares'])) PilarPlanta.fromMap(_mapa(p))
+      ],
       comodos: [
         for (final (i, c) in _lista(m['comodos']).indexed)
           ComodoPlanta.fromMap(_mapa(c), indice: i),
       ],
+      nomeTerreo: m['nomeTerreo'] as String? ?? 'Térreo',
+      andares: [
+        for (final (i, a) in _lista(m['andares']).indexed)
+          AndarPlanta.fromMap(_mapa(a), indice: i),
+      ],
+      modelo: m['modelo'] is Map ? _mapa(m['modelo']) : null,
     );
   }
+}
+
+/// Um andar acima do térreo: a planta dele e quantas vezes ela se repete
+/// (no prédio, os andares-tipo iguais).
+@immutable
+class AndarPlanta {
+  const AndarPlanta({
+    required this.nome,
+    required this.paredes,
+    required this.comodos,
+    this.pilares = const [],
+    this.repeticoes = 1,
+  });
+
+  /// "Superior", "1º ao 3º andar".
+  final String nome;
+  final List<ParedePlanta> paredes;
+  final List<ComodoPlanta> comodos;
+  final List<PilarPlanta> pilares;
+  final int repeticoes;
+
+  Map<String, dynamic> toMap() => {
+        'nome': nome,
+        'repeticoes': repeticoes,
+        'paredes': [for (final w in paredes) w.toMap()],
+        'pilares': [for (final p in pilares) p.toMap()],
+        'comodos': [for (final c in comodos) c.toMap()],
+      };
+
+  factory AndarPlanta.fromMap(Map<String, dynamic> m, {int indice = 0}) =>
+      AndarPlanta(
+        nome: m['nome'] as String? ?? 'Andar ${indice + 1}',
+        repeticoes: (m['repeticoes'] as num?)?.toInt() ?? 1,
+        paredes: [
+          for (final (i, w) in _lista(m['paredes']).indexed)
+            ParedePlanta.fromMap(_mapa(w), indice: i),
+        ],
+        pilares: [
+          for (final p in _lista(m['pilares'])) PilarPlanta.fromMap(_mapa(p))
+        ],
+        comodos: [
+          for (final (i, c) in _lista(m['comodos']).indexed)
+            ComodoPlanta.fromMap(_mapa(c), indice: i),
+        ],
+      );
 }
 
 /// Alturas que a planta baixa não mostra (vêm do corte, ou do padrão).
@@ -458,10 +653,14 @@ class ComodoPlanta {
     this.coberto = true,
     this.piso = PisoComodo.porcelanato,
     required this.retangulos,
+    this.unidade,
   });
 
   final String id;
   final String nome;
+
+  /// A unidade do cômodo no geminado ou no prédio ("Casa 2", "Apto 3").
+  final String? unidade;
 
   /// quarto, sala, cozinha, banheiro, garagem, varanda, quintal...
   final String tipo;
@@ -486,7 +685,20 @@ class ComodoPlanta {
         'coberto': coberto,
         'piso': piso.chave,
         'retangulos': [for (final r in retangulos) r.toMap()],
+        if (unidade != null) 'unidade': unidade,
       };
+
+  /// Uma cópia com outro nome, cobertura ou piso (a revisão da planta).
+  ComodoPlanta copiar({String? nome, bool? coberto, PisoComodo? piso}) =>
+      ComodoPlanta(
+        id: id,
+        nome: nome ?? this.nome,
+        tipo: tipo,
+        coberto: coberto ?? this.coberto,
+        piso: piso ?? this.piso,
+        retangulos: retangulos,
+        unidade: unidade,
+      );
 
   factory ComodoPlanta.fromMap(Map<String, dynamic> m, {int indice = 0}) =>
       ComodoPlanta(
@@ -499,6 +711,7 @@ class ComodoPlanta {
           for (final r in _lista(m['retangulos']))
             RetanguloPlanta.fromMap(_mapa(r)),
         ],
+        unidade: m['unidade'] as String?,
       );
 }
 

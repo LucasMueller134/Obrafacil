@@ -144,7 +144,8 @@ class _AcompanhamentoState extends State<_Acompanhamento> {
   CronogramaFaseModel? get _faseAtual {
     final fases = _fases;
     return fases
-            .where((f) => f.percentualConcluido > 0 && f.percentualConcluido < 100)
+            .where(
+                (f) => f.percentualConcluido > 0 && f.percentualConcluido < 100)
             .firstOrNull ??
         fases.where((f) => f.percentualConcluido < 100).firstOrNull;
   }
@@ -164,7 +165,8 @@ class _AcompanhamentoState extends State<_Acompanhamento> {
       StatusObra.concluida =>
         const SeloStatus(StatusSelo.aprovado, texto: 'Obra concluída'),
     };
-    final recentes = [...widget.diario]..sort((a, b) => b.data.compareTo(a.data));
+    final recentes = [...widget.diario]
+      ..sort((a, b) => b.data.compareTo(a.data));
 
     return Scaffold(
       appBar: AppBar(),
@@ -232,8 +234,10 @@ class _AcompanhamentoState extends State<_Acompanhamento> {
           _NaMargem(SeletorGrande<bool>(
             rotulo: 'A casa',
             opcoes: const [
-              OpcaoSeletor(valor: false, rotulo: 'Hoje', icone: Icons.construction),
-              OpcaoSeletor(valor: true, rotulo: 'Pronta', icone: Icons.home_outlined),
+              OpcaoSeletor(
+                  valor: false, rotulo: 'Hoje', icone: Icons.construction),
+              OpcaoSeletor(
+                  valor: true, rotulo: 'Pronta', icone: Icons.home_outlined),
             ],
             selecionado: _pronta,
             aoMudar: (v) => setState(() => _pronta = v),
@@ -251,9 +255,7 @@ class _AcompanhamentoState extends State<_Acompanhamento> {
                   : progresso,
               altura: 240,
               legenda: !_pronta,
-              fonte: planta == null
-                  ? FonteMaquete.padrao
-                  : FontePlanta(planta),
+              fonte: planta == null ? FonteMaquete.padrao : FontePlanta(planta),
             ),
           const SizedBox(height: Espaco.e8),
           _NaMargem(Text(
@@ -321,7 +323,10 @@ class _AcompanhamentoState extends State<_Acompanhamento> {
                         for (final (i, e) in recentes.take(5).indexed) ...[
                           if (i > 0) ...[
                             const SizedBox(height: Espaco.e12),
-                            Divider(color: c.grade, thickness: Traco.fino, height: 1),
+                            Divider(
+                                color: c.grade,
+                                thickness: Traco.fino,
+                                height: 1),
                             const SizedBox(height: Espaco.e12),
                           ],
                           _RegistroDoDia(entrada: e),
@@ -376,25 +381,42 @@ class _AcompanhamentoState extends State<_Acompanhamento> {
 
 /// A planta numerada e tocável e a lista dos cômodos com teto. Tocar abre
 /// a ficha do cômodo, com o botão da vista 360°.
-class _PorDentro extends StatelessWidget {
+class _PorDentro extends StatefulWidget {
   const _PorDentro({required this.obraId, required this.planta});
 
   final String obraId;
   final PlantaObra planta;
 
   @override
+  State<_PorDentro> createState() => _PorDentroState();
+}
+
+class _PorDentroState extends State<_PorDentro> {
+  /// O pavimento que aparece (0 = térreo).
+  int _andar = 0;
+
+  String get obraId => widget.obraId;
+
+  @override
   Widget build(BuildContext context) {
     final c = context.cores;
-    final comodos = [
-      for (final x in planta.comodos)
-        if (x.coberto) x,
-    ];
+    final andar = _andar.clamp(0, widget.planta.totalPlantas - 1);
+    // A planta do pavimento escolhido; no geminado e no prédio, a
+    // unidade-tipo.
+    final planta = widget.planta.planta(andar);
+    final comodos = comodosParaMostrar(planta);
     final numeros = {
       for (var i = 0; i < comodos.length; i++) comodos[i].id: i + 1,
     };
+    final avisoUnidade = avisoDaUnidadeTipo(planta);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        SeletorDeAndar(
+          planta: widget.planta,
+          selecionado: andar,
+          aoMudar: (v) => setState(() => _andar = v),
+        ),
         Folha(
           preenchimento: EdgeInsets.zero,
           child: LayoutBuilder(
@@ -403,14 +425,15 @@ class _PorDentro extends StatelessWidget {
               child: PlantaDesenhada(
                 planta: planta,
                 numeros: numeros,
-                aoTocarComodo: (x) => _abrir(context, x),
+                aoTocarComodo: (x) => _abrir(context, planta, x),
               ),
             ),
           ),
         ),
         const SizedBox(height: Espaco.e8),
         Text(
-          'Toque num cômodo para ver as medidas e olhar em 360°.',
+          'Toque num cômodo para ver as medidas e olhar em 360°.'
+          '${avisoUnidade == null ? '' : ' $avisoUnidade'}',
           style: Tipografia.apoio.copyWith(color: c.grafite2),
         ),
         const SizedBox(height: Espaco.e16),
@@ -427,7 +450,7 @@ class _PorDentro extends StatelessWidget {
                   valor: areaDoComodo(comodos[i]),
                   margemHorizontal: Espaco.e12,
                   divisoria: i < comodos.length - 1,
-                  aoTocar: () => _abrir(context, comodos[i]),
+                  aoTocar: () => _abrir(context, planta, comodos[i]),
                 ),
             ],
           ),
@@ -436,7 +459,7 @@ class _PorDentro extends StatelessWidget {
     );
   }
 
-  void _abrir(BuildContext context, ComodoPlanta comodo) {
+  void _abrir(BuildContext context, PlantaObra planta, ComodoPlanta comodo) {
     unawaited(Tato.leve());
     unawaited(showModalBottomSheet<void>(
       context: context,

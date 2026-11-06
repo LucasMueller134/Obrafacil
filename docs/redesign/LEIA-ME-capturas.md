@@ -72,6 +72,7 @@ do antes.
 | `depois_cliente_test.dart` | `10_cliente_obra`, `10b_cliente_obra_pronta`, `10c_cliente_comodo` |
 | `depois_planta_ia_test.dart` | `16_planta_lendo`, `16b_planta_nao_publicada`, `16c_planta_revisao`, `17_gerar_fachada` (IA falsa; no teste a maquete aparece como a planta desenhada, no celular é o 3D) |
 | `depois_restantes_test.dart` | `18_nova_obra_dono`, `19_cadastro`, `19b_cadastro_dados`, `20_verificar_email_cliente`, `21_diario_mestre`, `21b_diario_registro_mestre`, `22_estoque_mestre`, `22b_estoque_material_mestre`, `23_galeria_dono`, `24_fornecedores_dono`, `25_notificacoes_dono`, `26_relatorio_dono`, `26b_relatorio_perguntar_dono`, `27_cliente_obras` |
+| `depois_modelos_test.dart` | `28_modelo_casa_dono`, `28b_modelo_predio_dono` (montar pelo modelo), `29_planta_sobrado_dono` (pavimento superior), `29b_planta_predio_dono`, `29c_planta_geminado_dono`, `18b_nova_obra_construcao_dono` (tipo da construção na nova obra) |
 
 Login e abertura não têm ninguém logado: a `Cena` delas usa
 `situacao: SituacaoLogin.deslogado` (o login falso não devolve usuário) e

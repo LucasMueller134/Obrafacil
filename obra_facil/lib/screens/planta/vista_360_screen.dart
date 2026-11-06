@@ -95,8 +95,12 @@ class _Vista360State extends State<_Vista360> {
       stream: _planta,
       builder: (context, snap) {
         final planta = snap.data;
-        final comodo =
-            planta?.comodos.where((x) => x.id == widget.comodoId).firstOrNull;
+        final comodo = planta?.todosOsComodos
+            .where((x) => x.id == widget.comodoId)
+            .firstOrNull;
+        // A planta do pavimento do cômodo (vãos, ficha, paredes).
+        final indice = planta?.plantaDoComodo(widget.comodoId) ?? 0;
+        final doAndar = planta?.planta(math.max(0, indice));
         final podeGerar = ehDono &&
             planta != null &&
             comodo != null &&
@@ -158,7 +162,12 @@ class _Vista360State extends State<_Vista360> {
                           MediaQuery.sizeOf(context).height * 0.55, 460),
                       child: RepaintBoundary(
                         key: _chaveVista,
-                        child: Interior360(planta: planta, comodo: comodo),
+                        child: Interior360(
+                          planta: planta,
+                          comodo: comodo,
+                          pavimento:
+                              planta.pavimentoDaPlanta(math.max(0, indice)),
+                        ),
                       ),
                     ),
                     StreamBuilder<List<ImagemIaModel>>(
@@ -169,8 +178,8 @@ class _Vista360State extends State<_Vista360> {
                             .toList();
                         if (daqui.isEmpty) return const SizedBox.shrink();
                         return Padding(
-                          padding: const EdgeInsets.fromLTRB(Espaco.margem,
-                              Espaco.e16, Espaco.margem, 0),
+                          padding: const EdgeInsets.fromLTRB(
+                              Espaco.margem, Espaco.e16, Espaco.margem, 0),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
@@ -186,7 +195,7 @@ class _Vista360State extends State<_Vista360> {
                     Padding(
                       padding:
                           const EdgeInsets.symmetric(horizontal: Espaco.margem),
-                      child: FichaComodo(planta: planta, comodo: comodo),
+                      child: FichaComodo(planta: doAndar!, comodo: comodo),
                     ),
                   ],
                 ),
@@ -199,10 +208,19 @@ class _Vista360State extends State<_Vista360> {
 /// O cômodo por dentro: 3D em tempo real quando o aparelho tem Flutter GPU;
 /// senão, as quatro paredes desdobradas ([ParedesDoComodo]).
 class Interior360 extends StatefulWidget {
-  const Interior360({super.key, required this.planta, required this.comodo});
+  const Interior360({
+    super.key,
+    required this.planta,
+    required this.comodo,
+    this.pavimento = 0,
+  });
 
+  /// A planta inteira (a cena tem todos os pavimentos).
   final PlantaObra planta;
   final ComodoPlanta comodo;
+
+  /// Em que pavimento o cômodo está (0 = térreo): a altura do olho.
+  final int pavimento;
 
   @override
   State<Interior360> createState() => _Interior360State();
@@ -286,7 +304,10 @@ class _Interior360State extends State<Interior360> {
     // Planta -> glTF (X, Z) -> flutter_scene (Z invertido).
     final x = (r.x + r.x1) / 2 - cx;
     final z = -((r.y + r.y1) / 2 - cy);
-    final y = NiveisMaquete.piso + _alturaDoOlho;
+    final y = NiveisMaquete.piso +
+        widget.pavimento *
+            (widget.planta.alturas.peDireito + NiveisMaquete.espessuraLaje) +
+        _alturaDoOlho;
     final direcao = vm.Vector3(
       math.sin(_giro) * math.cos(_inclinacao),
       math.sin(_inclinacao),
@@ -307,7 +328,10 @@ class _Interior360State extends State<Interior360> {
     final c = context.cores;
     final cena = _cena;
     if (_semTresD) {
-      return ParedesDoComodo(planta: widget.planta, comodo: widget.comodo);
+      final indice = widget.planta.plantaDoComodo(widget.comodo.id);
+      return ParedesDoComodo(
+          planta: widget.planta.planta(math.max(0, indice)),
+          comodo: widget.comodo);
     }
     if (cena == null) {
       return ColoredBox(

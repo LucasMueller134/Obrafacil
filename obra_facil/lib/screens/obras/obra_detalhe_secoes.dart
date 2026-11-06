@@ -701,9 +701,13 @@ class _ListaModulos extends StatelessWidget {
         Icons.architecture_outlined,
         'Planta da obra',
         planta == null
-            ? 'Envie a planta: a maquete fica igual à obra'
-            : '${planta!.comodos.length} cômodos · '
-                '${planta!.areaConstruida.toStringAsFixed(0)} m² construídos',
+            ? 'Monte pelo modelo ou envie a planta: a maquete fica igual à '
+                'obra'
+            : planta!.modelo != null
+                ? PedidoModelo.fromMap(planta!.modelo!).resumo
+                : '${planta!.todosOsComodos.length} cômodos · '
+                    '${planta!.areaConstruida.toStringAsFixed(0)} m² '
+                    'construídos',
         rotas.planta,
       ),
     ];
