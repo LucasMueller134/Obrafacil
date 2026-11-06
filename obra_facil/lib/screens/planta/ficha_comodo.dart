@@ -16,12 +16,7 @@ String areaDoComodo(ComodoPlanta c) =>
 /// "2 portas · 1 janela".
 String aberturasDoComodo(PlantaObra planta, ComodoPlanta c) {
   final vaos = planta.aberturasDo(c);
-  final portas = vaos
-      .where((a) =>
-          a.tipo == TipoAbertura.porta ||
-          a.tipo == TipoAbertura.portaCorrer ||
-          a.tipo == TipoAbertura.portao)
-      .length;
+  final portas = vaos.where((a) => a.tipo.ehPorta).length;
   final janelas = vaos.where((a) => a.tipo.ehJanela).length;
   final passagens = vaos.where((a) => a.tipo == TipoAbertura.passagem).length;
   String n(int k, String um, String varios) => '$k ${k == 1 ? um : varios}';

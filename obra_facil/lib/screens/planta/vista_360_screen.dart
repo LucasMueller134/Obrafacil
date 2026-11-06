@@ -543,7 +543,8 @@ class _Elevacao extends CustomPainter {
             Paint()
               ..color = cores.traco
               ..strokeWidth = Traco.fino);
-      } else if (v.tipo == TipoAbertura.porta) {
+      } else if (v.tipo == TipoAbertura.porta ||
+          v.tipo == TipoAbertura.portaPivotante) {
         // Maçaneta.
         canvas.drawCircle(Offset(r.right - 8, r.center.dy), 2.5,
             Paint()..color = cores.grafite);

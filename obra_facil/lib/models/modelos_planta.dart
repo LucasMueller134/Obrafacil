@@ -96,6 +96,14 @@ class PedidoModelo {
     if (tipo == TipoModelo.geminado && (unidades < 2 || unidades > 4)) {
       return 'O geminado tem de 2 a 4 casas.';
     }
+    // No geminado sobrado os quartos ficam lado a lado nos fundos.
+    if (tipo == TipoModelo.geminado &&
+        sobrado &&
+        quartos > ModelosPlanta.maxQuartosGeminado(area)) {
+      return 'Com ${area.round()} m², cada sobrado do geminado tem até '
+          '${ModelosPlanta.maxQuartosGeminado(area)} quartos: aumente os m² '
+          'ou tire um quarto.';
+    }
     if (tipo == TipoModelo.predio) {
       if (andares < 1 || andares > 20) return 'De 1 a 20 andares.';
       if (apartamentos < 1) return 'Informe quantos apartamentos.';
@@ -185,36 +193,83 @@ abstract final class ModelosPlanta {
   static const double _gourmet = 3.0;
 
   static PlantaObra _casas(PedidoModelo p, int n) {
+    final geminado = p.tipo == TipoModelo.geminado;
     final unidades = [
       for (var i = 0; i < n; i++)
-        p.sobrado
-            ? _sobrado('u${i + 1}-', p.area, p.quartos,
+        geminado && p.sobrado
+            ? _sobradoGeminado('u${i + 1}-', p.area, p.quartos,
                 n == 1 ? null : 'Casa ${i + 1}')
-            : _terrea('u${i + 1}-', p.area, p.quartos,
-                n == 1 ? null : 'Casa ${i + 1}',
-                portaDaFrente: true),
+            : p.sobrado
+                ? _sobrado('u${i + 1}-', p.area, p.quartos,
+                    n == 1 ? null : 'Casa ${i + 1}')
+                : _terrea('u${i + 1}-', p.area, p.quartos,
+                    n == 1 ? null : 'Casa ${i + 1}',
+                    portaDaFrente: true, fachadaGeminado: geminado),
     ];
     final modelo = unidades.first;
     final wu = modelo.largura, du = modelo.profundidade;
-    // Com garagem coberta, na frente só o acesso e um jardim; sem ela, a
-    // garagem descoberta.
-    final frente = modelo.garagemCoberta ? 2.0 : 5.5;
-    final largura = _lateral * 2 + n * wu;
+    // O sobrado geminado encosta nas divisas (como no desenho); a térrea
+    // deixa o corredor dos lados (as janelas dos quartos dão para ele).
+    final lateral = geminado && p.sobrado ? 0.0 : _lateral;
+    // Com garagem coberta, na frente só o acesso e um jardim; com a
+    // fechada, o recuo aberto para a rua; sem garagem, a descoberta.
+    final frente = modelo.garagemFechada
+        ? _frenteGeminado
+        : modelo.garagemCoberta
+            ? 2.0
+            : 5.5;
+    final largura = lateral * 2 + n * wu;
     final profundidade = _fundos + du + frente;
+    final alturas = geminado ? alturasGeminado : _alturasCasa;
 
     final terreo = _Pavimento();
     final superior = _Pavimento();
+    final fachadaTerreo = <ElementoFachada>[];
+    final fachadaSuperior = <ElementoFachada>[];
     for (var i = 0; i < n; i++) {
       final u = unidades[i];
-      final ox = _lateral + i * wu;
+      final ox = lateral + i * wu;
       terreo.juntar(u.terreo, ox, _fundos);
       if (p.sobrado) superior.juntar(u.superior!, ox, _fundos);
+      fachadaTerreo.addAll([for (final e in u.fachadaTerreo) _mover(e, ox)]);
+      fachadaSuperior
+          .addAll([for (final e in u.fachadaSuperior) _mover(e, ox)]);
       final nomeUnidade = n == 1 ? null : 'Casa ${i + 1}';
       final x0 = i == 0 ? 0.0 : ox, x1 = i == n - 1 ? largura : ox + wu;
       final prefixo = 'u${i + 1}-';
       final yf = _fundos + du;
       terreo.cels.addAll([
-        if (u.garagemCoberta) ...[
+        if (u.garagemFechada) ...[
+          // Recuo aberto para a rua: o acesso dos carros na frente do
+          // portão e a entrada na frente do hall (muros só dos lados).
+          _Cel('${prefixo}acesso', 'Acesso da garagem', 'garagem', x0, yf,
+              ox + u.garagemAte, profundidade,
+              coberto: false,
+              piso: PisoComodo.garagem,
+              unidade: nomeUnidade,
+              abertoRua: true),
+          _Cel(
+              '${prefixo}entrada',
+              'Entrada',
+              'jardim',
+              ox + u.garagemAte,
+              yf,
+              u.frenteAte == null || u.frenteAte! >= wu - 0.01
+                  ? x1
+                  : ox + u.frenteAte!,
+              profundidade,
+              coberto: false,
+              piso: PisoComodo.porcelanato,
+              unidade: nomeUnidade,
+              abertoRua: true),
+          if (u.frenteAte != null && u.frenteAte! < wu - 0.01)
+            _Cel('${prefixo}jardim', 'Jardim', 'jardim', ox + u.frenteAte!,
+                _fundos + u.corpoAte!, x1, profundidade,
+                coberto: false,
+                piso: PisoComodo.grama,
+                unidade: nomeUnidade,
+                abertoRua: true),
+        ] else if (u.garagemCoberta) ...[
           // O acesso dos carros fica aberto para a rua (sem muro); o
           // jardim, na frente do hall, tem o portão de pedestre.
           _Cel('${prefixo}acesso', 'Acesso da garagem', 'garagem', x0, yf,
@@ -243,23 +298,42 @@ abstract final class ModelosPlanta {
                 _fundos + u.corpoAte!, x1, profundidade,
                 coberto: false, piso: PisoComodo.grama, unidade: nomeUnidade),
         ] else
+          // Vaga descoberta; no geminado, aberta para a rua (a fachada
+          // aparece inteira).
           _Cel('${prefixo}garagem', 'Garagem', 'garagem', x0, yf, x1,
               profundidade,
               coberto: false,
               piso: PisoComodo.garagem,
               unidade: nomeUnidade,
-              portao: 2.8),
+              portao: geminado ? null : 2.8,
+              abertoRua: geminado),
         _Cel('${prefixo}quintal', 'Quintal', 'quintal', x0, 0, x1, _fundos,
             coberto: false, piso: PisoComodo.grama, unidade: nomeUnidade),
-        if (i == 0)
+        if (i == 0 && lateral > 0)
           _Cel('${prefixo}lateral-e', 'Corredor lateral', 'circulacao', 0,
-              _fundos, _lateral, yf,
+              _fundos, lateral, yf,
               coberto: false, piso: PisoComodo.cimento, unidade: nomeUnidade),
-        if (i == n - 1)
+        if (i == n - 1 && lateral > 0)
           _Cel('${prefixo}lateral-d', 'Corredor lateral', 'circulacao',
-              largura - _lateral, _fundos, largura, yf,
+              largura - lateral, _fundos, largura, yf,
               coberto: false, piso: PisoComodo.cimento, unidade: nomeUnidade),
       ]);
+      // A aleta na divisa com a casa do lado, do chão ao topo da
+      // platibanda.
+      if (geminado && i < n - 1) {
+        final pavimentos = p.sobrado ? 2 : 1;
+        final xd = ox + wu;
+        fachadaTerreo.add(ElementoFachada(
+          tipo: TipoElementoFachada.aleta,
+          de: _r(xd - 0.1),
+          ate: _r(xd + 0.1),
+          y: _r(_frenteDe(u) + 0.075),
+          base: -0.2,
+          topo:
+              _r(pavimentos * (alturas.peDireito + 0.12) + alturas.platibanda),
+          saliencia: 0.45,
+        ));
+      }
     }
     final nome = switch (p.tipo) {
       TipoModelo.geminado =>
@@ -272,9 +346,50 @@ abstract final class ModelosPlanta {
       largura: largura,
       profundidade: profundidade,
       terreo: terreo,
-      andares: [if (p.sobrado) ('Superior', superior, 1)],
+      alturas: alturas,
+      fachada: [for (final e in fachadaTerreo) _naPlanta(e, _fundos)],
+      andares: [
+        if (p.sobrado)
+          (
+            'Superior',
+            superior,
+            1,
+            [for (final e in fachadaSuperior) _naPlanta(e, _fundos)]
+          ),
+      ],
     );
   }
+
+  static const AlturasPlanta _alturasCasa =
+      AlturasPlanta(peDireito: 2.6, porta: 2.1, muro: 2.0);
+
+  /// A frente da casa (onde está a parede da rua), em y da casa.
+  static double _frenteDe(_Casa u) => u.profundidade;
+
+  /// Elemento da casa levado para o lugar dela no terreno (só em x; o y
+  /// entra em [_naPlanta]).
+  static ElementoFachada _mover(ElementoFachada e, double dx) =>
+      _elemento(e, dx: dx, dy: 0);
+
+  static ElementoFachada _naPlanta(ElementoFachada e, double dy) =>
+      _elemento(e, dx: 0, dy: dy);
+
+  static ElementoFachada _elemento(ElementoFachada e,
+          {required double dx, required double dy}) =>
+      ElementoFachada(
+        tipo: e.tipo,
+        de: _r(e.de + dx),
+        ate: _r(e.ate + dx),
+        y: _r(e.y + dy),
+        sentido: e.sentido,
+        base: e.base,
+        topo: e.topo,
+        saliencia: e.saliencia,
+        recuo: e.recuo,
+        borda: e.borda,
+        peitoril: e.peitoril,
+        passo: e.passo,
+      );
 
   static const double _corredor = 1.1;
 
@@ -285,8 +400,14 @@ abstract final class ModelosPlanta {
   ///
   /// [apartamento]: sem garagem, hall e gourmet; a sala ganha uma sacada
   /// de vidro na frente (o apartamento do prédio).
+  ///
+  /// [fachadaGeminado]: a frente do geminado (o desenho): garagem fechada
+  /// com porta de lâminas, porta pivotante no hall e uma moldura de
+  /// concreto em volta das duas, com ripado sobre as portas.
   static _Casa _terrea(String pre, double area, int q, String? unidade,
-      {required bool portaDaFrente, bool apartamento = false}) {
+      {required bool portaDaFrente,
+      bool apartamento = false,
+      bool fachadaGeminado = false}) {
     final nb = q >= 3 ? 2 : 1;
     final largura = (math.sqrt(area) * 0.95).clamp(6.0, 14.0);
     final cw = (largura - _corredor) / 2;
@@ -395,7 +516,58 @@ abstract final class ModelosPlanta {
       t.cels.add(c);
       t.ligar(sala.id, c.id, TipoAbertura.portaCorrer, 2.0);
     }
-    if (garagem) {
+    if (garagem && fachadaGeminado) {
+      // Frente do geminado: a garagem fechada e o hall, com as duas portas
+      // altas dentro de uma moldura.
+      final g = _Cel('${pre}garagem', 'Garagem', 'garagem', 0, d0, gw, d,
+          piso: PisoComodo.garagem, unidade: unidade);
+      final hall = _Cel(
+          '${pre}hall', 'Hall de entrada', 'hall', gw, d0, gw + hw, d,
+          piso: PisoComodo.porcelanato, unidade: unidade);
+      t.cels.addAll([g, hall]);
+      t.ligar(hall.id, sala.id, TipoAbertura.passagem, 1.0);
+      t.ligar(g.id, hall.id, TipoAbertura.porta, 0.8);
+      t.ligar(g.id, cozinha.id, TipoAbertura.porta, 0.8);
+      final portaoW = (gw - 0.6).clamp(2.4, 5.0).toDouble();
+      t.porFora(g.id, _Lado.frente, portaoW,
+          tipo: TipoAbertura.portaGaragem,
+          alvo: (0.4 + portaoW / 2, d),
+          altura: _vaoAlto);
+      final pivo = math.min(1.4, hw - 0.6);
+      t.porFora(hall.id, _Lado.frente, pivo,
+          tipo: TipoAbertura.portaPivotante,
+          alvo: (gw + 0.2 + pivo / 2, d),
+          altura: _vaoAlto);
+      casa
+        ..garagemFechada = true
+        ..garagemAte = gw
+        ..frenteAte = gw + hw
+        ..corpoAte = d0;
+      final a = alturasGeminado;
+      final topo = a.peDireito + 0.12 + a.platibanda - 0.3;
+      casa.fachadaTerreo.addAll([
+        ElementoFachada(
+          tipo: TipoElementoFachada.moldura,
+          de: 0.2,
+          ate: gw + hw - 0.2,
+          y: d + 0.075,
+          base: -0.2,
+          topo: topo,
+          saliencia: 0.3,
+          borda: 0.4,
+        ),
+        ElementoFachada(
+          tipo: TipoElementoFachada.ripadoHorizontal,
+          de: 0.6,
+          ate: gw + hw - 0.6,
+          y: d + 0.075,
+          base: _vaoAlto,
+          topo: topo - 0.4,
+          saliencia: 0.05,
+          passo: 0.075,
+        ),
+      ]);
+    } else if (garagem) {
       // Frente: a garagem coberta (sem paredes, só pilares) e o hall.
       final g = _Cel('${pre}garagem', 'Garagem', 'garagem', 0, d0, gw, d,
           piso: PisoComodo.garagem,
@@ -415,6 +587,38 @@ abstract final class ModelosPlanta {
         ..garagemAte = gw
         ..frenteAte = gw + hw
         ..corpoAte = d0;
+    } else if (portaDaFrente && fachadaGeminado) {
+      // Geminado pequeno, sem garagem: a pivotante na sala e a moldura em
+      // volta da frente toda, com o ripado sobre a porta e as janelas.
+      final pivo = math.min(1.2, largura - wk - 1.2);
+      t.porFora(sala.id, _Lado.frente, pivo,
+          tipo: TipoAbertura.portaPivotante,
+          alvo: (largura - 0.4 - pivo / 2, d),
+          altura: _vaoAlto);
+      final a = alturasGeminado;
+      final topo = a.peDireito + 0.12 + a.platibanda - 0.3;
+      casa.fachadaTerreo.addAll([
+        ElementoFachada(
+          tipo: TipoElementoFachada.moldura,
+          de: 0.2,
+          ate: largura - 0.2,
+          y: d + 0.075,
+          base: -0.2,
+          topo: topo,
+          saliencia: 0.3,
+          borda: 0.4,
+        ),
+        ElementoFachada(
+          tipo: TipoElementoFachada.ripadoHorizontal,
+          de: 0.6,
+          ate: largura - 0.6,
+          y: d + 0.075,
+          base: _vaoAlto,
+          topo: topo - 0.4,
+          saliencia: 0.05,
+          passo: 0.075,
+        ),
+      ]);
     } else if (portaDaFrente) {
       t.porFora(sala.id, _Lado.frente, 0.9);
     }
@@ -601,6 +805,267 @@ abstract final class ModelosPlanta {
     return casa;
   }
 
+  // ------------------------------------------------------------ geminado
+  //
+  // O geminado segue a fachada desenhada (fachada_geminado.dxf): no
+  // tamanho-padrão, cada casa tem 6 m de frente e 7 m de altura. No
+  // térreo, a porta da garagem (3,40 × 2,40) e a porta pivotante de
+  // madeira (1,40 × 2,40); em cima, a sacada dentro de uma moldura de
+  // concreto (5,60 m de largura, faixas de 50 cm), com vidro na frente,
+  // ripado em L (painel em pé de 1 m e faixa deitada sobre a porta) e a
+  // porta de correr da suíte (3,20 m). Entre as casas, uma aleta de 20 cm.
+  // Casa maior ou menor: a frente vai de 5 a 8 m e as peças acompanham.
+
+  /// Pé-direito, muro e platibanda do geminado: com 2,80 m de pé-direito
+  /// o topo fica nos 7,00 m do desenho, a porta de correr em 5,62 m e a
+  /// moldura de 2,80 a 6,40 m.
+  static const AlturasPlanta alturasGeminado =
+      AlturasPlanta(peDireito: 2.8, porta: 2.1, muro: 2.0, platibanda: 0.96);
+
+  /// Fundo da sacada dentro da moldura.
+  static const double _sacadaGeminado = 1.2;
+
+  /// Altura da porta da garagem e da pivotante (2,60 m do chão, como no
+  /// desenho).
+  static const double _vaoAlto = 2.4;
+
+  /// Altura da porta de correr da sacada: até o fundo da viga.
+  static double get _vaoSacada => alturasGeminado.peDireito - 0.3;
+
+  /// Recuo da frente: o acesso da garagem e a entrada, abertos para a rua.
+  static const double _frenteGeminado = 3.5;
+
+  /// Frente de cada casa do geminado sobrado para a área pedida: 6 m (o
+  /// desenho) de 130 a 180 m², de 5 a 8 m fora disso.
+  static double larguraGeminado(double area) {
+    final w = area <= 110
+        ? 5.0
+        : area <= 130
+            ? 5.0 + (area - 110) / 20
+            : area <= 180
+                ? 6.0
+                : area <= 260
+                    ? 6.0 + (area - 180) / 40
+                    : 8.0;
+    return (w * 10).round() / 10;
+  }
+
+  /// Quartos do geminado sobrado: a suíte na frente e os outros lado a lado
+  /// nos fundos, com pelo menos 2,4 m de largura cada.
+  static int maxQuartosGeminado(double area) =>
+      1 + math.max(1, (larguraGeminado(area) / 2.4).floor());
+
+  /// Uma casa do geminado sobrado.
+  ///
+  /// Térreo: a garagem fechada na frente (faixa da esquerda) e o hall de
+  /// entrada do lado; atrás da garagem a cozinha e a sala, integradas; atrás
+  /// do hall a escada, o lavabo e a lavanderia; nos fundos a área gourmet.
+  /// Superior: a sacada e a suíte com a largura toda; atrás, o closet e o
+  /// banheiro da suíte, o banheiro social, a escada e a circulação; nos
+  /// fundos os quartos, lado a lado, com janela para o quintal.
+  static _Casa _sobradoGeminado(
+      String pre, double area, int q, String? unidade) {
+    final w = larguraGeminado(area);
+    final r = w >= 7.5 ? 2.4 : 2.0; // faixa do hall e da escada
+    final l = w - r; // a garagem
+    final g = w <= 5.5 ? 5.0 : 5.5; // fundo da garagem
+    const sac = _sacadaGeminado, e = 2.7, lavabo = 1.4, corredor = 1.0;
+    const suiteMin = 3.0, quartoMin = 3.0;
+    final atras = q - 1;
+    final meio = q >= 2 ? 3.8 : e;
+    final temCorredor = atras >= 2;
+    final temGourmet = area >= 150;
+    final dMin = [
+      g + 2.6 + 3.0,
+      sac + suiteMin + e + lavabo + 1.6,
+      sac + suiteMin + meio + (temCorredor ? corredor : 0) + quartoMin,
+    ].reduce(math.max);
+    final d = math.max(dMin, (area - (temGourmet ? w * _gourmet : 0)) / 2 / w);
+    // Em cima: a sobra vai meio a meio para a suíte e os quartos.
+    final resto = d - sac - meio - (temCorredor ? corredor : 0);
+    final suite = (resto * 0.5).clamp(suiteMin, 4.6).toDouble();
+    final h = sac + suite; // o hall embaixo da sacada e da suíte
+    // A cozinha desce até o lavabo encostar nela com folga para a porta.
+    final k = math.max(((d - g) * 0.45).clamp(2.6, 4.0).toDouble(),
+        math.min(h + e + 1.0 - g, d - g - 2.8));
+    final y0 = temGourmet ? _gourmet : 0.0;
+    final dt = y0 + d;
+    final casa = _Casa(w, dt)
+      ..superior = _Pavimento()
+      ..garagemFechada = true
+      ..garagemAte = l;
+
+    _Cel cel(String id, String nome, String tipo, double x0, double ya,
+            double x1, double yb,
+            {PisoComodo piso = PisoComodo.porcelanato, bool aberto = false}) =>
+        _Cel('$pre$id', nome, tipo, x0, ya, x1, yb,
+            piso: piso, unidade: unidade, aberto: aberto);
+
+    // Térreo.
+    final t = casa.terreo;
+    final yEscada = dt - h - e;
+    t.cels.addAll([
+      cel('garagem', 'Garagem', 'garagem', 0, dt - g, l, dt,
+          piso: PisoComodo.garagem),
+      cel('cozinha', 'Cozinha', 'cozinha', 0, dt - g - k, l, dt - g,
+          piso: PisoComodo.ceramica),
+      cel('sala', 'Sala de estar e jantar', 'sala', 0, y0, l, dt - g - k),
+      cel('hall', 'Hall de entrada', 'hall', l, dt - h, w, dt),
+      cel('escada', 'Escada', 'escada', l, yEscada, w, dt - h,
+          piso: PisoComodo.cimento),
+      cel('lavabo', 'Lavabo', 'banheiro', l, yEscada - lavabo, w, yEscada,
+          piso: PisoComodo.ceramica),
+      cel('lavanderia', 'Lavanderia', 'lavanderia', l, y0, w, yEscada - lavabo,
+          piso: PisoComodo.ceramica),
+    ]);
+    final portaoW = (l - 0.6).clamp(2.4, 5.0).toDouble();
+    t.porFora('${pre}garagem', _Lado.frente, portaoW,
+        tipo: TipoAbertura.portaGaragem,
+        alvo: (0.4 + portaoW / 2, dt),
+        altura: _vaoAlto);
+    final pivo = math.min(1.4, r - 0.6);
+    t.porFora('${pre}hall', _Lado.frente, pivo,
+        tipo: TipoAbertura.portaPivotante,
+        alvo: (l + 0.2 + pivo / 2, dt),
+        altura: _vaoAlto);
+    t.ligar('${pre}garagem', '${pre}hall', TipoAbertura.porta, 0.8);
+    t.ligar('${pre}hall', '${pre}escada', TipoAbertura.passagem, 1.2);
+    t.ligar('${pre}escada', '${pre}cozinha', TipoAbertura.passagem, 0.9);
+    t.ligar('${pre}cozinha', '${pre}sala', TipoAbertura.passagem,
+        (l - 0.6).clamp(1.2, 4.0).toDouble());
+    t.ligarAoMelhor('${pre}lavabo', ['${pre}cozinha', '${pre}sala'],
+        TipoAbertura.porta, 0.7);
+    t.ligarAoMelhor('${pre}lavanderia', ['${pre}cozinha', '${pre}sala'],
+        TipoAbertura.porta, 0.8);
+    final correr = math.min(3.0, l - 0.6);
+    if (temGourmet) {
+      t.cels.add(cel('gourmet', 'Área gourmet', 'gourmet', 0, 0, w, _gourmet,
+          piso: PisoComodo.ceramica, aberto: true));
+      t.ligar('${pre}sala', '${pre}gourmet', TipoAbertura.portaCorrer, correr);
+      t.ligar('${pre}lavanderia', '${pre}gourmet', TipoAbertura.porta, 0.8);
+    } else {
+      t.porFora('${pre}sala', _Lado.fundos, correr,
+          tipo: TipoAbertura.portaCorrer);
+      t.porFora('${pre}lavanderia', _Lado.fundos, 0.8);
+    }
+
+    // Superior.
+    final s = casa.superior!;
+    final ps = '${pre}s-';
+    _Cel cs(String id, String nome, String tipo, double x0, double ya,
+            double x1, double yb, {PisoComodo piso = PisoComodo.porcelanato}) =>
+        _Cel('$ps$id', nome, tipo, x0, ya, x1, yb,
+            piso: piso, unidade: unidade);
+    final y1 = dt - sac - suite; // fim da suíte
+    final cw = (l * 0.42).clamp(1.4, 2.0).toDouble(); // o closet
+    final dm = q >= 2 ? 2.2 : e; // closet e banheiro da suíte
+    final yq = y1 - meio - (temCorredor ? corredor : 0); // os quartos
+    s.cels.addAll([
+      _Cel('${ps}sacada', 'Sacada', 'varanda', 0, dt - sac, w, dt,
+          piso: PisoComodo.ceramica,
+          unidade: unidade,
+          guardaCorpo: true,
+          vidroSoNaFrente: true,
+          vidroEntre: (0.7, w - 0.7)),
+      cs('suite', 'Suíte', 'quarto', 0, y1, w, dt - sac),
+      cs('closet', 'Closet', 'closet', 0, y1 - dm, cw, y1),
+      cs('banho-suite', 'Banheiro da suíte', 'banheiro', cw, y1 - dm, l, y1,
+          piso: PisoComodo.ceramica),
+      cs('escada', 'Escada', 'escada', l, y1 - e, w, y1,
+          piso: PisoComodo.cimento),
+      if (q >= 2) ...[
+        cs('banheiro', 'Banheiro', 'banheiro', 0, y1 - meio, l, y1 - dm,
+            piso: PisoComodo.ceramica),
+        cs('circulacao', 'Circulação', 'circulacao', l, y1 - meio, w, y1 - e),
+      ],
+      if (temCorredor)
+        cs('corredor', 'Corredor', 'circulacao', 0, yq, w, yq + corredor),
+      if (q == 1)
+        cs('sala-intima', 'Sala íntima', 'sala', 0, y0, w, yq)
+      else
+        for (var i = 0; i < atras; i++)
+          cs('quarto-${i + 2}', 'Quarto ${i + 2}', 'quarto', w * i / atras, y0,
+              w * (i + 1) / atras, yq),
+    ]);
+    // O ripado em L e a porta de correr na parede do fundo da sacada.
+    final rip = ((w - 1.4) / 4.6).clamp(0.6, 1.2).toDouble();
+    final correrSuite = w - 1.8 - rip;
+    s.ligar('${ps}suite', '${ps}sacada', TipoAbertura.portaCorrer, correrSuite,
+        alvo: ((rip + w) / 2, dt - sac), altura: _vaoSacada);
+    s.ligar('${ps}suite', '${ps}closet', TipoAbertura.passagem, 0.8);
+    s.ligar('${ps}closet', '${ps}banho-suite', TipoAbertura.porta, 0.7);
+    s.ligar('${ps}suite', '${ps}escada', TipoAbertura.porta, 0.8);
+    if (q == 1) {
+      s.ligar('${ps}escada', '${ps}sala-intima', TipoAbertura.passagem, 1.0);
+    } else {
+      s.ligar('${ps}escada', '${ps}circulacao', TipoAbertura.passagem, 1.0);
+      s.ligar('${ps}banheiro', '${ps}circulacao', TipoAbertura.porta, 0.7);
+      if (temCorredor) {
+        s.ligar('${ps}circulacao', '${ps}corredor', TipoAbertura.passagem, 1.0);
+      }
+      for (var i = 0; i < atras; i++) {
+        s.ligar(
+            '${ps}quarto-${i + 2}',
+            temCorredor ? '${ps}corredor' : '${ps}circulacao',
+            TipoAbertura.porta,
+            0.8);
+      }
+    }
+
+    // A fachada: a moldura da sacada (descendo até cobrir a laje do
+    // térreo), o ripado em L no fundo da sacada e os panos de parede entre
+    // a moldura e as divisas.
+    final yFrente = dt + 0.075; // face de fora da parede da frente
+    final yFundo = dt - sac + 0.06; // face da parede do fundo da sacada
+    casa.fachadaSuperior.addAll([
+      for (final (a, b) in [(0.0, 0.2), (w - 0.2, w)])
+        ElementoFachada(
+          tipo: TipoElementoFachada.pano,
+          de: a,
+          ate: b,
+          y: yFrente,
+          base: -0.32,
+          topo: alturasGeminado.peDireito + 0.12,
+          recuo: sac + 0.015,
+        ),
+      ElementoFachada(
+        tipo: TipoElementoFachada.moldura,
+        de: 0.2,
+        ate: w - 0.2,
+        y: yFrente,
+        // De 2,80 a 6,40 m do chão; a faixa de baixo até 3,30 m.
+        base: -0.32,
+        topo: alturasGeminado.peDireito + 0.48,
+        saliencia: 0.3,
+        recuo: sac + 0.015,
+        borda: 0.5,
+        peitoril: 0.18,
+      ),
+      ElementoFachada(
+        tipo: TipoElementoFachada.ripadoVertical,
+        de: 0.7,
+        ate: 0.7 + rip,
+        y: yFundo,
+        base: 0,
+        topo: alturasGeminado.peDireito,
+        saliencia: 0.06,
+        passo: 0.1,
+      ),
+      ElementoFachada(
+        tipo: TipoElementoFachada.ripadoHorizontal,
+        de: 0.7 + rip,
+        ate: w - 0.7,
+        y: yFundo,
+        base: _vaoSacada,
+        topo: alturasGeminado.peDireito,
+        saliencia: 0.06,
+        passo: 0.075,
+      ),
+    ]);
+    casa.entrada = '${pre}hall';
+    return casa;
+  }
+
   // ------------------------------------------------------------ prédio
 
   static const double _corredorPredio = 1.4;
@@ -740,7 +1205,8 @@ abstract final class ModelosPlanta {
           (
             p.andares == 2 ? '2º andar' : '2º ao ${p.andares}º andar',
             andar(false),
-            p.andares - 1
+            p.andares - 1,
+            const <ElementoFachada>[],
           ),
       ],
     );
@@ -754,7 +1220,9 @@ abstract final class ModelosPlanta {
     required double largura,
     required double profundidade,
     required _Pavimento terreo,
-    required List<(String, _Pavimento, int)> andares,
+    required List<(String, _Pavimento, int, List<ElementoFachada>)> andares,
+    AlturasPlanta alturas = _alturasCasa,
+    List<ElementoFachada> fachada = const [],
   }) {
     final t = _Construtor(terreo, largura, profundidade, 't', terreo: true);
     return PlantaObra(
@@ -762,13 +1230,14 @@ abstract final class ModelosPlanta {
       fonte: 'Modelo do app: ${pedido.resumo}',
       largura: _r(largura),
       profundidade: _r(profundidade),
-      alturas: const AlturasPlanta(peDireito: 2.6, porta: 2.1, muro: 2.0),
+      alturas: alturas,
       paredes: t.paredes,
       pilares: t.pilares,
       comodos: t.comodos,
       nomeTerreo: 'Térreo',
+      fachada: fachada,
       andares: [
-        for (final (i, (nomeAndar, pav, rep)) in andares.indexed)
+        for (final (i, (nomeAndar, pav, rep, fachadaAndar)) in andares.indexed)
           () {
             final c = _Construtor(pav, largura, profundidade, 'a${i + 1}');
             return AndarPlanta(
@@ -777,6 +1246,7 @@ abstract final class ModelosPlanta {
               pilares: c.pilares,
               comodos: c.comodos,
               repeticoes: rep,
+              fachada: fachadaAndar,
             );
           }(),
       ],
@@ -800,7 +1270,10 @@ class _Cel {
       this.aberto = false,
       this.guardaCorpo = false,
       this.fachada,
-      this.portao});
+      this.portao,
+      this.abertoRua = false,
+      this.vidroSoNaFrente = false,
+      this.vidroEntre});
 
   String id;
   final String nome;
@@ -823,6 +1296,18 @@ class _Cel {
   /// Largura do portão no muro da frente deste quintal.
   final double? portao;
 
+  /// Quintal sem muro para a rua (só os dos lados): a frente aberta do
+  /// geminado.
+  final bool abertoRua;
+
+  /// Com [guardaCorpo]: vidro só na frente; dos lados, parede (a sacada
+  /// dentro da moldura).
+  final bool vidroSoNaFrente;
+
+  /// O vidro da mureta só entre estes x (o vão da moldura); nulo: a mureta
+  /// toda.
+  final (double, double)? vidroEntre;
+
   _Cel mover(double dx, double dy, {double? espelharY, String prefixo = ''}) {
     var a = y0, b = y1;
     if (espelharY != null) {
@@ -836,14 +1321,20 @@ class _Cel {
         aberto: aberto,
         guardaCorpo: guardaCorpo,
         fachada: fachada,
-        portao: portao);
+        portao: portao,
+        abertoRua: abertoRua,
+        vidroSoNaFrente: vidroSoNaFrente,
+        vidroEntre: vidroEntre == null
+            ? null
+            : (vidroEntre!.$1 + dx, vidroEntre!.$2 + dx));
   }
 }
 
 /// Porta, passagem ou janela pedida entre dois cômodos ([b]) ou para fora
 /// ([lado]).
 class _Lig {
-  _Lig(this.a, this.b, this.lado, this.tipo, this.largura, {this.candidatos});
+  _Lig(this.a, this.b, this.lado, this.tipo, this.largura,
+      {this.candidatos, this.alvo, this.altura});
 
   final String a;
   final String? b;
@@ -853,17 +1344,46 @@ class _Lig {
 
   /// Ligar ao vizinho, entre estes, com quem a parede comum é maior.
   final List<String>? candidatos;
+
+  /// Ponto (x, y) onde o meio do vão deve ficar (a fachada desenhada); nulo:
+  /// no meio do maior trecho livre.
+  final (double, double)? alvo;
+
+  /// Altura do vão; nula: 2,10 m (porta) ou a do pé-direito (passagem).
+  final double? altura;
+
+  _Lig mover(double dx, double dy, {double? espelharY}) {
+    var l = lado;
+    if (espelharY != null && l != null) {
+      l = switch (l) {
+        _Lado.frente => _Lado.fundos,
+        _Lado.fundos => _Lado.frente,
+        _ => l,
+      };
+    }
+    final p = alvo;
+    return _Lig(a, b, l, tipo, largura,
+        candidatos: candidatos,
+        altura: altura,
+        alvo: p == null
+            ? null
+            : (p.$1 + dx, (espelharY == null ? p.$2 : espelharY - p.$2) + dy));
+  }
 }
 
 class _Pavimento {
   final List<_Cel> cels = [];
   final List<_Lig> ligs = [];
 
-  void ligar(String a, String b, TipoAbertura tipo, double largura) =>
-      ligs.add(_Lig(a, b, null, tipo, largura));
+  void ligar(String a, String b, TipoAbertura tipo, double largura,
+          {(double, double)? alvo, double? altura}) =>
+      ligs.add(_Lig(a, b, null, tipo, largura, alvo: alvo, altura: altura));
 
-  void porFora(String a, _Lado lado, double largura) =>
-      ligs.add(_Lig(a, null, lado, TipoAbertura.porta, largura));
+  void porFora(String a, _Lado lado, double largura,
+          {TipoAbertura tipo = TipoAbertura.porta,
+          (double, double)? alvo,
+          double? altura}) =>
+      ligs.add(_Lig(a, null, lado, tipo, largura, alvo: alvo, altura: altura));
 
   /// Porta para o vizinho (entre [candidatos]) com a maior parede comum.
   void ligarAoMelhor(String a, List<String> candidatos, TipoAbertura tipo,
@@ -877,16 +1397,7 @@ class _Pavimento {
       cels.add(c.mover(dx, dy, espelharY: espelharY));
     }
     for (final l in outro.ligs) {
-      var lado = l.lado;
-      if (espelharY != null && lado != null) {
-        lado = switch (lado) {
-          _Lado.frente => _Lado.fundos,
-          _Lado.fundos => _Lado.frente,
-          _ => lado,
-        };
-      }
-      ligs.add(
-          _Lig(l.a, l.b, lado, l.tipo, l.largura, candidatos: l.candidatos));
+      ligs.add(l.mover(dx, dy, espelharY: espelharY));
     }
   }
 }
@@ -911,6 +1422,14 @@ class _Casa {
   /// até a frente, o corpo da casa termina em y = [corpoAte] (o jardim).
   double? frenteAte;
   double? corpoAte;
+
+  /// A fachada do geminado: garagem fechada na frente, até x =
+  /// [garagemAte], e a entrada do lado; frente aberta para a rua.
+  bool garagemFechada = false;
+
+  /// Moldura, ripado e aleta (coordenadas da casa), por pavimento.
+  final fachadaTerreo = <ElementoFachada>[];
+  final fachadaSuperior = <ElementoFachada>[];
 }
 
 /// Um cômodo a pôr numa coluna: área desejada e profundidade mínima.
@@ -1064,7 +1583,8 @@ class _Construtor {
             final c = cobertas.first;
             // Garagem e gourmet: abertos para fora (só os pilares).
             if (c.aberto) continue;
-            if (c.guardaCorpo) {
+            final frenteDaCel = h && (linha - c.y1).abs() < _eps;
+            if (c.guardaCorpo && (!c.vidroSoNaFrente || frenteDaCel)) {
               pecas.add(_Peca(
                   h, linha, a, b, TipoParede.muretaVidro, _interna, {c.id}));
               continue;
@@ -1084,9 +1604,15 @@ class _Construtor {
         }
         // Só descobertos: muro no limite do terreno e entre quintais de
         // unidades diferentes (o acesso da garagem fica aberto para a rua).
-        final muro =
-            (terreo && noLimite && dono.length == 1 && !dono.first.aberto) ||
-                (dono.length == 2 && dono[0].unidade != dono[1].unidade);
+        final rua = h && (linha - profundidade).abs() < _eps;
+        final muro = (terreo &&
+                noLimite &&
+                dono.length == 1 &&
+                !dono.first.aberto &&
+                !(rua && dono.first.abertoRua)) ||
+            (dono.length == 2 &&
+                dono[0].unidade != dono[1].unidade &&
+                !(dono[0].abertoRua && dono[1].abertoRua));
         if (muro) {
           pecas.add(_Peca(h, linha, a, b, TipoParede.muro, _interna,
               {for (final c in dono) c.id}));
@@ -1149,7 +1675,7 @@ class _Construtor {
   /// Põe um vão de [largura] no trecho [a, b] da parede, no maior espaço
   /// livre (sem encostar em outro vão). Devolve se coube.
   bool _por(_Parede w, double a, double b, double largura, TipoAbertura tipo,
-      {double? peitoril, double? altura, double minimo = 0.6}) {
+      {double? peitoril, double? altura, double minimo = 0.6, double? centro}) {
     const folga = 0.15;
     // Espaços livres no trecho.
     var livres = [(a + folga, b - folga)];
@@ -1164,11 +1690,26 @@ class _Construtor {
       ].where((t) => t.$2 - t.$1 > 0.01).toList();
     }
     if (livres.isEmpty) return false;
-    livres.sort((p, q) => (q.$2 - q.$1).compareTo(p.$2 - p.$1));
+    // Com o centro pedido (a fachada desenhada): o trecho livre que tem
+    // ele, ou o mais perto; senão, o maior.
+    double distancia((double, double) t) => centro == null
+        ? 0
+        : centro < t.$1
+            ? t.$1 - centro
+            : centro > t.$2
+                ? centro - t.$2
+                : 0;
+    livres.sort((p, q) {
+      final d = distancia(p).compareTo(distancia(q));
+      if (d != 0) return d;
+      return (q.$2 - q.$1).compareTo(p.$2 - p.$1);
+    });
     final (x, y) = livres.first;
     final cabe = math.min(largura, y - x);
     if (cabe < minimo) return false;
-    final inicio = (x + y) / 2 - cabe / 2;
+    final inicio = centro == null
+        ? (x + y) / 2 - cabe / 2
+        : (centro - cabe / 2).clamp(x, y - cabe).toDouble();
     w.vaos.add(AberturaPlanta(
       id: '$prefixo-v${++_contaVaos}',
       tipo: tipo,
@@ -1184,14 +1725,33 @@ class _Construtor {
     // Portas e passagens pedidas.
     // A sacada: vidro em toda a mureta.
     for (final w in _paredes.where((w) => w.tipo == TipoParede.muretaVidro)) {
-      w.vaos.add(AberturaPlanta(
-        id: '$prefixo-v${++_contaVaos}',
-        tipo: TipoAbertura.janela,
-        inicio: 0,
-        largura: _r(w.b - w.a),
-        peitoril: 0.15,
-        altura: 0.95,
-      ));
+      // Um vidro por sacada (a mureta de casas vizinhas vira uma parede
+      // só), e só no vão da moldura, se a sacada pede.
+      final porSacada = <String, (double, double)>{};
+      for (final p in w.pecas) {
+        final id = p.cels.first;
+        final atual = porSacada[id];
+        porSacada[id] = atual == null
+            ? (p.a, p.b)
+            : (math.min(atual.$1, p.a), math.max(atual.$2, p.b));
+      }
+      for (final MapEntry(key: id, value: (pa, pb)) in porSacada.entries) {
+        var a = pa, b = pb;
+        final faixa = _porId[id]?.vidroEntre;
+        if (faixa != null && w.horizontal) {
+          a = math.max(a, faixa.$1);
+          b = math.min(b, faixa.$2);
+        }
+        if (b - a < 0.3) continue;
+        w.vaos.add(AberturaPlanta(
+          id: '$prefixo-v${++_contaVaos}',
+          tipo: TipoAbertura.janela,
+          inicio: _r(a - w.a),
+          largura: _r(b - a),
+          peitoril: 0.15,
+          altura: 0.95,
+        ));
+      }
     }
     for (final l in pav.ligs) {
       final a = _porId[l.a];
@@ -1220,10 +1780,27 @@ class _Construtor {
             });
       }
       if (trechos.isEmpty) continue;
-      trechos.sort((p, q) => (q.$3 - q.$2).compareTo(p.$3 - p.$2));
+      // Com o alvo: o trecho que passa mais perto dele.
+      final alvo = l.alvo;
+      double longe((_Parede, double, double) t) {
+        if (alvo == null) return 0;
+        final (w, x, y) = t;
+        final u = w.horizontal ? alvo.$1 : alvo.$2;
+        final v = w.horizontal ? alvo.$2 : alvo.$1;
+        final fora = u < x ? x - u : (u > y ? u - y : 0.0);
+        return fora + (v - w.linha).abs();
+      }
+
+      trechos.sort((p, q) {
+        final d = longe(p).compareTo(longe(q));
+        if (d != 0) return d;
+        return (q.$3 - q.$2).compareTo(p.$3 - p.$2);
+      });
       final (w, x, y) = trechos.first;
       _por(w, x, y, l.largura, l.tipo,
-          altura: l.tipo == TipoAbertura.passagem ? null : 2.1);
+          altura: l.altura ?? (l.tipo == TipoAbertura.passagem ? null : 2.1),
+          centro: alvo == null ? null : (w.horizontal ? alvo.$1 : alvo.$2),
+          minimo: math.min(0.6, l.largura));
     }
     // Janelas: em cada cômodo coberto, na parede de fora mais comprida.
     for (final c in pav.cels.where((c) => c.coberto)) {
@@ -1235,10 +1812,15 @@ class _Construtor {
         _ => (0.0, 0.0, 0.0),
       };
       if (largura == 0) continue;
+      // Na divisa do terreno não abre janela (código de obras).
+      bool naDivisa(_Parede w) =>
+          !w.horizontal &&
+          (w.linha.abs() < _eps || (w.linha - this.largura).abs() < _eps);
       final trechos = _trechos((w, p) =>
           p.cels.length == 1 &&
           p.cels.first == c.id &&
-          p.tipo == TipoParede.alvenaria);
+          p.tipo == TipoParede.alvenaria &&
+          !naDivisa(w));
       trechos.sort((p, q) => (q.$3 - q.$2).compareTo(p.$3 - p.$2));
       for (final (w, x, y) in trechos) {
         if (_por(w, x, y, largura, TipoAbertura.janela,

@@ -14,8 +14,14 @@ import 'ficha_comodo.dart';
 PedidoModelo pedidoInicial(TipoModelo tipo) => switch (tipo) {
       TipoModelo.casa =>
         const PedidoModelo(tipo: TipoModelo.casa, area: 70, quartos: 2),
+      // O geminado começa no projeto-padrão (a fachada desenhada): 2
+      // sobrados de 6 m de frente, 160 m² e 3 quartos.
       TipoModelo.geminado => const PedidoModelo(
-          tipo: TipoModelo.geminado, area: 60, quartos: 2, unidades: 2),
+          tipo: TipoModelo.geminado,
+          area: 160,
+          quartos: 3,
+          unidades: 2,
+          sobrado: true),
       TipoModelo.predio => const PedidoModelo(
           tipo: TipoModelo.predio,
           area: 55,

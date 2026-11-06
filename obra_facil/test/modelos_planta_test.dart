@@ -66,7 +66,7 @@ void main() {
   group('geminado', () {
     for (final sobrado in [false, true]) {
       for (final n in [2, 3, 4]) {
-        for (final area in const <double>[50, 75, 110, 150]) {
+        for (final area in const <double>[50, 75, 110, 150, 200, 250]) {
           final pedido = PedidoModelo(
             tipo: TipoModelo.geminado,
             area: area.toDouble(),

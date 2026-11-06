@@ -37,6 +37,7 @@ class PlantaObra {
     this.nomeTerreo = 'Térreo',
     this.andares = const [],
     this.modelo,
+    this.fachada = const [],
   });
 
   final int versao;
@@ -70,6 +71,10 @@ class PlantaObra {
   /// para mostrar e refazer. Nulo: planta de verdade (lida ou de exemplo).
   final Map<String, dynamic>? modelo;
 
+  /// O que a fachada do térreo tem além das paredes e dos vãos: moldura,
+  /// ripado, aleta (os modelos prontos; a planta lida não traz).
+  final List<ElementoFachada> fachada;
+
   /// Cômodos do térreo com laje.
   Iterable<ComodoPlanta> get comodosCobertos => comodos.where((c) => c.coberto);
 
@@ -97,6 +102,7 @@ class PlantaObra {
       comodos: a.comodos,
       nomeTerreo: a.nome,
       andares: const [],
+      fachada: a.fachada,
     );
   }
 
@@ -166,6 +172,7 @@ class PlantaObra {
     String? nomeTerreo,
     List<AndarPlanta>? andares,
     Map<String, dynamic>? modelo,
+    List<ElementoFachada>? fachada,
   }) =>
       PlantaObra(
         versao: versao,
@@ -181,6 +188,7 @@ class PlantaObra {
         nomeTerreo: nomeTerreo ?? this.nomeTerreo,
         andares: andares ?? this.andares,
         modelo: modelo ?? this.modelo,
+        fachada: fachada ?? this.fachada,
       );
 
   /// O cômodo que contém o ponto (x, y) da planta, ou nulo. Cômodos
@@ -224,11 +232,13 @@ class PlantaObra {
           '(2,20 a 4,50 m).');
     }
     _problemasDaPlanta(p, paredes, comodos, '');
+    _problemasDaFachada(p, fachada, '');
     for (final a in andares) {
       if (a.repeticoes < 1) {
         p.add('O andar ${a.nome} não se repete nenhuma vez.');
       }
       _problemasDaPlanta(p, a.paredes, a.comodos, ' (${a.nome})');
+      _problemasDaFachada(p, a.fachada, ' (${a.nome})');
     }
     final ids = <String>{};
     for (final c in todosOsComodos) {
@@ -277,6 +287,16 @@ class PlantaObra {
     }
   }
 
+  static void _problemasDaFachada(
+      List<String> p, List<ElementoFachada> fachada, String onde) {
+    for (final e in fachada) {
+      if (!(e.ate - e.de > 0.01) || !(e.topo - e.base > 0.01)) {
+        p.add('Um elemento da fachada$onde (${e.tipo.chave}) não tem '
+            'medidas.');
+      }
+    }
+  }
+
   Map<String, dynamic> toMap() => {
         'versao': versao,
         if (nome != null) 'nome': nome,
@@ -291,6 +311,7 @@ class PlantaObra {
         if (nomeTerreo != 'Térreo') 'nomeTerreo': nomeTerreo,
         if (andares.isNotEmpty) 'andares': [for (final a in andares) a.toMap()],
         if (modelo != null) 'modelo': modelo,
+        if (fachada.isNotEmpty) 'fachada': [for (final e in fachada) e.toMap()],
       };
 
   factory PlantaObra.fromMap(Map<String, dynamic> m) {
@@ -320,6 +341,9 @@ class PlantaObra {
           AndarPlanta.fromMap(_mapa(a), indice: i),
       ],
       modelo: m['modelo'] is Map ? _mapa(m['modelo']) : null,
+      fachada: [
+        for (final e in _lista(m['fachada'])) ElementoFachada.fromMap(_mapa(e)),
+      ],
     );
   }
 }
@@ -334,6 +358,7 @@ class AndarPlanta {
     required this.comodos,
     this.pilares = const [],
     this.repeticoes = 1,
+    this.fachada = const [],
   });
 
   /// "Superior", "1º ao 3º andar".
@@ -343,12 +368,16 @@ class AndarPlanta {
   final List<PilarPlanta> pilares;
   final int repeticoes;
 
+  /// Moldura, ripado e aleta da fachada deste andar.
+  final List<ElementoFachada> fachada;
+
   Map<String, dynamic> toMap() => {
         'nome': nome,
         'repeticoes': repeticoes,
         'paredes': [for (final w in paredes) w.toMap()],
         'pilares': [for (final p in pilares) p.toMap()],
         'comodos': [for (final c in comodos) c.toMap()],
+        if (fachada.isNotEmpty) 'fachada': [for (final e in fachada) e.toMap()],
       };
 
   factory AndarPlanta.fromMap(Map<String, dynamic> m, {int indice = 0}) =>
@@ -366,6 +395,10 @@ class AndarPlanta {
           for (final (i, c) in _lista(m['comodos']).indexed)
             ComodoPlanta.fromMap(_mapa(c), indice: i),
         ],
+        fachada: [
+          for (final e in _lista(m['fachada']))
+            ElementoFachada.fromMap(_mapa(e)),
+        ],
       );
 }
 
@@ -376,6 +409,7 @@ class AlturasPlanta {
     this.peDireito = 2.6,
     this.porta = 2.1,
     this.muro = 2.0,
+    this.platibanda = 0.6,
   });
 
   /// Do piso pronto ao fundo da laje.
@@ -387,13 +421,21 @@ class AlturasPlanta {
   /// Altura padrão do muro de divisa.
   final double muro;
 
-  Map<String, dynamic> toMap() =>
-      {'peDireito': peDireito, 'porta': porta, 'muro': muro};
+  /// Da laje de cobertura ao topo da platibanda (esconde o telhado).
+  final double platibanda;
+
+  Map<String, dynamic> toMap() => {
+        'peDireito': peDireito,
+        'porta': porta,
+        'muro': muro,
+        'platibanda': platibanda,
+      };
 
   factory AlturasPlanta.fromMap(Map<String, dynamic> m) => AlturasPlanta(
         peDireito: _num(m['peDireito'], 2.6),
         porta: _num(m['porta'], 2.1),
         muro: _num(m['muro'], 2.0),
+        platibanda: _num(m['platibanda'], 0.6).clamp(0.3, 2.0).toDouble(),
       );
 }
 
@@ -511,13 +553,24 @@ enum TipoAbertura {
   /// Vão sem porta (passagem entre cômodos).
   passagem('passagem'),
   janela('janela'),
-  portao('portao');
+
+  /// Portão no muro (de grade).
+  portao('portao'),
+
+  /// Porta da garagem na parede da casa (de lâminas, sobe ou basculante).
+  portaGaragem('porta_garagem'),
+
+  /// Porta de entrada pivotante, larga e alta, de madeira.
+  portaPivotante('porta_pivotante');
 
   const TipoAbertura(this.chave);
 
   final String chave;
 
   bool get ehJanela => this == janela;
+
+  /// Fecha com uma folha (tudo menos a passagem e a janela).
+  bool get ehPorta => this != passagem && this != janela;
 
   static TipoAbertura daChave(Object? chave) => TipoAbertura.values
       .firstWhere((t) => t.chave == chave, orElse: () => porta);
@@ -720,6 +773,124 @@ class ComodoPlanta {
         ],
         unidade: m['unidade'] as String?,
         fachada: m['fachada'] as String?,
+      );
+}
+
+/// O que um [ElementoFachada] é.
+enum TipoElementoFachada {
+  /// Quadro de concreto em volta de um vão da fachada (a sacada): quatro
+  /// faixas de [ElementoFachada.borda]; as dos lados e a de cima vão do
+  /// lado de fora até o fundo da sacada ([ElementoFachada.recuo]); a de
+  /// baixo é a mureta da frente, até o [ElementoFachada.peitoril].
+  moldura('moldura'),
+
+  /// Ripas de madeira em pé, presas na parede, a cada
+  /// [ElementoFachada.passo].
+  ripadoVertical('ripado_vertical'),
+
+  /// Ripas deitadas (a faixa sobre a porta).
+  ripadoHorizontal('ripado_horizontal'),
+
+  /// Lâmina em pé saindo da fachada (a divisa entre as casas).
+  aleta('aleta'),
+
+  /// Pano de parede rebocada e pintada que fecha uma fresta da fachada
+  /// (entre a moldura e a divisa, do lado da sacada).
+  pano('pano');
+
+  const TipoElementoFachada(this.chave);
+
+  final String chave;
+
+  static TipoElementoFachada daChave(Object? chave) =>
+      TipoElementoFachada.values
+          .firstWhere((t) => t.chave == chave, orElse: () => aleta);
+}
+
+/// Uma peça da fachada que não é parede nem vão: a moldura da sacada, o
+/// ripado, a aleta da divisa. Fica numa face voltada para a frente ou para
+/// o fundo do terreno (as fachadas dos modelos prontos).
+@immutable
+class ElementoFachada {
+  const ElementoFachada({
+    required this.tipo,
+    required this.de,
+    required this.ate,
+    required this.y,
+    this.sentido = 1,
+    required this.base,
+    required this.topo,
+    this.saliencia = 0,
+    this.recuo = 0,
+    this.borda = 0.5,
+    this.peitoril,
+    this.passo = 0.1,
+  });
+
+  final TipoElementoFachada tipo;
+
+  /// De onde a onde vai, em `x` da planta.
+  final double de;
+  final double ate;
+
+  /// A face em que está presa, em `y` da planta.
+  final double y;
+
+  /// Para onde a face olha: +1 para a rua (y crescendo), -1 para o fundo.
+  final int sentido;
+
+  /// Alturas da base e do topo, a partir do piso pronto do pavimento
+  /// (negativa: desce abaixo dele).
+  final double base;
+  final double topo;
+
+  /// Quanto sai para fora da face.
+  final double saliencia;
+
+  /// Quanto entra para dentro da face (a moldura cobre o fundo da sacada).
+  final double recuo;
+
+  /// Largura das faixas da moldura.
+  final double borda;
+
+  /// Topo da faixa de baixo da moldura (a mureta); nulo: sem ela.
+  final double? peitoril;
+
+  /// Distância entre as ripas.
+  final double passo;
+
+  double get largura => ate - de;
+
+  Map<String, dynamic> toMap() => {
+        'tipo': tipo.chave,
+        'de': de,
+        'ate': ate,
+        'y': y,
+        if (sentido != 1) 'sentido': sentido,
+        'base': base,
+        'topo': topo,
+        if (saliencia != 0) 'saliencia': saliencia,
+        if (recuo != 0) 'recuo': recuo,
+        if (tipo == TipoElementoFachada.moldura) 'borda': borda,
+        if (peitoril != null) 'peitoril': peitoril,
+        if (tipo == TipoElementoFachada.ripadoVertical ||
+            tipo == TipoElementoFachada.ripadoHorizontal)
+          'passo': passo,
+      };
+
+  factory ElementoFachada.fromMap(Map<String, dynamic> m) => ElementoFachada(
+        tipo: TipoElementoFachada.daChave(m['tipo']),
+        de: _num(m['de']),
+        ate: _num(m['ate']),
+        y: _num(m['y']),
+        sentido: _num(m['sentido'], 1) < 0 ? -1 : 1,
+        base: _num(m['base']),
+        topo: _num(m['topo']),
+        saliencia: _num(m['saliencia']),
+        recuo: _num(m['recuo']),
+        borda: _num(m['borda'], 0.5),
+        peitoril: m['peitoril'] == null ? null : _num(m['peitoril']),
+        passo: _num(m['passo'], 0.1).clamp(0.03, 1.0).toDouble(),
       );
 }
 

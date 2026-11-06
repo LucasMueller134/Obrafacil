@@ -75,6 +75,16 @@ abstract final class MateriaisMaquete {
       cor: [0.45, 0.27, 0.12, 1], rugosidade: 0.6);
   static const grama =
       MaterialGerado('grama', cor: [0.52, 0.6, 0.45, 1], rugosidade: 0.95);
+  // Fachada do geminado: moldura e aleta grafite, ripado e porta de
+  // cumaru, portão de lâminas e a fita de LED da moldura.
+  static const grafite = MaterialGerado('grafite',
+      cor: [0.052, 0.054, 0.058, 1], rugosidade: 0.72);
+  static const cumaru = MaterialGerado('madeira_cumaru',
+      cor: [0.33, 0.13, 0.045, 1], rugosidade: 0.58);
+  static const portao = MaterialGerado('portao_laminas',
+      cor: [0.085, 0.088, 0.092, 1], metalico: 0.55, rugosidade: 0.45);
+  static const luz =
+      MaterialGerado('luz_led', cor: [1.0, 0.82, 0.55, 1], semLuz: true);
 
   static const todos = [
     base,
@@ -104,6 +114,10 @@ abstract final class MateriaisMaquete {
     pisoGaragem,
     pisoMadeira,
     grama,
+    grafite,
+    cumaru,
+    portao,
+    luz,
   ];
 
   static String doPiso(PisoComodo piso) => switch (piso) {
@@ -126,7 +140,10 @@ class NiveisMaquete {
   static const double piso = 0.20;
   static const double espessuraLaje = 0.12;
   static const double alturaViga = 0.30;
-  static const double fiadaPlatibanda = 0.20;
+
+  /// Altura de cada fiada da platibanda (a da planta em 3 fiadas).
+  double get fiadaPlatibanda =>
+      alturas.platibanda / NosMaquete.totalFiadasPlatibanda;
 
   double get lajeFundo => piso + alturas.peDireito;
   double get lajeTopo => lajeFundo + espessuraLaje;
@@ -511,6 +528,40 @@ class GeradorMaquete {
     );
   }
 
+  /// Caixa ao longo da parede [w], de [w0] a [w1] na espessura (o lado
+  /// positivo é o da normal (dy, -dx) da parede).
+  void _entre(MalhaGerada m, String material, ParedePlanta w, double u0,
+      double u1, double w0, double w1, double y0, double y1) {
+    m.caixaAoLongo(
+      material,
+      origem: _xz(w.de.$1, w.de.$2),
+      direcao: w.direcao,
+      u0: u0,
+      u1: u1,
+      w0: math.min(w0, w1),
+      w1: math.max(w0, w1),
+      y0: y0,
+      y1: y1,
+    );
+  }
+
+  /// O lado de fora da parede [w] no ponto [u]: +1 (o da normal da caixa)
+  /// ou -1. Fora é o lado descoberto; com laje dos dois lados, o da sacada,
+  /// da garagem ou do gourmet.
+  double _fora(ParedePlanta w, double u) {
+    final (mx, my) = w.pontoEm(u);
+    final (dx, dy) = w.direcao;
+    final d = w.espessura / 2 + 0.2;
+    final mais = (mx + dy * d, my - dx * d), menos = (mx - dy * d, my + dx * d);
+    final cm = _coberta.contem(mais.$1, mais.$2),
+        cn = _coberta.contem(menos.$1, menos.$2);
+    if (cm != cn) return cm ? -1 : 1;
+    final fm = _fechada.contem(mais.$1, mais.$2),
+        fn = _fechada.contem(menos.$1, menos.$2);
+    if (fm != fn) return fm ? -1 : 1;
+    return 1;
+  }
+
   /// Pilares das paredes de alvenaria: nas pontas e a cada 3,5 m no
   /// máximo, fora dos vãos. Posição (x, y da planta) e direção.
   late final List<((double, double), (double, double))> _pilares = () {
@@ -572,10 +623,18 @@ class GeradorMaquete {
           final p = w.pontoEm(a.inicio);
           return (p.$1 - 0.45, planta.profundidade + 0.55);
         }
+        // Frente aberta do geminado: no canto, longe das portas.
+        if (a.tipo == TipoAbertura.portaGaragem) {
+          return (0.2, planta.profundidade + 0.55);
+        }
       }
     }
     return (planta.largura - 0.6, planta.profundidade + 0.55);
   }
+
+  /// Altura da base da caixa d'água: com platibanda alta, a caixa fica
+  /// quase no chão da laje e some atrás dela.
+  double get _baseDaCaixa => planta.alturas.platibanda >= 0.9 ? 0.1 : 0.6;
 
   /// Onde a caixa d'água fica: em cima do banheiro (ou da cozinha).
   (double, double)? get _posicaoCaixa {
@@ -629,6 +688,7 @@ class GeradorMaquete {
     _rebocoEPintura(pecas);
     _revestimentos(pecas);
     _fachada(pecas);
+    _elementosFachada(pecas);
     _acabamento(pecas);
     _fantasmas(fantasmas);
   }
@@ -718,6 +778,89 @@ class GeradorMaquete {
 
   /// Escada em U dentro de cada cômodo "escada": dois lances de concreto,
   /// do piso deste pavimento ao piso do de cima, com o patamar no fundo.
+  /// Moldura, ripado, aleta e panos da fachada desenhada (os modelos
+  /// prontos do geminado): concreto grafite, cumaru e a fita de LED.
+  void _elementosFachada(Map<String, NoGerado> pecas) {
+    if (planta.fachada.isEmpty) return;
+    final concreto = pecas['revestimentos_pingadeira']!.malha;
+    final ripado = pecas['revestimentos_ripado']!;
+    final pintura = pecas['pintura_paredes']!.malha;
+    final reboco = pecas['reboco_paredes']!.malha;
+    final g = MateriaisMaquete.grafite.nome;
+    final madeira = MateriaisMaquete.cumaru.nome;
+    final p = NiveisMaquete.piso;
+    var temRipado = false;
+
+    /// Caixa de x0 a x1, de ya a yb (planta) e de z0 a z1 (acima do piso).
+    void caixa(MalhaGerada m, String mat, double x0, double x1, double ya,
+        double yb, double z0, double z1) {
+      final (ax, az) = _xz(math.min(x0, x1), math.min(ya, yb));
+      final (bx, bz) = _xz(math.max(x0, x1), math.max(ya, yb));
+      m.caixa(mat, (ax, p + z0, az), (bx, p + z1, bz));
+    }
+
+    for (final e in planta.fachada) {
+      final s = e.sentido.toDouble();
+      final frente = e.y + s * e.saliencia;
+      final fundo = e.y - s * e.recuo;
+      switch (e.tipo) {
+        case TipoElementoFachada.moldura:
+          final b = e.borda;
+          // As faixas dos lados e a de cima, do fundo da sacada à frente.
+          caixa(concreto, g, e.de, e.de + b, fundo, frente, e.base, e.topo);
+          caixa(concreto, g, e.ate - b, e.ate, fundo, frente, e.base, e.topo);
+          caixa(concreto, g, e.de + b, e.ate - b, fundo, frente, e.topo - b,
+              e.topo);
+          // A de baixo é a mureta da frente.
+          if (e.peitoril != null) {
+            caixa(concreto, g, e.de + b, e.ate - b, e.y - s * 0.15, frente,
+                e.base, e.peitoril!);
+          }
+          // Fita de LED embaixo da faixa de cima, perto da frente.
+          caixa(
+              concreto,
+              MateriaisMaquete.luz.nome,
+              e.de + b + 0.05,
+              e.ate - b - 0.05,
+              frente - s * 0.14,
+              frente - s * 0.08,
+              e.topo - b - 0.012,
+              e.topo - b);
+        case TipoElementoFachada.ripadoVertical:
+        case TipoElementoFachada.ripadoHorizontal:
+          temRipado = true;
+          final m = ripado.malha;
+          // Fundo grafite atrás das ripas.
+          caixa(m, g, e.de, e.ate, e.y, e.y + s * 0.012, e.base, e.topo);
+          final r0 = e.y + s * 0.015, r1 = e.y + s * e.saliencia;
+          if (e.tipo == TipoElementoFachada.ripadoVertical) {
+            final largura = e.passo * 0.5;
+            for (var x = e.de + e.passo * 0.25;
+                x + largura <= e.ate + 1e-6;
+                x += e.passo) {
+              caixa(m, madeira, x, x + largura, r0, r1, e.base, e.topo);
+            }
+          } else {
+            final altura = e.passo * 0.55;
+            for (var z = e.base + e.passo * 0.2;
+                z + altura <= e.topo + 1e-6;
+                z += e.passo) {
+              caixa(m, madeira, e.de, e.ate, r0, r1, z, z + altura);
+            }
+          }
+        case TipoElementoFachada.aleta:
+          caixa(concreto, g, e.de, e.ate, fundo, frente, e.base, e.topo);
+        case TipoElementoFachada.pano:
+          // Parede: reboco e, por cima, a pintura (aparece em cada fase).
+          caixa(reboco, MateriaisMaquete.reboco.nome, e.de, e.ate, fundo,
+              frente, e.base, e.topo);
+          caixa(pintura, MateriaisMaquete.tinta.nome, e.de, e.ate,
+              fundo - s * 0.006, frente + s * 0.006, e.base, e.topo);
+      }
+    }
+    if (temRipado) ripado.translacao = (0, p, 0);
+  }
+
   void _escadas(NoGerado no) {
     final mat = MateriaisMaquete.concreto.nome;
     final subir = planta.alturas.peDireito + NiveisMaquete.espessuraLaje;
@@ -952,7 +1095,7 @@ class GeradorMaquete {
     }
     for (var k = 0; k < NosMaquete.totalFiadasPlatibanda; k++) {
       fiadas[NosMaquete.totalFiadasParede + k].translacao =
-          (0, niveis.lajeTopo + k * NiveisMaquete.fiadaPlatibanda, 0);
+          (0, niveis.lajeTopo + k * niveis.fiadaPlatibanda, 0);
     }
 
     for (final w in _paredes) {
@@ -1004,12 +1147,12 @@ class GeradorMaquete {
     // Platibanda: 3 fiadas em volta da laje, por cima da borda.
     final bordas = topo ? _coberta.bordas() : const <BordaCoberta>[];
     for (var k = 0; k < NosMaquete.totalFiadasPlatibanda; k++) {
-      final y0 = niveis.lajeTopo + k * NiveisMaquete.fiadaPlatibanda;
+      final y0 = niveis.lajeTopo + k * niveis.fiadaPlatibanda;
       final m = fiadas[NosMaquete.totalFiadasParede + k].malha;
       for (final b in bordas) {
         final w = _paredeDaBorda(b);
-        _blocos(m, w, [(0, w.comprimento)], y0,
-            y0 + NiveisMaquete.fiadaPlatibanda, k.isOdd,
+        _blocos(m, w, [(0, w.comprimento)], y0, y0 + niveis.fiadaPlatibanda,
+            k.isOdd,
             topoAVista: k == NosMaquete.totalFiadasPlatibanda - 1);
       }
     }
@@ -1152,25 +1295,26 @@ class GeradorMaquete {
     if (pos == null) return;
     final (x, z) = _xz(pos.$1, pos.$2);
     final t0 = niveis.lajeTopo;
+    final hb = _baseDaCaixa;
     final base = pecas['hidraulica_base']!;
     base.malha.caixa(MateriaisMaquete.concreto.nome, (x - 0.7, t0, z - 0.7),
-        (x + 0.7, t0 + 0.6, z + 0.7));
+        (x + 0.7, t0 + hb, z + 0.7));
     base.translacao = (x, t0, z);
 
     final caixa = pecas['hidraulica_caixa_dagua']!;
     caixa.malha.cilindro(MateriaisMaquete.plasticoAzul.nome,
-        base: (x, t0 + 0.6, z),
+        base: (x, t0 + hb, z),
         raio: 0.52,
         raioTopo: 0.6,
         altura: 0.68,
         lados: 24);
     caixa.malha.cilindro(MateriaisMaquete.plasticoAzul.nome,
-        base: (x, t0 + 1.28, z),
+        base: (x, t0 + hb + 0.68, z),
         raio: 0.63,
         raioTopo: 0.5,
         altura: 0.08,
         lados: 24);
-    caixa.translacao = (x, t0 + 0.6, z);
+    caixa.translacao = (x, t0 + hb, z);
 
     final tubos = pecas['hidraulica_tubos']!;
     tubos.malha.cilindro(MateriaisMaquete.pvc.nome,
@@ -1227,6 +1371,14 @@ class GeradorMaquete {
       for (final b in _coberta.bordas()) {
         final w = _paredeDaBorda(b);
         casca(w, niveis.lajeFundo, niveis.platibandaTopo, pontas: false);
+      }
+    } else if (!andarSimples) {
+      // Com andar em cima: a borda da laje entre os pavimentos também é
+      // rebocada e pintada (senão fica uma faixa de concreto em volta). Nos
+      // andares-casca do prédio fica de fora (o peso no celular).
+      for (final b in _coberta.bordas()) {
+        casca(_paredeDaBorda(b), niveis.lajeFundo, niveis.lajeTopo,
+            pontas: false);
       }
     }
     // Contrapiso dos cômodos cobertos.
@@ -1302,7 +1454,8 @@ class GeradorMaquete {
           final y = base + a.base(planta.alturas);
           _naParede(peitoris, MateriaisMaquete.granito.nome, w, u0 - 0.03,
               u1 + 0.03, w.espessura / 2 + 0.05, y - 0.025, y);
-        } else if (a.tipo != TipoAbertura.portao) {
+        } else if (a.tipo != TipoAbertura.portao &&
+            a.tipo != TipoAbertura.portaGaragem) {
           _naParede(peitoris, MateriaisMaquete.granito.nome, w, u0, u1,
               w.espessura / 2, base + 0.03, base + 0.05);
         }
@@ -1325,6 +1478,10 @@ class GeradorMaquete {
         final y0 = base + a.base(planta.alturas);
         final y1 = base + a.topo(planta.alturas);
         switch (a.tipo) {
+          case TipoAbertura.janela when w.tipo == TipoParede.muretaVidro:
+            _vidroSemCaixilho(esquadrias, w, u0, u1, y0, y1);
+          case TipoAbertura.portaCorrer when !andarSimples:
+            _portaDeCorrer(esquadrias, w, u0, u1, y0, y1);
           case TipoAbertura.janela:
           case TipoAbertura.portaCorrer:
             _caixilho(esquadrias, w, u0, u1, y0, y1, al, vidro,
@@ -1340,6 +1497,10 @@ class GeradorMaquete {
             }
             _naParede(esquadrias, al, w, u0, u1, 0.03, y1 - 0.08, y1 - 0.03);
             _naParede(esquadrias, al, w, u0, u1, 0.03, y0 + 0.05, y0 + 0.1);
+          case TipoAbertura.portaGaragem:
+            _portaoDeLaminas(esquadrias, w, u0, u1, y0, y1);
+          case TipoAbertura.portaPivotante:
+            _pivotante(portas, w, u0, u1, y0, y1);
           case TipoAbertura.passagem:
             break;
         }
@@ -1401,6 +1562,102 @@ class GeradorMaquete {
     _naParede(m, vidro, w, u0 + b, u1 - b, 0.006, y0 + b, y1 - b);
   }
 
+  /// Porta da garagem: painel grafite de lâminas deitadas (lambril), no
+  /// lado de fora da parede, num quadro de alumínio.
+  void _portaoDeLaminas(MalhaGerada m, ParedePlanta w, double u0, double u1,
+      double y0, double y1) {
+    final s = _fora(w, (u0 + u1) / 2);
+    final e = w.espessura / 2;
+    final al = MateriaisMaquete.aluminio.nome;
+    final mat = MateriaisMaquete.portao.nome;
+    // Quadro: as duas laterais e a de cima, rente à face de fora.
+    _entre(m, al, w, u0, u0 + 0.05, s * (e - 0.1), s * (e + 0.01), y0, y1);
+    _entre(m, al, w, u1 - 0.05, u1, s * (e - 0.1), s * (e + 0.01), y0, y1);
+    _entre(m, al, w, u0, u1, s * (e - 0.1), s * (e + 0.01), y1 - 0.06, y1);
+    // O painel, 6 cm para dentro da face.
+    _entre(m, mat, w, u0 + 0.05, u1 - 0.05, s * (e - 0.1), s * (e - 0.06), y0,
+        y1 - 0.06);
+    // As lâminas: frisos saltados a cada 10 cm.
+    for (var y = y0 + 0.07; y < y1 - 0.1; y += 0.1) {
+      _entre(m, mat, w, u0 + 0.05, u1 - 0.05, s * (e - 0.06), s * (e - 0.045),
+          y, y + 0.06);
+    }
+  }
+
+  /// Porta pivotante de cumaru, alta e larga, com frisos em pé e o puxador
+  /// de barra preto do lado de fora (a 20 cm da borda, como no desenho).
+  void _pivotante(MalhaGerada m, ParedePlanta w, double u0, double u1,
+      double y0, double y1) {
+    final s = _fora(w, (u0 + u1) / 2);
+    final e = w.espessura / 2;
+    final madeira = MateriaisMaquete.cumaru.nome;
+    final al = MateriaisMaquete.aluminio.nome;
+    // Batente grafite em volta.
+    final g = MateriaisMaquete.grafite.nome;
+    _entre(m, g, w, u0, u0 + 0.04, -e, e, y0, y1);
+    _entre(m, g, w, u1 - 0.04, u1, -e, e, y0, y1);
+    _entre(m, g, w, u0, u1, -e, e, y1 - 0.04, y1);
+    // A folha, 3 cm para dentro da face.
+    final f0 = s * (e - 0.08), f1 = s * (e - 0.03);
+    _entre(m, madeira, w, u0 + 0.04, u1 - 0.04, f0, f1, y0 + 0.01, y1 - 0.04);
+    // Frisos em pé.
+    final n = ((u1 - u0) / 0.2).floor();
+    for (var k = 1; k < n; k++) {
+      final u = u0 + (u1 - u0) * k / n;
+      _entre(m, g, w, u - 0.006, u + 0.006, f1, f1 + s * 0.002, y0 + 0.08,
+          y1 - 0.12);
+    }
+    // Puxador: barra de 3 cm a 6 cm da folha, de 1,0 a 1,7 m, com dois pés.
+    final up = u0 + 0.2;
+    final p0 = f1 + s * 0.05, p1 = f1 + s * 0.08;
+    _entre(m, al, w, up - 0.015, up + 0.015, p0, p1, y0 + 1.0, y0 + 1.7);
+    for (final y in [y0 + 1.08, y0 + 1.6]) {
+      _entre(m, al, w, up - 0.008, up + 0.008, f1, p0, y, y + 0.02);
+    }
+  }
+
+  /// Porta de correr de alumínio preto: 2 folhas (4 se passa de 3,6 m) em
+  /// dois trilhos, com perfis de cima e de baixo.
+  void _portaDeCorrer(MalhaGerada m, ParedePlanta w, double u0, double u1,
+      double y0, double y1) {
+    final al = MateriaisMaquete.aluminio.nome;
+    final vidro = MateriaisMaquete.vidro.nome;
+    final s = _fora(w, (u0 + u1) / 2);
+    final folhas = u1 - u0 > 3.6 ? 4 : 2;
+    final largura = (u1 - u0) / folhas;
+    // Trilho de baixo e perfil de cima, na espessura dos dois trilhos.
+    _entre(m, al, w, u0, u1, s * -0.06, s * 0.06, y0, y0 + 0.03);
+    _entre(m, al, w, u0, u1, s * -0.06, s * 0.06, y1 - 0.05, y1);
+    _entre(m, al, w, u0, u0 + 0.03, s * -0.06, s * 0.06, y0, y1);
+    _entre(m, al, w, u1 - 0.03, u1, s * -0.06, s * 0.06, y0, y1);
+    for (var k = 0; k < folhas; k++) {
+      // As do meio correm no trilho de dentro; as das pontas, no de fora.
+      final dentro = folhas == 2 ? k == 1 : (k == 1 || k == 2);
+      final t0 = dentro ? s * -0.045 : s * 0.005;
+      final t1 = t0 + s * 0.04;
+      final a = u0 + 0.03 + k * (largura - 0.015);
+      final b = math.min(u1 - 0.03, a + largura + 0.01);
+      const p = 0.05;
+      final z0 = y0 + 0.03, z1 = y1 - 0.05;
+      _entre(m, al, w, a, a + p, t0, t1, z0, z1);
+      _entre(m, al, w, b - p, b, t0, t1, z0, z1);
+      _entre(m, al, w, a, b, t0, t1, z0, z0 + 0.07);
+      _entre(m, al, w, a, b, t0, t1, z1 - p, z1);
+      _entre(m, vidro, w, a + p, b - p, (t0 + t1) / 2 - 0.004,
+          (t0 + t1) / 2 + 0.004, z0 + 0.07, z1 - p);
+    }
+  }
+
+  /// Guarda-corpo de vidro sem caixilho: o vidro inteiro preso num perfil
+  /// baixo de alumínio, em cima da mureta.
+  void _vidroSemCaixilho(MalhaGerada m, ParedePlanta w, double u0, double u1,
+      double y0, double y1) {
+    _naParede(
+        m, MateriaisMaquete.aluminio.nome, w, u0, u1, 0.03, y0, y0 + 0.06);
+    _naParede(m, MateriaisMaquete.vidro.nome, w, u0 + 0.01, u1 - 0.01, 0.006,
+        y0 + 0.06, y1);
+  }
+
   // ------------------------------------------------------------ fantasmas
 
   void _fantasmas(List<NoGerado> fantasmas) {
@@ -1458,8 +1715,9 @@ class GeradorMaquete {
     if (topo && caixa != null) {
       final (x, z) = _xz(caixa.$1, caixa.$2);
       final t0 = niveis.lajeTopo;
-      fantasmas[5].malha.anelTracejado(mat, (x, t0 + 1.36, z), 0.6);
-      fantasmas[5].malha.anelTracejado(mat, (x, t0 + 0.6, z), 0.52);
+      final hb = _baseDaCaixa;
+      fantasmas[5].malha.anelTracejado(mat, (x, t0 + hb + 0.76, z), 0.6);
+      fantasmas[5].malha.anelTracejado(mat, (x, t0 + hb, z), 0.52);
     }
     // 07: a calçada da rua.
     if (!terreo) return;
