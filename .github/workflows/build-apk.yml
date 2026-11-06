@@ -1,4 +1,4 @@
-# Compila o APK do ObraFácil na nuvem a cada push na master.
+# Compila o APK do Obra na Mão na nuvem a cada push na master.
 #
 # Por que o scaffold Android é gerado aqui e não commitado: a máquina local
 # está atrás de firewall (FortiNet) que bloqueia o pub.dev, então o
@@ -73,7 +73,7 @@ jobs:
           MANIFEST=android/app/src/main/AndroidManifest.xml
           # nome exibido no launcher
           confere "$MANIFEST" 'android:label="obra_facil"'
-          sed -i 's/android:label="obra_facil"/android:label="ObraFácil"/' "$MANIFEST"
+          sed -i 's/android:label="obra_facil"/android:label="Obra na Mão"/' "$MANIFEST"
           # permissões: internet (Firebase) e microfone (lançamento por voz);
           # queries para o serviço de reconhecimento de fala (Android 11+)
           confere "$MANIFEST" '<manifest xmlns:android="http://schemas.android.com/apk/res/android">'
@@ -124,7 +124,7 @@ jobs:
         run: flutter build apk --release
 
       - name: Renomear APK
-        run: cp build/app/outputs/flutter-apk/app-release.apk obrafacil-${{ github.run_number }}.apk
+        run: cp build/app/outputs/flutter-apk/app-release.apk obra-na-mao-${{ github.run_number }}.apk
 
       - name: Publicar na aba Releases
         uses: softprops/action-gh-release@v2
@@ -132,12 +132,12 @@ jobs:
           tag_name: build-${{ github.run_number }}
           # a tag aponta para o commit que foi compilado, não para a main
           target_commitish: ${{ github.sha }}
-          name: 'ObraFácil build ${{ github.run_number }}'
+          name: 'Obra na Mão build ${{ github.run_number }}'
           body: 'APK gerado automaticamente do commit ${{ github.sha }}'
-          files: obra_facil/obrafacil-${{ github.run_number }}.apk
+          files: obra_facil/obra-na-mao-${{ github.run_number }}.apk
 
       - name: Guardar APK como artefato (backup)
         uses: actions/upload-artifact@v4
         with:
-          name: obrafacil-apk
-          path: obra_facil/obrafacil-${{ github.run_number }}.apk
+          name: obra-na-mao-apk
+          path: obra_facil/obra-na-mao-${{ github.run_number }}.apk

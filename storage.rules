@@ -1,6 +1,6 @@
 rules_version = '2';
 
-// Storage do ObraFácil. Só as imagens "como vai ficar" moram aqui (as
+// Storage do Obra na Mão. Só as imagens "como vai ficar" moram aqui (as
 // fotos do canteiro continuam no Firestore). Quem grava é a Cloud Function
 // gerarImagem, com o Admin SDK, que não passa por estas regras: pelo app,
 // ninguém grava. O app lê pela URL de download que a função devolve.

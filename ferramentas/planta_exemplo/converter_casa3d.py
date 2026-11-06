@@ -1,5 +1,5 @@
 """Converte a casa 7 x 20 do projeto casa-3d (MIT) para o formato de planta
-do ObraFácil (obra_facil/assets/plantas/casa_7x20.json).
+do Obra na Mão (obra_facil/assets/plantas/casa_7x20.json).
 
 Origem: https://github.com/jobasfernandes/casa-3d, src/data/planta.ts, que o
 próprio projeto confere contra a planta desenhada (ref/*.svg). Licença MIT,

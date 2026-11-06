@@ -131,11 +131,11 @@ class _DemoIaScreenState extends State<_DemoIa> {
         children: [
           const Rotulo('Demonstração'),
           const SizedBox(height: Espaco.e4),
-          Text('As IAs do ObraFácil',
+          Text('As IAs do Obra na Mão',
               style: Tipografia.tituloTela.copyWith(color: c.grafite)),
           const SizedBox(height: Espaco.e8),
           Text(
-            'Os quatro módulos de IA do ObraFácil rodam dentro do celular, '
+            'Os quatro módulos de IA do Obra na Mão rodam dentro do celular, '
             'sem internet. Teste três deles aqui, sem precisar de conta.',
             style: Tipografia.corpo.copyWith(color: c.grafite2),
           ),

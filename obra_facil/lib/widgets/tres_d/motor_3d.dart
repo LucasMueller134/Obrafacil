@@ -3,7 +3,7 @@ import 'dart:ui';
 
 /// Motor 3D mínimo, em Dart puro, para as cenas do app.
 ///
-/// Por que escrever um em vez de usar biblioteca: as cenas do ObraFácil são
+/// Por que escrever um em vez de usar biblioteca: as cenas do Obra na Mão são
 /// low-poly (algumas centenas de faces), precisam rodar offline em celular
 /// fraco, e o que se quer é exatamente o controle fino — cor de tijolo,
 /// sombra chapada, aresta desenhada. Um rasterizador por ordenação de

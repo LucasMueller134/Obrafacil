@@ -51,7 +51,7 @@ class RelatorioSemanal {
     };
     final b = StringBuffer();
     b.writeln('RELATÓRIO SEMANAL — ${nomeObra.toUpperCase()}');
-    b.writeln('Gerado em ${Formatters.data(geradoEm)} pelo ObraFácil');
+    b.writeln('Gerado em ${Formatters.data(geradoEm)} pelo Obra na Mão');
     for (final s in secoes) {
       b.writeln();
       b.writeln('${emojis[s.tipo]} ${s.titulo.toUpperCase()}');

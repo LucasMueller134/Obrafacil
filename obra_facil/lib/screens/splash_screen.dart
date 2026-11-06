@@ -81,7 +81,7 @@ class SplashScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: Espaco.e24),
                       Semantics(
-                        label: 'Abrindo o ObraFácil',
+                        label: 'Abrindo o Obra na Mão',
                         child: const IndicadorCarregando(),
                       ),
                     ],

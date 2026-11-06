@@ -184,7 +184,7 @@ class AppDeCaptura extends StatelessWidget {
         Provider<PlantaIaService>.value(value: ia ?? PlantaIaFalsa()),
       ],
       child: MaterialApp.router(
-        title: 'ObraFácil',
+        title: 'Obra na Mão',
         debugShowCheckedModeBanner: false,
         theme: TemaPrancheta.claro,
         darkTheme: TemaPrancheta.escuro,

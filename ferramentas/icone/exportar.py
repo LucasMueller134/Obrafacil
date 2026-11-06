@@ -1,4 +1,4 @@
-"""Exporta o ícone do ObraFácil (planta baixa) para obra_facil/assets/icone/.
+"""Exporta o ícone do Obra na Mão (planta baixa) para obra_facil/assets/icone/.
 
 Fontes: planta.svg (quadro de 108 dp) e notificacao.svg (grade de 24 dp),
 nesta pasta. O Chromium do Playwright rasteriza cada PNG já no tamanho final

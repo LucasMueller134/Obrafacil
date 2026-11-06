@@ -33,17 +33,17 @@ Future<void> main() async {
     cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
   );
 
-  runApp(const ObraFacilApp());
+  runApp(const ObraNaMaoApp());
 }
 
-class ObraFacilApp extends StatefulWidget {
-  const ObraFacilApp({super.key});
+class ObraNaMaoApp extends StatefulWidget {
+  const ObraNaMaoApp({super.key});
 
   @override
-  State<ObraFacilApp> createState() => _ObraFacilAppState();
+  State<ObraNaMaoApp> createState() => _ObraNaMaoAppState();
 }
 
-class _ObraFacilAppState extends State<ObraFacilApp> {
+class _ObraNaMaoAppState extends State<ObraNaMaoApp> {
   late final AuthProvider _auth = AuthProvider(AuthService());
   late final router = criarRouter(_auth);
 
@@ -58,7 +58,7 @@ class _ObraFacilAppState extends State<ObraFacilApp> {
         Provider<PlantaIaService>(create: (_) => PlantaIaFirebase()),
       ],
       child: MaterialApp.router(
-        title: 'ObraFácil',
+        title: 'Obra na Mão',
         debugShowCheckedModeBanner: false,
         // A prancheta: claro de dia, escuro à noite, como o celular.
         theme: TemaPrancheta.claro,

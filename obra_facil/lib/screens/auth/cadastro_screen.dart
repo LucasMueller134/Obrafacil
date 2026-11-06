@@ -148,7 +148,7 @@ class _CadastroScreenState extends State<_Cadastro> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _cabecalho('Criar conta · 1 de 2', 'Como você vai usar o ObraFácil?',
+          _cabecalho('Criar conta · 1 de 2', 'Como você vai usar o Obra na Mão?',
               'Escolha o seu perfil. Isso define o que você vê no app.'),
           const SizedBox(height: Espaco.e24),
           Folha(

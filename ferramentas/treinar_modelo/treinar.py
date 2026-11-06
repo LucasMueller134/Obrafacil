@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Treina o modelo próprio de fases da obra do ObraFácil.
+"""Treina o modelo próprio de fases da obra do Obra na Mão.
 
 O classificador base do ML Kit, que o app usa na foto do diário, foi
 treinado em fotos do dia a dia: não conhece forma de laje, baldrame nem
@@ -371,7 +371,7 @@ def _treinar_e_exportar(args, image_classifier, quantization, treino, validacao,
 
 def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(
-        description="Treina o modelo próprio de fases da obra (ObraFácil).")
+        description="Treina o modelo próprio de fases da obra (Obra na Mão).")
     parser.add_argument("--dados", required=True,
                         help="pasta com uma subpasta de fotos por fase")
     parser.add_argument("--dados-teste",

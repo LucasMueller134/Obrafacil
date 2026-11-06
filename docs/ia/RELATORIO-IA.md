@@ -1,4 +1,4 @@
-# Relatório das IAs do ObraFácil
+# Relatório das IAs do Obra na Mão
 
 Auditoria e revisão das IAs de **imagem** e **voz** do app, com medição de
 acerto antes e depois. Decisão do projeto: **IA 100% no aparelho**, sem

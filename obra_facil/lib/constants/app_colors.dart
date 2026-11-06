@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Paleta "Canteiro Premium" — tema escuro do ObraFácil.
+/// Paleta "Canteiro Premium" — tema escuro do Obra na Mão.
 ///
 /// Laranja de obra como cor de ação, cinza-cimento nas superfícies
 /// e amarelo-capacete para alertas e destaques.

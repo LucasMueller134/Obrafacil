@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
-/// Animações padrão do ObraFácil — entrada escalonada e suave,
+/// Animações padrão do Obra na Mão — entrada escalonada e suave,
 /// consistente em todas as telas.
 extension AnimacoesObraFacil on Widget {
   /// Item de lista: fade + desliza de baixo, com atraso pelo índice.

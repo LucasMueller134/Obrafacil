@@ -97,7 +97,7 @@ abstract class NotificacaoService {
         hora: prefs.resumoMatinalHora,
         minuto: prefs.resumoMatinalMinuto,
         titulo: '☀️ Bora pra obra!',
-        corpo: 'Abra o ObraFácil e veja o panorama: gastos, estoque e o que '
+        corpo: 'Abra o Obra na Mão e veja o panorama: gastos, estoque e o que '
             'precisa de atenção hoje.',
       );
     }

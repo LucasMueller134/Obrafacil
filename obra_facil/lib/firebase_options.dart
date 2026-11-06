@@ -13,7 +13,7 @@ class DefaultFirebaseOptions {
         return android;
       default:
         throw UnsupportedError(
-            'ObraFácil é Android-first: plataforma não suportada.');
+            'Obra na Mão é Android-first: plataforma não suportada.');
     }
   }
 

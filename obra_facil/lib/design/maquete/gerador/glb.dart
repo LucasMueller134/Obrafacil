@@ -108,7 +108,7 @@ Uint8List escreverGlb(ModeloGerado modelo) {
 
   final usaSemLuz = modelo.materiais.any((m) => m.semLuz);
   final json = {
-    'asset': {'version': '2.0', 'generator': 'ObraFácil (maquete da planta)'},
+    'asset': {'version': '2.0', 'generator': 'Obra na Mão (maquete da planta)'},
     if (usaSemLuz) 'extensionsUsed': ['KHR_materials_unlit'],
     'scene': 0,
     'scenes': [

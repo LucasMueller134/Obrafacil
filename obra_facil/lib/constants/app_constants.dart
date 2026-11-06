@@ -1,6 +1,6 @@
-/// Constantes de domínio do ObraFácil.
+/// Constantes de domínio do Obra na Mão.
 abstract class AppConstants {
-  static const String appName = 'ObraFácil';
+  static const String appName = 'Obra na Mão';
   static const String slogan =
       'Menos caderninho. Mais controle. Inteligência no canteiro.';
 

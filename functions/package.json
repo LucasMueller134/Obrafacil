@@ -1,7 +1,7 @@
 {
-  "name": "obrafacil-functions",
+  "name": "obra-na-mao-functions",
   "private": true,
-  "description": "Cloud Functions do ObraFácil: leitura da planta (Gemini) e imagens \"como vai ficar\" (Nano Banana Pro). A chave do Gemini fica no Secret Manager, nunca no app.",
+  "description": "Cloud Functions do Obra na Mão: leitura da planta (Gemini) e imagens \"como vai ficar\" (Nano Banana Pro). A chave do Gemini fica no Secret Manager, nunca no app.",
   "main": "lib/index.js",
   "engines": {
     "node": "22"

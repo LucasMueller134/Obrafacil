@@ -69,7 +69,7 @@ class ErroVoz {
     if (e('error_permission') || e('error_insufficient_permissions')) {
       return const ErroVoz(
           TipoErroVoz.microfone,
-          'O ObraFácil está sem acesso ao microfone. Libere o microfone '
+          'O Obra na Mão está sem acesso ao microfone. Libere o microfone '
           'para o app nas configurações do aparelho e tente de novo.');
     }
     if (e('error_busy') || e('error_recognizer_busy')) {

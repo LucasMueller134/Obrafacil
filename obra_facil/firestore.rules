@@ -1,6 +1,6 @@
 rules_version = '2';
 
-// Regras de segurança do ObraFácil.
+// Regras de segurança do Obra na Mão.
 // Publique no console do Firebase (Firestore Database → Regras)
 // ou via CLI: firebase deploy --only firestore:rules
 service cloud.firestore {

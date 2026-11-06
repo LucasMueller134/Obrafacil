@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Maquete 3D da obra do ObraFácil (direção de arte "Prancheta").
+"""Maquete 3D da obra do Obra na Mão (direção de arte "Prancheta").
 
 Tudo é gerado por código no Blender (módulo Python ``bpy``), sem nenhum asset
 de terceiros:
@@ -1383,7 +1383,7 @@ def exportar(c, caminho):
         export_all_vertex_colors=False, export_active_vertex_color_when_no_material=False,
         export_extras=True, export_cameras=False, export_lights=False, export_animations=False,
         export_skins=False, export_morph=False, export_draco_mesh_compression_enable=False,
-        export_meshopt_compression_enable=False, export_copyright='ObraFácil: modelo procedural, sem assets de terceiros')
+        export_meshopt_compression_enable=False, export_copyright='Obra na Mão: modelo procedural, sem assets de terceiros')
 
 
 def ancoras_cotas(c):

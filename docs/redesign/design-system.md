@@ -1,6 +1,6 @@
 # Design system "Prancheta"
 
-A interface do ObraFácil fala a língua do desenho técnico: papel, grafite,
+A interface do Obra na Mão fala a língua do desenho técnico: papel, grafite,
 cota, carimbo e traço. O laranja da marca aparece como marca-texto, sempre
 com texto preto em cima. A maquete 3D mostra em material real o que já foi
 construído e, tracejado, o que falta.

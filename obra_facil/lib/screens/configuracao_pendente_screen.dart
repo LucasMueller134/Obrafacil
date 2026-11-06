@@ -12,7 +12,7 @@ class ConfiguracaoPendenteApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'ObraFácil — configuração',
+      title: 'Obra na Mão — configuração',
       debugShowCheckedModeBanner: false,
       theme: TemaPrancheta.claro,
       darkTheme: TemaPrancheta.escuro,

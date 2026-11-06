@@ -1,4 +1,4 @@
-// Cloud Functions do ObraFácil (plano Blaze).
+// Cloud Functions do Obra na Mão (plano Blaze).
 //
 // - lerPlanta: a planta da obra (foto, PDF ou DXF) vira o JSON da planta,
 //   lido pelo Gemini. Não grava nada: o app mostra a leitura para o dono

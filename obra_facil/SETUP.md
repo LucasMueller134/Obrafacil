@@ -1,4 +1,4 @@
-# 🛠️ ObraFácil — Guia de configuração e execução
+# 🛠️ Obra na Mão — Guia de configuração e execução
 
 Passo a passo para rodar o projeto do zero numa máquina nova.
 
@@ -23,8 +23,9 @@ flutter pub get
 
 O app usa **Firebase Auth** (login) e **Cloud Firestore** (dados + offline).
 
-1. Crie um projeto em <https://console.firebase.google.com> (plano Spark/gratuito basta —
-   o protótipo não usa Firebase Storage; fotos são comprimidas e salvas no Firestore).
+1. Crie um projeto em <https://console.firebase.google.com>. O plano Spark
+   (gratuito) basta para o app: as fotos são comprimidas e salvas no
+   Firestore. Só a IA da planta (passo 4) pede o plano Blaze.
 2. No console: **Authentication → Sign-in method → E-mail/senha → Ativar**.
 3. No console: **Firestore Database → Criar banco de dados** (modo produção,
    região `southamerica-east1`).
@@ -56,21 +57,38 @@ Celular físico com **depuração USB** ativada é o ideal — os módulos de IA
 > (`io.flutter.embedding.android.EnableFlutterGPU` = `true`) dentro de
 > `<application>` no `android/app/src/main/AndroidManifest.xml`.
 
-## 4. Roteiro de demonstração (pitch/banca)
+## 4. IA da planta (opcional)
+
+A leitura da planta e as imagens "como vai ficar" rodam em Cloud Functions
+(pasta `functions/` na raiz do repositório), com o Gemini. Pedem o plano
+Blaze, a chave do Gemini no Secret Manager e o deploy das funções e das
+regras. Passo a passo, custos e limites:
+[docs/ia/gemini-planta.md](../docs/ia/gemini-planta.md). Sem isso o app
+funciona igual e, na planta, oferece a casa de exemplo.
+
+## 5. Roteiro de demonstração (pitch/banca)
 
 1. Crie uma conta **Dono/Gestor** e uma obra (o cronograma padrão é gerado sozinho).
 2. Copie o **código de convite** no dashboard da obra.
 3. Em outro aparelho (ou após logout), crie uma conta **Mestre de obras** e entre com o código.
 4. Como mestre: lance um gasto **tirando foto de uma nota fiscal** (OCR preenche) e outro **por voz**.
 5. Como dono: **aprove/rejeite** os lançamentos pendentes e veja os gráficos atualizarem.
-6. Abra o **Relatório semanal (IA)** e a **previsão de estouro** no dashboard.
-7. Modo offline: ative o modo avião, lance um gasto, desative — ele sincroniza sozinho.
+6. Abra o **Relatório semanal (IA)** e a **previsão de estouro** na central da obra.
+7. Na central, abra **Planta da obra** e use a casa de exemplo (ou envie uma
+   planta, se a IA da planta estiver publicada). A maquete passa a ser a casa
+   da planta; toque num cômodo e abra a **vista 360°**.
+8. Atualize uma fase no **Cronograma** e veja a maquete crescer.
+9. Como cliente (código de acompanhamento): veja a casa **hoje** e **pronta**
+   e os cômodos por dentro.
+10. Modo offline: ative o modo avião, lance um gasto, desative — ele sincroniza sozinho.
 
 ## Arquitetura (resumo)
 
 ```
 lib/
-├── constants/   # cores (tema escuro "Canteiro Premium"), domínio
+├── constants/   # constantes de domínio (fases, unidades, climas)
+├── design/      # design system Prancheta (tokens, tema, componentes)
+│   └── maquete/ # maquete 3D (flutter_scene) e o gerador da casa pela planta
 ├── models/      # entidades + toMap/fromMap (Firestore)
 ├── services/
 │   ├── auth_service.dart        # Firebase Auth
@@ -86,11 +104,12 @@ lib/
 │       ├── material_vision_service.dart   # material pela foto e pelo texto da embalagem
 │       ├── progresso_foto_service.dart    # mudança visual entre duas fotos
 │       ├── previsao_*_service.dart        # regressão (orçamento e estoque)
-│       └── relatorio_semanal_service.dart, perguntas_obra_service.dart # texto por regras
+│       ├── relatorio_semanal_service.dart, perguntas_obra_service.dart # texto por regras
+│       └── planta_ia_service.dart         # chama as Cloud Functions da planta (Gemini)
 ├── providers/   # AuthProvider (estado global de sessão)
 ├── router/      # go_router + guarda de autenticação
 ├── screens/     # telas por módulo
-├── widgets/     # componentes reutilizáveis (gráficos, cards…)
+├── widgets/     # componentes compartilhados (gráficos, chat, imagem…)
 └── utils/       # formatação pt-BR e validação
 ```
 
@@ -103,7 +122,7 @@ lib/
   Firebase Storage, que passou a exigir plano pago em projetos novos.
   O widget `ImagemObra` também aceita URLs http, então a migração para
   Storage é transparente.
-- **IA 100% on-device**: ML Kit (modelos TFLite embarcados) para OCR,
+- **IA no aparelho**: ML Kit (modelos TFLite embarcados) para OCR,
   código de barras e visão; reconhecedor de voz do Android em modo
   offline; regressão e geração de relatório em Dart puro. Por padrão
   nada sai do aparelho e tudo funciona sem internet. Para a voz offline, o
@@ -114,3 +133,12 @@ lib/
   [docs/ia/RELATORIO-IA.md](../docs/ia/RELATORIO-IA.md).
 - **Fluxo de aprovação**: lançamento de mestre nasce `pendente`; do dono
   nasce `aprovado`. Só entra nos gráficos e na previsão o que foi aprovado.
+- **IA da planta na nuvem, sem chave no app**: a leitura da planta e as
+  imagens "como vai ficar" precisam de um modelo grande (Gemini), então
+  rodam em Cloud Functions; a chave fica no Secret Manager, só o dono da
+  obra chama e há limite por mês. A maquete em si é gerada no aparelho a
+  partir da planta, e funciona offline depois de gravada.
+- **Design Prancheta em todas as telas**: tema claro e escuro pelo
+  sistema, fontes embutidas (o canteiro fica sem sinal), alvos de toque
+  grandes e desfazer no lugar de diálogos. Ver
+  [docs/redesign/design-system.md](../docs/redesign/design-system.md).
