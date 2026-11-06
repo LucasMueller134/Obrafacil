@@ -95,6 +95,39 @@ perfil escolhido. O e-mail do Google já vem confirmado.
 Para rodar localmente com o Google, assine o build de debug com a mesma
 chave ou cadastre também o SHA-1 da sua chave de debug.
 
+## 4c. iPhone (teste grátis, pelo computador)
+
+A cada push na `main`, o build **Build iOS** (Mac do GitHub) gera um `.ipa`
+sem assinatura na aba **Releases** ("Obra na Mão iOS build N"). Para
+instalar no iPhone sem conta paga da Apple:
+
+1. **No computador** (Windows ou Mac), instale o
+   [Sideloadly](https://sideloadly.io). No Windows, instale também o iTunes
+   e o iCloud baixados do site da Apple (não os da Microsoft Store).
+2. Baixe o `obra-na-mao-ios-N.ipa` da release mais nova de iOS.
+3. Ligue o iPhone no computador pelo cabo, desbloqueie e toque em
+   **Confiar**.
+4. No Sideloadly, arraste o `.ipa`, escolha o iPhone, digite o seu Apple ID
+   e clique em **Start**. Ele assina o app com a sua conta e instala.
+5. **No iPhone**: em **Ajustes → Privacidade e Segurança → Modo de
+   Desenvolvedor**, ligue e reinicie. Depois, em **Ajustes → Geral → VPN e
+   Gerenciamento de Dispositivo**, toque no seu Apple ID e em **Confiar**.
+
+Com Apple ID comum o app abre por **7 dias** e cabem até 3 apps instalados
+assim ao mesmo tempo; depois dos 7 dias é só repetir o passo 4 com o mesmo
+Apple ID (os dados da obra ficam no Firebase). O Sideloadly também pode
+renovar sozinho, com o iPhone no cabo ou no mesmo Wi-Fi.
+
+**Firebase no iPhone (uma vez):** em **Configurações do projeto → Seus
+apps → Adicionar app → iOS**, use o ID do pacote
+`br.com.obrafacil.obraFacil` e baixe o `GoogleService-Info.plist`. O
+`GOOGLE_APP_ID` e a `API_KEY` dele entram em
+`DefaultFirebaseOptions.ios` (`lib/firebase_options.dart`). Até lá o
+iPhone abre na tela de configuração pendente, com a demonstração das IAs.
+
+No iPhone o verificador em segundo plano (aprovações e alertas a cada 15
+min) fica desligado; os lembretes agendados funcionam.
+
 ## 5. Roteiro de demonstração (pitch/banca)
 
 1. Crie uma conta **Dono/Gestor** e uma obra (o cronograma padrão é gerado sozinho).
