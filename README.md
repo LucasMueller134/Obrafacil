@@ -77,7 +77,7 @@ Um aplicativo **Android** com **três perfis de acesso** e **fluxo de aprovaçã
 - O **geminado** segue a fachada desenhada do projeto-padrão: casas de 6 m de frente e 7 m de altura, garagem fechada com portão de lâminas (3,40 m), porta pivotante de madeira (1,40 m), sacada com vidro dentro de uma moldura de concreto grafite, ripado em L, porta de correr de 3,20 m, fita de LED e aleta entre as casas. Casa maior ou menor: a frente vai de 5 a 8 m (dois carros a partir de 7,5 m) e todas as peças acompanham
 - **Planta da obra:** quem quer a casa exata envia o projeto real (foto, PDF, imagem ou DXF), a IA lê paredes, portas, janelas e cômodos e o dono confere numa tela de revisão antes de confirmar
 - A maquete passa a ser **gerada no próprio aparelho a partir da planta**, igual à casa de verdade, com quantos pavimentos ela tiver (sobrado e prédio sobem andar por andar)
-- Planta tocável com a ficha de cada cômodo (medidas, área, piso, pé-direito, portas e janelas) e **vista 360°** por dentro
+- Planta tocável com a ficha de cada cômodo (medidas, área, piso, pé-direito, portas e janelas) e **vista 360°** por dentro: a casa mobiliada (móveis de cada cômodo, luminárias, cortinas, revestimentos), de dia ou de noite, com o mapa do andar para ir de um cômodo a outro
 - Imagens **"como vai ficar"** da fachada e dos cômodos, geradas por IA em cima da maquete
 
 **Para todos**

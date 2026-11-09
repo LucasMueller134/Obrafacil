@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 
 import '../../models/planta_obra.dart';
 import 'gerador/gerador_maquete.dart';
+import 'gerador/interior.dart' show LuzDoTeto;
 import 'gerador/glb.dart';
 import 'plano_maquete.dart';
 
@@ -96,9 +97,14 @@ final class FontePadrao extends FonteMaquete {
 /// A maquete gerada pela planta da obra, no aparelho. A reserva (aparelho
 /// sem 3D, testes, "reduzir animações") é a planta desenhada.
 final class FontePlanta extends FonteMaquete {
-  FontePlanta(this.planta) : _json = jsonEncode(planta.toMap());
+  /// Com [interior], a casa vem mobiliada e com as luminárias (vista 360°).
+  FontePlanta(this.planta, {this.interior = false})
+      : _json = '${interior ? 'I' : 'E'}${jsonEncode(planta.toMap())}';
 
   final PlantaObra planta;
+  final bool interior;
+
+  /// O pedido para o isolate: I (interior) ou E e o json da planta.
   final String _json;
 
   @override
@@ -130,20 +136,27 @@ final class FontePlanta extends FonteMaquete {
 
 /// O que a cena precisa de uma maquete gerada.
 class MaquetePronta {
-  const MaquetePronta(this.glb, this.enquadramento, this.triangulos);
+  const MaquetePronta(this.glb, this.enquadramento, this.triangulos,
+      {this.luzes = const []});
 
   final Uint8List glb;
   final EnquadramentoMaquete enquadramento;
   final int triangulos;
+
+  /// As luminárias do teto (só com o interior).
+  final List<LuzDoTeto> luzes;
 }
 
-MaquetePronta _gerar(String json) {
-  final planta = PlantaObra.fromMap(jsonDecode(json) as Map<String, dynamic>);
-  final m = GeradorMaquete.gerar(planta);
+MaquetePronta _gerar(String pedido) {
+  final interior = pedido.startsWith('I');
+  final planta = PlantaObra.fromMap(
+      jsonDecode(pedido.substring(1)) as Map<String, dynamic>);
+  final m = GeradorMaquete.gerar(planta, interior: interior);
   final (mn, mx) = m.modelo.limites;
   return MaquetePronta(
     escreverGlb(m.modelo),
     EnquadramentoMaquete.paraLimites(mn, mx),
     m.modelo.triangulos,
+    luzes: m.luzes,
   );
 }

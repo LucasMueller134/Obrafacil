@@ -116,7 +116,7 @@ void main() {
 
     test('a maquete tem moldura grafite, cumaru, portão e LED', () {
       final m = GeradorMaquete.gerar(p);
-      expect(m.modelo.triangulos, lessThan(150000));
+      expect(m.modelo.triangulos, lessThan(200000));
       final glb = escreverGlb(m.modelo);
       final materiais = {
         for (final mat in _jsonDoGlb(glb)['materials'] as List)

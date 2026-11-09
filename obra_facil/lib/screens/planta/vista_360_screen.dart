@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/physics.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_scene/scene.dart' as fs;
@@ -58,6 +59,15 @@ class _Vista360State extends State<_Vista360> {
   final _chaveVista = GlobalKey();
   bool _capturando = false;
 
+  /// O cômodo da vista: começa no da rota e muda pelo mapa ou pela lista,
+  /// sem recarregar a casa.
+  late String _comodoId = widget.comodoId;
+
+  void _irPara(String id) {
+    if (id == _comodoId) return;
+    setState(() => _comodoId = id);
+  }
+
   /// Fotografa o ângulo que o dono escolheu e abre a geração da imagem.
   Future<void> _gerarFoto(PlantaObra planta, ComodoPlanta comodo) async {
     setState(() => _capturando = true);
@@ -95,11 +105,10 @@ class _Vista360State extends State<_Vista360> {
       stream: _planta,
       builder: (context, snap) {
         final planta = snap.data;
-        final comodo = planta?.todosOsComodos
-            .where((x) => x.id == widget.comodoId)
-            .firstOrNull;
+        final comodo =
+            planta?.todosOsComodos.where((x) => x.id == _comodoId).firstOrNull;
         // A planta do pavimento do cômodo (vãos, ficha, paredes).
-        final indice = planta?.plantaDoComodo(widget.comodoId) ?? 0;
+        final indice = planta?.plantaDoComodo(_comodoId) ?? 0;
         final doAndar = planta?.planta(math.max(0, indice));
         final podeGerar = ehDono &&
             planta != null &&
@@ -160,15 +169,20 @@ class _Vista360State extends State<_Vista360> {
                     SizedBox(
                       height: math.min(
                           MediaQuery.sizeOf(context).height * 0.55, 460),
-                      child: RepaintBoundary(
-                        key: _chaveVista,
-                        child: Interior360(
-                          planta: planta,
-                          comodo: comodo,
-                          pavimento:
-                              planta.pavimentoDaPlanta(math.max(0, indice)),
-                        ),
+                      child: Interior360(
+                        planta: planta,
+                        comodo: comodo,
+                        pavimento:
+                            planta.pavimentoDaPlanta(math.max(0, indice)),
+                        aoTrocarComodo: _irPara,
+                        chaveDaCena: _chaveVista,
                       ),
+                    ),
+                    const SizedBox(height: Espaco.e12),
+                    _OutrosComodos(
+                      planta: planta,
+                      atual: comodo,
+                      aoEscolher: _irPara,
                     ),
                     StreamBuilder<List<ImagemIaModel>>(
                       stream: _imagens,
@@ -205,15 +219,77 @@ class _Vista360State extends State<_Vista360> {
   }
 }
 
+/// Os outros cômodos cobertos da mesma casa (ou apartamento), numa faixa
+/// que rola de lado: tocar troca a vista na hora.
+class _OutrosComodos extends StatelessWidget {
+  const _OutrosComodos({
+    required this.planta,
+    required this.atual,
+    required this.aoEscolher,
+  });
+
+  final PlantaObra planta;
+  final ComodoPlanta atual;
+  final ValueChanged<String> aoEscolher;
+
+  @override
+  Widget build(BuildContext context) {
+    final comodos = [
+      for (final k in planta.todosOsComodos)
+        if (k.coberto && k.unidade == atual.unidade && k.tipo != 'escada') k,
+    ];
+    if (comodos.length < 2) return const SizedBox.shrink();
+    return Semantics(
+      container: true,
+      label: 'Outros cômodos',
+      child: SizedBox(
+        height: Alvo.minimo,
+        child: ListView.separated(
+          key: const ValueKey('outros-comodos'),
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: Espaco.margem),
+          itemCount: comodos.length,
+          separatorBuilder: (_, __) => const SizedBox(width: Espaco.e8),
+          itemBuilder: (context, i) {
+            final k = comodos[i];
+            return ChoiceChip(
+              label: Text(k.nome),
+              selected: k.id == atual.id,
+              onSelected: (_) => aoEscolher(k.id),
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
 /// O cômodo por dentro: 3D em tempo real quando o aparelho tem Flutter GPU;
 /// senão, as quatro paredes desdobradas ([ParedesDoComodo]).
+///
+/// A casa vem pronta e mobiliada. Arrastar olha em volta (e o giro segue
+/// um pouco depois de soltar), pinçar aproxima, dois toques voltam ao
+/// começo. O botão do sol troca dia e noite (de noite as luminárias
+/// acendem) e o mapa no canto mostra onde a pessoa está e para onde olha:
+/// tocar noutro cômodo vai para ele sem recarregar a casa.
 class Interior360 extends StatefulWidget {
   const Interior360({
     super.key,
     required this.planta,
     required this.comodo,
     this.pavimento = 0,
+    this.giroInicial,
+    this.aoTrocarComodo,
+    this.noiteInicial = false,
+    this.chaveDaCena,
   });
+
+  /// O RepaintBoundary só da cena (sem os botões e o mapa), para a foto
+  /// do ângulo.
+  final GlobalKey? chaveDaCena;
+
+  /// Para onde o olhar começa (radianos); nulo: o lado mais comprido.
+  final double? giroInicial;
 
   /// A planta inteira (a cena tem todos os pavimentos).
   final PlantaObra planta;
@@ -222,14 +298,24 @@ class Interior360 extends StatefulWidget {
   /// Em que pavimento o cômodo está (0 = térreo): a altura do olho.
   final int pavimento;
 
+  /// Tocar num cômodo do mapa (nulo: o mapa não troca de cômodo).
+  final ValueChanged<String>? aoTrocarComodo;
+
+  /// Começa de noite (testes e capturas).
+  final bool noiteInicial;
+
   @override
   State<Interior360> createState() => _Interior360State();
 }
 
-class _Interior360State extends State<Interior360> {
+class _Interior360State extends State<Interior360>
+    with SingleTickerProviderStateMixin {
   CenaMaquete? _cena;
+  Map<String, fs.PointLight> _luzes = const {};
   bool _semTresD = false;
   bool _descartado = false;
+  late bool _noite = widget.noiteInicial;
+  bool _mexeu = false;
 
   /// Para onde o olho aponta: giro (em volta do eixo vertical) e
   /// inclinação (para cima/baixo), em radianos; e o campo de visão.
@@ -237,17 +323,41 @@ class _Interior360State extends State<Interior360> {
   double _inclinacao = -0.08;
   double _campo = 70 * math.pi / 180;
   double _campoNoInicio = 0;
+  int _dedos = 0;
+
+  /// O giro que continua depois de soltar o dedo.
+  late final AnimationController _inercia =
+      AnimationController.unbounded(vsync: this)
+        ..addListener(() => setState(() => _giro = _inercia.value));
 
   static const double _alturaDoOlho = 1.6;
+  static const double _radianosPorPonto = 0.006;
 
   @override
   void initState() {
     super.initState();
-    _giro = _giroInicial();
+    _giro = widget.giroInicial ?? _giroInicial();
     // O tema e a MediaQuery só podem ser lidos depois do initState.
     SchedulerBinding.instance.addPostFrameCallback((_) {
       if (mounted) unawaited(_carregar());
     });
+  }
+
+  @override
+  void didUpdateWidget(Interior360 antes) {
+    super.didUpdateWidget(antes);
+    if (antes.comodo.id != widget.comodo.id) {
+      _inercia.stop();
+      _giro = _giroInicial();
+      _inclinacao = -0.08;
+      _campo = 70 * math.pi / 180;
+      // A sombra dos móveis vem da luz do cômodo onde a pessoa está.
+      final cena = _cena;
+      if (cena != null) {
+        LuzMaquete.horario(cena.cena, _luzes,
+            noite: _noite, comodo: widget.comodo.id);
+      }
+    }
   }
 
   /// Começa olhando para o lado mais comprido do cômodo.
@@ -265,22 +375,21 @@ class _Interior360State extends State<Interior360> {
       final cena = await CenaMaquete.carregarDaPlanta(
         tema: TemaMaquete.de(
             escuro: Theme.of(context).brightness == Brightness.dark),
-        fonte: FontePlanta(widget.planta),
+        fonte: FontePlanta(widget.planta, interior: true),
       );
       if (_descartado || !mounted) {
         cena.descartar();
         return;
       }
-      // A casa pronta, sem o tracejado; luz sem sombra (dentro, a laje
-      // deixaria tudo no escuro).
+      // A casa pronta e mobiliada, sem o tracejado, com a luz de dentro.
       cena.aplicar(PlanoMaquete.calcular(
           List<double>.filled(ProgressoMaquete.totalFases, 1)));
-      cena.cena.directionalLight = fs.DirectionalLight(
-        direction: CenaMaquete.direcaoDaLuz,
-        color: vm.Vector3(1.0, 0.975, 0.945),
-        intensity: CenaMaquete.intensidadeDaLuz,
-      );
-      setState(() => _cena = cena);
+      final luzes = LuzMaquete.deDentro(cena.cena, cena.luzes,
+          comodo: widget.comodo.id, noite: _noite);
+      setState(() {
+        _cena = cena;
+        _luzes = luzes;
+      });
     } catch (erro) {
       MaqueteObra.anotarFalhaGpu(erro);
       if (mounted) setState(() => _semTresD = true);
@@ -290,6 +399,7 @@ class _Interior360State extends State<Interior360> {
   @override
   void dispose() {
     _descartado = true;
+    _inercia.dispose();
     final cena = _cena;
     _cena = null;
     if (cena != null) {
@@ -298,12 +408,44 @@ class _Interior360State extends State<Interior360> {
     super.dispose();
   }
 
-  fs.PerspectiveCamera _camera() {
+  void _trocarHorario() {
+    final cena = _cena;
+    if (cena == null) return;
+    unawaited(Tato.leve());
+    setState(() => _noite = !_noite);
+    LuzMaquete.horario(cena.cena, _luzes,
+        noite: _noite, comodo: widget.comodo.id);
+  }
+
+  void _recentrar() {
+    _inercia.stop();
+    setState(() {
+      _giro = _giroInicial();
+      _inclinacao = -0.08;
+      _campo = 70 * math.pi / 180;
+    });
+  }
+
+  /// Onde a pessoa fica: no meio do cômodo; na garagem, ao lado do carro.
+  (double, double) get _ondeFica {
     final r = widget.comodo.principal;
+    var (x, y) = ((r.x + r.x1) / 2, (r.y + r.y1) / 2);
+    if (widget.comodo.tipo == 'garagem' && widget.comodo.coberto) {
+      if (r.profundidade >= r.largura) {
+        x = r.x + math.max(0.45, (r.largura - 1.8) / 4);
+      } else {
+        y = r.y + math.max(0.45, (r.profundidade - 1.8) / 4);
+      }
+    }
+    return (x, y);
+  }
+
+  fs.PerspectiveCamera _camera() {
     final (cx, cy) = GeradorMaquete.centroDe(widget.planta);
+    final (px, py) = _ondeFica;
     // Planta -> glTF (X, Z) -> flutter_scene (Z invertido).
-    final x = (r.x + r.x1) / 2 - cx;
-    final z = -((r.y + r.y1) / 2 - cy);
+    final x = px - cx;
+    final z = -(py - cy);
     final y = NiveisMaquete.piso +
         widget.pavimento *
             (widget.planta.alturas.peDireito + NiveisMaquete.espessuraLaje) +
@@ -339,66 +481,293 @@ class _Interior360State extends State<Interior360> {
         child: const Center(child: IndicadorCarregando()),
       );
     }
-    return Semantics(
-      label:
-          'Vista 360° de ${widget.comodo.nome}. Arraste para olhar em volta.',
-      image: true,
-      customSemanticsActions: {
-        const CustomSemanticsAction(label: 'Olhar para a esquerda'): () =>
-            setState(() => _giro += math.pi / 4),
-        const CustomSemanticsAction(label: 'Olhar para a direita'): () =>
-            setState(() => _giro -= math.pi / 4),
-      },
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onScaleStart: (_) => _campoNoInicio = _campo,
-            onScaleUpdate: (d) => setState(() {
-              if (d.pointerCount > 1) {
-                _campo = (_campoNoInicio / d.scale)
-                    .clamp(40 * math.pi / 180, 95 * math.pi / 180);
-              } else {
-                _giro += d.focalPointDelta.dx * 0.006;
-                _inclinacao = (_inclinacao + d.focalPointDelta.dy * 0.004)
-                    .clamp(-0.7, 0.7);
-              }
-            }),
-            child: fs.SceneView(
-              cena.cena,
-              camera: _camera(),
-              warmUp: true,
-              loadingBuilder: (context, _) => ColoredBox(
-                color: c.folhaRebaixada,
-                child: const Center(child: IndicadorCarregando()),
-              ),
-            ),
-          ),
-          Positioned(
-            left: Espaco.margem,
-            bottom: Espaco.e12,
-            child: IgnorePointer(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  color: c.papel,
-                  borderRadius: Raio.cantoPequeno,
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: Espaco.e8, vertical: Espaco.e4),
-                  child: Text(
-                    'Arraste para olhar em volta',
-                    style: Tipografia.apoio.copyWith(color: c.grafite),
+    final indice = math.max(0, widget.planta.plantaDoComodo(widget.comodo.id));
+    return LayoutBuilder(builder: (context, caixa) {
+      final proporcao = caixa.maxWidth / math.max(1, caixa.maxHeight);
+      return Semantics(
+        label: 'Vista 360° de ${widget.comodo.nome}, '
+            '${_noite ? 'de noite' : 'de dia'}. Arraste para olhar em volta.',
+        image: true,
+        customSemanticsActions: {
+          const CustomSemanticsAction(label: 'Olhar para a esquerda'): () =>
+              setState(() => _giro += math.pi / 4),
+          const CustomSemanticsAction(label: 'Olhar para a direita'): () =>
+              setState(() => _giro -= math.pi / 4),
+        },
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onDoubleTap: _recentrar,
+              onScaleStart: (d) {
+                _inercia.stop();
+                _campoNoInicio = _campo;
+                _dedos = d.pointerCount;
+              },
+              onScaleUpdate: (d) => setState(() {
+                _mexeu = true;
+                _dedos = math.max(_dedos, d.pointerCount);
+                if (d.pointerCount > 1) {
+                  _campo = (_campoNoInicio / d.scale)
+                      .clamp(40 * math.pi / 180, 95 * math.pi / 180);
+                } else {
+                  _giro += d.focalPointDelta.dx * _radianosPorPonto;
+                  _inclinacao = (_inclinacao + d.focalPointDelta.dy * 0.004)
+                      .clamp(-0.7, 0.7);
+                }
+              }),
+              onScaleEnd: (d) {
+                if (_dedos > 1) return;
+                final v = d.velocity.pixelsPerSecond.dx * _radianosPorPonto;
+                if (v.abs() < 0.3) return;
+                _inercia.value = _giro;
+                unawaited(_inercia.animateWith(
+                    FrictionSimulation(0.08, _giro, v.clamp(-6.0, 6.0))));
+              },
+              child: RepaintBoundary(
+                key: widget.chaveDaCena,
+                child: fs.SceneView(
+                  cena.cena,
+                  camera: _camera(),
+                  warmUp: true,
+                  loadingBuilder: (context, _) => ColoredBox(
+                    color: c.folhaRebaixada,
+                    child: const Center(child: IndicadorCarregando()),
                   ),
                 ),
               ),
             ),
+            Positioned(
+              right: Espaco.e8,
+              top: Espaco.e8,
+              child: Column(
+                children: [
+                  _NoPapel(
+                    child: BotaoIcone(
+                      icone: _noite
+                          ? Icons.wb_sunny_outlined
+                          : Icons.nightlight_outlined,
+                      rotulo: _noite ? 'Ver de dia' : 'Ver de noite',
+                      tamanho: Alvo.minimo,
+                      aoTocar: _trocarHorario,
+                    ),
+                  ),
+                  const SizedBox(height: Espaco.e8),
+                  _NoPapel(
+                    child: BotaoIcone(
+                      icone: Icons.center_focus_strong_outlined,
+                      rotulo: 'Voltar ao começo',
+                      tamanho: Alvo.minimo,
+                      aoTocar: _recentrar,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Positioned(
+              right: Espaco.e8,
+              bottom: Espaco.e8,
+              child: MapaDoAndar(
+                planta: widget.planta.planta(indice),
+                comodo: widget.comodo,
+                onde: _ondeFica,
+                giro: _giro,
+                campoHorizontal:
+                    2 * math.atan(math.tan(_campo / 2) * proporcao),
+                aoTocar: widget.aoTrocarComodo,
+              ),
+            ),
+            Positioned(
+              left: Espaco.margem,
+              bottom: Espaco.e12,
+              child: IgnorePointer(
+                child: AnimatedOpacity(
+                  opacity: _mexeu ? 0 : 1,
+                  duration: const Duration(milliseconds: 400),
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: c.papel,
+                      borderRadius: Raio.cantoPequeno,
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: Espaco.e8, vertical: Espaco.e4),
+                      child: Text(
+                        'Arraste para olhar em volta',
+                        style: Tipografia.apoio.copyWith(color: c.grafite),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    });
+  }
+}
+
+/// Fundo de papel atrás de um botão que fica sobre a cena 3D (de noite a
+/// cena escurece e o botão de contorno sumiria).
+class _NoPapel extends StatelessWidget {
+  const _NoPapel({required this.child});
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => DecoratedBox(
+        decoration: BoxDecoration(
+          color: context.cores.papel.withValues(alpha: 0.92),
+          borderRadius: Raio.cantoPequeno,
+        ),
+        child: child,
+      );
+}
+
+/// O andar visto de cima no canto da vista 360°: os cômodos, o atual em
+/// destaque, onde a pessoa está e o cone para onde ela olha. Tocar num
+/// cômodo coberto chama [aoTocar] com o id dele.
+class MapaDoAndar extends StatelessWidget {
+  const MapaDoAndar({
+    super.key,
+    required this.planta,
+    required this.comodo,
+    required this.onde,
+    required this.giro,
+    required this.campoHorizontal,
+    this.aoTocar,
+  });
+
+  final PlantaObra planta;
+  final ComodoPlanta comodo;
+  final (double, double) onde;
+  final double giro;
+  final double campoHorizontal;
+  final ValueChanged<String>? aoTocar;
+
+  static const double lado = 112;
+
+  /// Escala e deslocamento da planta para caber no quadrado.
+  (double, double, double) _encaixe() {
+    const borda = 8.0;
+    final escala = (lado - 2 * borda) /
+        math.max(planta.largura, math.max(planta.profundidade, 1));
+    final dx = (lado - planta.largura * escala) / 2;
+    final dy = (lado - planta.profundidade * escala) / 2;
+    return (escala, dx, dy);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.cores;
+    final (escala, dx, dy) = _encaixe();
+    return Semantics(
+      label: 'Mapa do andar: você está em ${comodo.nome}.'
+          '${aoTocar != null ? ' Toque noutro cômodo para ir até ele.' : ''}',
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTapUp: aoTocar == null
+            ? null
+            : (d) {
+                final x = (d.localPosition.dx - dx) / escala;
+                final y = (d.localPosition.dy - dy) / escala;
+                for (final k in planta.comodos) {
+                  if (!k.coberto || k.id == comodo.id) continue;
+                  if (k.retangulos.any(
+                      (r) => x >= r.x && x <= r.x1 && y >= r.y && y <= r.y1)) {
+                    unawaited(Tato.leve());
+                    aoTocar!(k.id);
+                    return;
+                  }
+                }
+              },
+        child: Container(
+          width: lado,
+          height: lado,
+          decoration: BoxDecoration(
+            color: c.papel.withValues(alpha: 0.92),
+            borderRadius: Raio.cantoPequeno,
+            border: Border.all(color: c.traco, width: Traco.fino),
           ),
-        ],
+          child: CustomPaint(
+            painter: _PintorMapa(
+              planta: planta,
+              atual: comodo.id,
+              onde: onde,
+              giro: giro,
+              campo: campoHorizontal,
+              escala: escala,
+              dx: dx,
+              dy: dy,
+              cores: c,
+            ),
+          ),
+        ),
       ),
     );
   }
+}
+
+class _PintorMapa extends CustomPainter {
+  _PintorMapa({
+    required this.planta,
+    required this.atual,
+    required this.onde,
+    required this.giro,
+    required this.campo,
+    required this.escala,
+    required this.dx,
+    required this.dy,
+    required this.cores,
+  });
+
+  final PlantaObra planta;
+  final String atual;
+  final (double, double) onde;
+  final double giro, campo, escala, dx, dy;
+  final CoresObra cores;
+
+  Offset _p(double x, double y) => Offset(dx + x * escala, dy + y * escala);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final cheio = Paint()..color = cores.folha;
+    final fora = Paint()..color = cores.folhaRebaixada;
+    final contorno = Paint()
+      ..color = cores.grafite2
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1;
+    final destaque = Paint()..color = cores.marca.withValues(alpha: 0.28);
+    for (final k in planta.comodos) {
+      for (final r in k.retangulos) {
+        final ret = Rect.fromPoints(_p(r.x, r.y), _p(r.x1, r.y1));
+        canvas.drawRect(ret, k.coberto ? cheio : fora);
+        if (k.id == atual) canvas.drawRect(ret, destaque);
+        canvas.drawRect(ret, contorno);
+      }
+    }
+    // O cone de visão: na planta, olhar no giro g é andar (sen g, -cos g).
+    final o = _p(onde.$1, onde.$2);
+    const alcance = 26.0;
+    final cone = Path()..moveTo(o.dx, o.dy);
+    for (var i = 0; i <= 12; i++) {
+      final a = giro - campo / 2 + campo * i / 12;
+      cone.lineTo(o.dx + math.sin(a) * alcance, o.dy - math.cos(a) * alcance);
+    }
+    cone.close();
+    canvas.drawPath(cone, Paint()..color = cores.marca.withValues(alpha: 0.35));
+    canvas.drawCircle(o, 3.5, Paint()..color = cores.marca);
+  }
+
+  @override
+  bool shouldRepaint(covariant _PintorMapa old) =>
+      old.giro != giro ||
+      old.campo != campo ||
+      old.atual != atual ||
+      old.onde != onde ||
+      old.cores != cores ||
+      old.planta != planta;
 }
 
 /// As quatro paredes do cômodo desdobradas, como num desenho de

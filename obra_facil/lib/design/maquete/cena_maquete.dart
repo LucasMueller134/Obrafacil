@@ -9,6 +9,7 @@ import 'package:flutter_scene/scene.dart' as fs;
 import 'package:vector_math/vector_math.dart' as vm;
 
 import 'fonte_maquete.dart';
+import 'gerador/interior.dart' show LuzDoTeto;
 import 'plano_maquete.dart';
 
 /// O que a `MaqueteObra` usa da cena 3D. A implementação é a [CenaMaquete];
@@ -216,6 +217,148 @@ final class _CenaProtegida extends fs.Scene {
   }
 }
 
+/// A luz da maquete: sol com sombra macia, céu claro e neutro como luz
+/// ambiente (vem de todos os lados, sem tingir de azul), sombra de contato
+/// e oclusão de ambiente (os cantos, os pés das paredes e o chão embaixo
+/// das peças escurecem como numa foto). Conferido no flutter_scene de
+/// verdade (Impeller), não só no Blender.
+abstract final class LuzMaquete {
+  /// O céu da luz ambiente: zênite levemente frio, horizonte claro e o chão
+  /// quente, todos dessaturados.
+  static fs.GradientSkySource ceu({double brilho = 1}) => fs.GradientSkySource(
+        zenithColor: vm.Vector3(0.62, 0.64, 0.66) * brilho,
+        horizonColor: vm.Vector3(0.90, 0.88, 0.85) * brilho,
+        groundColor: vm.Vector3(0.42, 0.40, 0.36) * brilho,
+        sunDirection: -CenaMaquete.direcaoDaLuz,
+      );
+
+  /// O sol: a mesma direção e cor das imagens de reserva.
+  static fs.DirectionalLight sol({required bool sombra}) => fs.DirectionalLight(
+        direction: CenaMaquete.direcaoDaLuz,
+        color: vm.Vector3(1.0, 0.975, 0.945),
+        intensity: CenaMaquete.intensidadeDaLuz,
+        castsShadow: sombra,
+        // Sol grande: sombra macia, mas com contorno.
+        shadowSoftness: 0.06,
+        shadowMapResolution: 2048,
+        // Cena pequena (tabuleiro de 14 x 12 m a ~28 m da câmera): duas
+        // cascatas bastam.
+        shadowCascadeCount: 2,
+        shadowMaxDistance: 60,
+        // O vão entre a peça e o chão (pé do móvel, rodapé, batente) que a
+        // sombra do mapa não pega.
+        contactShadows: sombra,
+      );
+
+  /// A maquete vista de fora (central da obra, área do cliente).
+  static void deFora(fs.Scene cena) {
+    _comum(cena);
+    cena
+      ..directionalLight = sol(sombra: true)
+      ..skyEnvironment = fs.SkyEnvironment(ceu())
+      ..environmentIntensity = 0.85;
+    cena.ambientOcclusion
+      ..enabled = true
+      ..radius = 0.6
+      ..intensity = 1.2
+      ..power = 1.5;
+  }
+
+  /// A casa por dentro (vista 360° do cômodo): o sol entra pelas janelas
+  /// (com sombra), o céu aparece lá fora, a oclusão é a de cômodo (cantos,
+  /// rodapé, embaixo dos móveis) e cada cômodo tem a luz quente do plafom.
+  /// A do cômodo onde a pessoa está faz sombra dos móveis. Devolve as luzes
+  /// dos plafons por id do cômodo ([horario] e [comodoAtual] mexem nelas).
+  static Map<String, fs.PointLight> deDentro(
+      fs.Scene cena, List<LuzDoTeto> luzes,
+      {String? comodo, bool noite = false}) {
+    _comum(cena);
+    cena.ambientOcclusion
+      ..enabled = true
+      ..radius = 0.35
+      ..intensity = 1.5
+      ..power = 1.6;
+    final criadas = <String, fs.PointLight>{};
+    for (final (i, l) in luzes.indexed) {
+      final (x, y, z) = l.posicao;
+      final luz = fs.PointLight(
+        color: vm.Vector3(1.0, 0.82, 0.62),
+        range: l.alcance,
+        radius: 0.15,
+        shadowSoftness: 1.5,
+      );
+      criadas[l.comodo ?? 'luz_$i'] = luz;
+      cena.add(fs.Node(
+        name: 'luz_${l.comodo ?? i}',
+        // glTF para o flutter_scene: o Z invertido.
+        localTransform: vm.Matrix4.translationValues(x, y, -z),
+      )..addComponent(fs.PointLightComponent(luz)));
+    }
+    horario(cena, criadas, noite: noite, comodo: comodo);
+    return criadas;
+  }
+
+  /// Dia (sol pela janela, céu azul, plafons fracos) ou noite (luar, céu
+  /// escuro e a casa acesa).
+  static void horario(fs.Scene cena, Map<String, fs.PointLight> luzes,
+      {required bool noite, String? comodo}) {
+    if (noite) {
+      cena
+        ..directionalLight = fs.DirectionalLight(
+          direction: CenaMaquete.direcaoDaLuz,
+          color: vm.Vector3(0.55, 0.65, 0.9),
+          intensity: 0.35,
+        )
+        ..skyEnvironment = fs.SkyEnvironment(fs.GradientSkySource(
+          zenithColor: vm.Vector3(0.05, 0.06, 0.1),
+          horizonColor: vm.Vector3(0.12, 0.12, 0.16),
+          groundColor: vm.Vector3(0.06, 0.05, 0.05),
+          sunDirection: -CenaMaquete.direcaoDaLuz,
+        ))
+        ..environmentIntensity = 0.5
+        ..skybox = fs.Skybox(fs.GradientSkySource(
+          zenithColor: vm.Vector3(0.01, 0.015, 0.05),
+          horizonColor: vm.Vector3(0.06, 0.08, 0.16),
+          groundColor: vm.Vector3(0.02, 0.02, 0.025),
+          sunDirection: -CenaMaquete.direcaoDaLuz,
+          sunColor: vm.Vector3(0.6, 0.65, 0.8),
+        ));
+    } else {
+      cena
+        ..directionalLight = sol(sombra: true)
+        ..skyEnvironment = fs.SkyEnvironment(ceu())
+        ..environmentIntensity = 0.75
+        // O céu que se vê pela janela: azul de dia claro (a luz ambiente
+        // continua a do céu neutro).
+        ..skybox = fs.Skybox(fs.GradientSkySource(
+          zenithColor: vm.Vector3(0.32, 0.5, 0.85),
+          horizonColor: vm.Vector3(0.82, 0.88, 0.95),
+          groundColor: vm.Vector3(0.45, 0.43, 0.4),
+          sunDirection: -CenaMaquete.direcaoDaLuz,
+        ));
+    }
+    for (final MapEntry(key: id, value: luz) in luzes.entries) {
+      final aqui = id == comodo;
+      luz
+        ..intensity = (noite ? 9.0 : 2.4) * (aqui ? 1.2 : 1.0)
+        ..castsShadow = aqui;
+    }
+  }
+
+  static void _comum(fs.Scene cena) {
+    // A cor do fantasma é calculada para esta curva e esta exposição
+    // (TemaMaquete.fantasmaNaCena); são os padrões, fixados aqui.
+    cena
+      ..exposure = 1.0
+      ..toneMapping = fs.ToneMappingMode.pbrNeutral;
+    // Aparelho mais fraco: primeiro a resolução do 3D cai um pouco (até
+    // 60%), antes de a MaqueteObra desistir e mostrar a imagem.
+    cena.renderQuality
+      ..adaptive = true
+      ..minRenderScale = 0.6;
+  }
+}
+
 /// A cena 3D da maquete em flutter_scene: carrega o `maquete.glb`
 /// (convertido em `.fsceneb` no build pelo hook do flutter_scene), troca os
 /// materiais de tema pelos desta instância ([PecasMaquete]), acende a luz e
@@ -226,7 +369,11 @@ final class _CenaProtegida extends fs.Scene {
 /// testes) ou se o modelo não tem algum nó que o plano usa: quem chama cai
 /// na imagem de reserva.
 class CenaMaquete implements Cena3dMaquete {
-  CenaMaquete._(this._cena, this.pecas, this.enquadramento);
+  CenaMaquete._(this._cena, this.pecas, this.enquadramento,
+      {this.luzes = const []});
+
+  /// As luminárias do teto da casa mobiliada (só com o interior).
+  final List<LuzDoTeto> luzes;
 
   /// Onde a câmera fica (a da maquete-padrão, ou a enquadrada para a casa
   /// gerada pela planta).
@@ -273,35 +420,20 @@ class CenaMaquete implements Cena3dMaquete {
     final pronta = await fonte.preparar();
     await fs.Scene.initializeStaticResources();
     final modelo = await fs.Node.fromGlbBytes(pronta.glb);
-    return _montar(modelo, tema, pronta.enquadramento);
+    return _montar(modelo, tema, pronta.enquadramento, luzes: pronta.luzes);
   }
 
   static CenaMaquete _montar(
     fs.Node modelo,
     TemaMaquete tema,
-    EnquadramentoMaquete enquadramento,
-  ) {
+    EnquadramentoMaquete enquadramento, {
+    List<LuzDoTeto> luzes = const [],
+  }) {
     final pecas = PecasMaquete.doModelo(modelo, tema: tema);
 
     final cena = _CenaProtegida();
     try {
-      cena
-        // A cor do fantasma é calculada para esta curva e esta exposição
-        // (TemaMaquete.fantasmaNaCena); são os padrões, fixados aqui.
-        ..exposure = 1.0
-        ..toneMapping = fs.ToneMappingMode.pbrNeutral
-        ..directionalLight = fs.DirectionalLight(
-          direction: direcaoDaLuz,
-          color: vm.Vector3(1.0, 0.975, 0.945),
-          intensity: intensidadeDaLuz,
-          castsShadow: true,
-          // Sol grande (14° nas imagens): sombra macia.
-          shadowSoftness: 0.12,
-          // Cena pequena (tabuleiro de 14 x 12 m a ~28 m da câmera): duas
-          // cascatas bastam.
-          shadowCascadeCount: 2,
-          shadowMaxDistance: 60,
-        );
+      LuzMaquete.deFora(cena);
       // Só o último quadro interessa (painel de depuração).
       cena.renderStats.historyLength = 0;
       cena.add(modelo);
@@ -309,7 +441,7 @@ class CenaMaquete implements Cena3dMaquete {
       cena.dispose();
       rethrow;
     }
-    return CenaMaquete._(cena, pecas, enquadramento);
+    return CenaMaquete._(cena, pecas, enquadramento, luzes: luzes);
   }
 
   @override

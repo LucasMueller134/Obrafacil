@@ -43,6 +43,12 @@ class LoteMaterial {
     indices.addAll([_v(a, n), _v(b, n), _v(c, n)]);
   }
 
+  /// Triângulo liso: cada vértice com a própria normal (superfície curva,
+  /// sem facetas). Anti-horário visto do lado das normais.
+  void trianguloLiso(P3 a, P3 na, P3 b, P3 nb, P3 c, P3 nc) {
+    indices.addAll([_v(a, na), _v(b, nb), _v(c, nc)]);
+  }
+
   /// Quadrilátero com a frente (e a normal) para o lado oposto a [dentro]:
   /// a ordem dos vértices não importa.
   void quadFora(P3 a, P3 b, P3 c, P3 d, P3 dentro) {

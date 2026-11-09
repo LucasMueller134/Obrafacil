@@ -8,6 +8,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:obra_facil/design/design.dart';
 import 'package:obra_facil/design/maquete/maquete.dart';
 import 'package:obra_facil/models/models.dart';
 import 'package:obra_facil/providers/auth_provider.dart';
@@ -104,8 +105,8 @@ void main() {
   testWidgets('o mestre vê a planta, mas não troca', (tester) async {
     final app = await _abrir(tester, '$_obra/planta',
         comPlanta: false, usuario: UsuariosExemplo.mestre);
-    expect(find.text('O dono da obra ainda não enviou a planta.'),
-        findsOneWidget);
+    expect(
+        find.text('O dono da obra ainda não enviou a planta.'), findsOneWidget);
     expect(find.text('Enviar a planta'), findsNothing);
     await _fechar(tester, app);
   });
@@ -127,8 +128,8 @@ void main() {
 
   testWidgets('360° sem 3D: as quatro paredes, com as medidas certas',
       (tester) async {
-    final app = await _abrir(tester, '$_obra/planta/quarto-2/360',
-        comPlanta: true);
+    final app =
+        await _abrir(tester, '$_obra/planta/quarto-2/360', comPlanta: true);
     await assentar(tester);
     expect(find.text('Quarto 2'), findsWidgets);
     expect(find.byType(ParedesDoComodo), findsOneWidget);
@@ -136,15 +137,88 @@ void main() {
     // Os lados seguintes, rolando de lado (como quem gira no cômodo).
     final faixa = find
         .descendant(
-            of: find.byType(ParedesDoComodo),
-            matching: find.byType(Scrollable))
+            of: find.byType(ParedesDoComodo), matching: find.byType(Scrollable))
         .first;
-    for (final lado in ['DIREITA · 4,10 m', 'FRENTE · 3,23 m', 'ESQUERDA · 4,10 m']) {
+    for (final lado in [
+      'DIREITA · 4,10 m',
+      'FRENTE · 3,23 m',
+      'ESQUERDA · 4,10 m'
+    ]) {
       await tester.scrollUntilVisible(find.text(lado), 200, scrollable: faixa);
       expect(find.text(lado), findsOneWidget);
     }
     expect(tester.takeException(), isNull);
     await _fechar(tester, app);
+  });
+
+  testWidgets('360°: troca de cômodo pela faixa, sem sair da vista',
+      (tester) async {
+    final app =
+        await _abrir(tester, '$_obra/planta/quarto-2/360', comPlanta: true);
+    await assentar(tester);
+    final banheiro = find.widgetWithText(ChoiceChip, 'Banheiro');
+    final faixa = find
+        .descendant(
+            of: find.byKey(const ValueKey('outros-comodos')),
+            matching: find.byType(Scrollable))
+        .first;
+    await tester.scrollUntilVisible(banheiro, 120, scrollable: faixa);
+    expect(banheiro, findsOneWidget);
+    // Só os cômodos cobertos da casa (o quintal fica de fora).
+    await tester.scrollUntilVisible(
+        find.widgetWithText(ChoiceChip, 'Área coberta'), 120,
+        scrollable: faixa);
+    expect(find.widgetWithText(ChoiceChip, 'Quintal'), findsNothing);
+    await tester.scrollUntilVisible(banheiro, -120, scrollable: faixa);
+    await _tocar(tester, banheiro);
+    expect(tester.widget<ChoiceChip>(banheiro).selected, isTrue);
+    // As paredes agora são as do banheiro (2,23 x 2,66), na mesma rota.
+    expect(find.text('FUNDO · 2,23 m'), findsOneWidget);
+    expect(app.rota, '$_obra/planta/quarto-2/360');
+    expect(tester.takeException(), isNull);
+    await _fechar(tester, app);
+  });
+
+  testWidgets(
+      'mapa do 360°: o cômodo atual em destaque e tocar noutro vai '
+      'até ele', (tester) async {
+    instalarPluginsFalsos();
+    final p = DadosExemplo.plantaExemplo();
+    final quarto = p.comodos.firstWhere((c) => c.id == 'quarto-2');
+    final escolhidos = <String>[];
+    await tester.pumpWidget(MaterialApp(
+      theme: TemaPrancheta.claro,
+      home: Scaffold(
+        body: Center(
+          child: MapaDoAndar(
+            planta: p,
+            comodo: quarto,
+            onde: (2.36, 9.11),
+            giro: 0,
+            campoHorizontal: 1.4,
+            aoTocar: escolhidos.add,
+          ),
+        ),
+      ),
+    ));
+    // A planta encaixada no quadrado de 112 com 8 de borda.
+    const lado = MapaDoAndar.lado;
+    final escala =
+        (lado - 16) / (p.largura > p.profundidade ? p.largura : p.profundidade);
+    final dx = (lado - p.largura * escala) / 2;
+    final dy = (lado - p.profundidade * escala) / 2;
+    final canto = tester.getTopLeft(find.byType(MapaDoAndar));
+    Offset ponto(double x, double y) =>
+        canto + Offset(dx + x * escala, dy + y * escala);
+    // A garagem (meio dela) e o próprio quarto 2 (nada acontece).
+    await tester.tapAt(ponto(5.55, 17.69));
+    await tester.tapAt(ponto(2.36, 9.11));
+    // O quintal é descoberto: também não.
+    await tester.tapAt(ponto(1.6, 4.8));
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(escolhidos, ['garagem']);
+    expect(
+        find.bySemanticsLabel(RegExp('você está em Quarto 2')), findsOneWidget);
   });
 
   test('vãos de um cômodo: porta de correr e janela do quarto 2', () {

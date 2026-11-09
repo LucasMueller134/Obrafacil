@@ -179,3 +179,23 @@ Fixos em outubro de 2026, e iguais para o antes e o depois:
   em `familiasComFallbackDeSimbolos` (`suporte/fontes.dart`).
 - A maquete 3D tem de usar a imagem de reserva nos testes (ver
   `design-system.md`, seção 7).
+
+## O 3D em imagem (maquete e vista 360°)
+
+As capturas acima não desenham o 3D (sem GPU no teste, a tela mostra a
+reserva). Para ver a maquete e o 360° como o celular desenha, há o
+`test/visual/render_3d_test.dart`: ele liga o Impeller com o Vulkan por
+software (lavapipe) e grava um PNG por vista.
+
+```sh
+apt-get install -y mesa-vulkan-drivers
+cd obra_facil
+RENDER_3D=1 SAIDA=/tmp/3d JOBS=int:gem160:t-u1-sala:4.71:noite \
+  flutter test --enable-impeller --enable-flutter-gpu test/visual/render_3d_test.dart
+```
+
+`ext:<modelo>:<giro>[:escuro]` é a maquete pronta vista de fora;
+`int:<modelo>:<cômodo>[:<giro>[:noite]]` é a vista 360° do cômodo. Uma vista
+por comando (a segunda casa gerada no mesmo processo fica carregando).
+Sem `RENDER_3D` o teste é pulado. O antes e depois da maquete e do 360°
+está em `docs/redesign/3d/`.

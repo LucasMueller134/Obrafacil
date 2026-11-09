@@ -13,6 +13,9 @@ import '../plano_maquete.dart';
 import '../progresso_maquete.dart';
 import 'area_coberta.dart';
 import 'geometria.dart';
+import 'interior.dart';
+import 'mobilia.dart';
+import 'moldura.dart';
 
 /// Os materiais da maquete: os mesmos do `maquete.glb` (cores lineares
 /// exportadas pelo Blender) e os pisos que a planta pede.
@@ -85,6 +88,56 @@ abstract final class MateriaisMaquete {
       cor: [0.085, 0.088, 0.092, 1], metalico: 0.55, rugosidade: 0.45);
   static const luz =
       MaterialGerado('luz_led', cor: [1.0, 0.82, 0.55, 1], semLuz: true);
+  // Paisagismo, carro e o interior (móveis do 360°): cores lineares,
+  // tons naturais e um pouco dessaturados, como os acabamentos.
+  static const folhagem =
+      MaterialGerado('folhagem', cor: [0.107, 0.2, 0.075, 1], rugosidade: 0.85);
+  static const folhagemClara = MaterialGerado('folhagem_clara',
+      cor: [0.2, 0.32, 0.105, 1], rugosidade: 0.85);
+  static const tronco =
+      MaterialGerado('tronco', cor: [0.133, 0.075, 0.04, 1], rugosidade: 0.9);
+  static const vaso =
+      MaterialGerado('vaso', cor: [0.4, 0.39, 0.37, 1], rugosidade: 0.85);
+  static const pinturaCarro = MaterialGerado('pintura_carro',
+      cor: [0.075, 0.1, 0.145, 1], metalico: 0.6, rugosidade: 0.22);
+  static const pneu =
+      MaterialGerado('pneu', cor: [0.018, 0.018, 0.02, 1], rugosidade: 0.85);
+  static const vidroEscuro = MaterialGerado('vidro_escuro',
+      cor: [0.02, 0.025, 0.03, 1], metalico: 0.3, rugosidade: 0.06);
+  static const lanterna =
+      MaterialGerado('lanterna', cor: [0.6, 0.03, 0.02, 1], semLuz: true);
+  static const lampada =
+      MaterialGerado('lampada', cor: [1.0, 0.93, 0.8, 1], semLuz: true);
+  static const tecido =
+      MaterialGerado('tecido', cor: [0.34, 0.32, 0.28, 1], rugosidade: 0.95);
+  static const tecidoAcento = MaterialGerado('tecido_acento',
+      cor: [0.52, 0.2, 0.08, 1], rugosidade: 0.9);
+  static const roupaDeCama = MaterialGerado('roupa_de_cama',
+      cor: [0.8, 0.78, 0.74, 1], rugosidade: 0.9);
+  static const madeiraClara = MaterialGerado('madeira_clara',
+      cor: [0.55, 0.33, 0.16, 1], rugosidade: 0.55);
+  static const laca = MaterialGerado('laca_branca',
+      cor: [0.78, 0.78, 0.76, 1], rugosidade: 0.35);
+  static const inox = MaterialGerado('inox',
+      cor: [0.62, 0.62, 0.62, 1], metalico: 1, rugosidade: 0.3);
+  static const metalPreto = MaterialGerado('metal_preto',
+      cor: [0.03, 0.03, 0.035, 1], metalico: 0.6, rugosidade: 0.4);
+  static const louca =
+      MaterialGerado('louca', cor: [0.86, 0.86, 0.85, 1], rugosidade: 0.12);
+  static const espelho = MaterialGerado('espelho',
+      cor: [0.9, 0.9, 0.92, 1], metalico: 1, rugosidade: 0.04);
+  static const tela = MaterialGerado('tela_tv',
+      cor: [0.01, 0.01, 0.012, 1], metalico: 0.2, rugosidade: 0.08);
+  static const tapete =
+      MaterialGerado('tapete', cor: [0.6, 0.5, 0.37, 1], rugosidade: 1);
+  static const forro =
+      MaterialGerado('forro', cor: [0.86, 0.86, 0.84, 1], rugosidade: 0.9);
+  static const rejunte =
+      MaterialGerado('rejunte', cor: [0.52, 0.5, 0.46, 1], rugosidade: 0.95);
+  static const azulejo =
+      MaterialGerado('azulejo', cor: [0.82, 0.82, 0.8, 1], rugosidade: 0.18);
+  static const quadro =
+      MaterialGerado('quadro', cor: [0.62, 0.55, 0.42, 1], rugosidade: 0.9);
 
   static const todos = [
     base,
@@ -118,6 +171,30 @@ abstract final class MateriaisMaquete {
     cumaru,
     portao,
     luz,
+    folhagem,
+    folhagemClara,
+    tronco,
+    vaso,
+    pinturaCarro,
+    pneu,
+    vidroEscuro,
+    lanterna,
+    lampada,
+    tecido,
+    tecidoAcento,
+    roupaDeCama,
+    madeiraClara,
+    laca,
+    inox,
+    metalPreto,
+    louca,
+    espelho,
+    tela,
+    tapete,
+    forro,
+    rejunte,
+    azulejo,
+    quadro,
   ];
 
   static String doPiso(PisoComodo piso) => switch (piso) {
@@ -159,11 +236,15 @@ class NiveisMaquete {
 /// O que o gerador entrega: o modelo (para o glb) e as medidas que a câmera
 /// e a planta tocável usam.
 class MaqueteGerada {
-  MaqueteGerada(this.modelo, this.planta, this.niveis, this.centro);
+  MaqueteGerada(this.modelo, this.planta, this.niveis, this.centro,
+      {this.luzes = const []});
 
   final ModeloGerado modelo;
   final PlantaObra planta;
   final NiveisMaquete niveis;
+
+  /// As luminárias do teto (só com o interior), na cena.
+  final List<LuzDoTeto> luzes;
 
   /// Ponto da planta (x, y) que vira a origem da cena.
   final (double, double) centro;
@@ -185,8 +266,20 @@ class GeradorMaquete {
     this.furoNaEscada = false,
     this.blocosSimples = false,
     this.andarSimples = false,
+    this.interior = false,
   })  : niveis = NiveisMaquete(planta.alturas),
         centro = centroDe(planta);
+
+  /// Casa mobiliada por dentro (a vista 360° dos cômodos): móveis, forro,
+  /// rodapé, rejunte, cortinas e luminárias.
+  final bool interior;
+
+  /// As luminárias deste pavimento (com o interior).
+  final luzes = <LuzDoTeto>[];
+
+  /// O que as peças da maquete já ocupam dentro de cada cômodo (a bancada
+  /// da churrasqueira): os móveis desviam.
+  final _reservados = <String, List<(double, double, double, double)>>{};
 
   /// Pavimento do chão: fundação, muros, poste, calçada, árvores.
   final bool terreo;
@@ -253,16 +346,20 @@ class GeradorMaquete {
 
   /// Gera a maquete. Lança [ArgumentError] se a planta tem problemas
   /// ([PlantaObra.problemas]).
-  static MaqueteGerada gerar(PlantaObra planta) {
+  ///
+  /// Com [interior], a casa vem mobiliada e com as luminárias (a vista
+  /// 360°); a maquete de fora fica sem, mais leve.
+  static MaqueteGerada gerar(PlantaObra planta, {bool interior = false}) {
     final problemas = planta.problemas();
     if (problemas.isNotEmpty) {
       throw ArgumentError('Planta com problemas: ${problemas.join(' ')}');
     }
     if (planta.andares.isEmpty) {
-      return GeradorMaquete._(planta, blocosSimples: _muitosBlocos(planta))
+      return GeradorMaquete._(planta,
+              blocosSimples: _muitosBlocos(planta), interior: interior)
           ._gerar();
     }
-    return _gerarAndares(planta);
+    return _gerarAndares(planta, interior: interior);
   }
 
   /// Blocos um a um passariam do que o celular desenha com folga: vira
@@ -314,17 +411,20 @@ class GeradorMaquete {
   }
 
   /// As peças de um pavimento, na altura dele como se fosse o térreo.
-  static (Map<String, NoGerado>, List<NoGerado>) _pavimento(PlantaObra vista,
+  static (Map<String, NoGerado>, List<NoGerado>, List<LuzDoTeto>) _pavimento(
+      PlantaObra vista,
       {required bool terreo,
       required bool topo,
       required bool simples,
-      bool andarSimples = false}) {
+      bool andarSimples = false,
+      bool interior = false}) {
     final g = GeradorMaquete._(vista,
         terreo: terreo,
         topo: topo,
         furoNaEscada: !topo,
         blocosSimples: simples,
-        andarSimples: andarSimples);
+        andarSimples: andarSimples,
+        interior: interior);
     final pecas = <String, NoGerado>{
       for (final etapas in PlanoMaquete.etapasPorFase)
         for (final e in etapas) e.no: NoGerado(e.no),
@@ -334,13 +434,14 @@ class GeradorMaquete {
         NoGerado(NosMaquete.fantasma(f)),
     ];
     g._construir(pecas, fantasmas);
-    return (pecas, fantasmas);
+    return (pecas, fantasmas, g.luzes);
   }
 
   /// Sobrado e prédio: cada pavimento é montado na altura local e empilhado.
   /// As fiadas de todos os pavimentos são repartidas nas 15 etapas da
   /// alvenaria, de baixo para cima.
-  static MaqueteGerada _gerarAndares(PlantaObra planta) {
+  static MaqueteGerada _gerarAndares(PlantaObra planta,
+      {bool interior = false}) {
     final simples = _muitosBlocos(planta);
     final predio = planta.modelo?['tipo'] == 'predio';
     final terreo = planta.planta(0);
@@ -354,26 +455,33 @@ class GeradorMaquete {
     final cursos =
         total * NosMaquete.totalFiadasParede + NosMaquete.totalFiadasPlatibanda;
     final pivos = <String, P3>{};
+    final luzes = <LuzDoTeto>[];
     var n = 0;
     for (var i = 0; i < planta.totalPlantas; i++) {
       final vista = planta.planta(i);
       final repeticoes = i == 0 ? 1 : planta.andares[i - 1].repeticoes;
-      (Map<String, NoGerado>, List<NoGerado>)? meio, alto;
+      (Map<String, NoGerado>, List<NoGerado>, List<LuzDoTeto>)? meio, alto;
       for (var r = 0; r < repeticoes; r++, n++) {
         final ehTopo = n == total - 1;
         final casca = predio && n > 0;
-        final (local, fantasmasLocais) = ehTopo
+        final (local, fantasmasLocais, luzesLocais) = ehTopo
             ? (alto ??= _pavimento(vista,
                 terreo: n == 0,
                 topo: true,
                 simples: simples,
-                andarSimples: casca))
+                andarSimples: casca,
+                interior: interior))
             : (meio ??= _pavimento(vista,
                 terreo: n == 0,
                 topo: false,
                 simples: simples,
-                andarSimples: casca));
+                andarSimples: casca,
+                interior: interior));
         final dy = n * andar;
+        for (final l in luzesLocais) {
+          final (x, y, z) = l.posicao;
+          luzes.add(LuzDoTeto((x, y + dy, z), l.alcance, comodo: l.comodo));
+        }
         for (final MapEntry(key: nome, value: origem) in local.entries) {
           var destino = pecas[nome]!;
           final k = _indiceDaFiada(nome);
@@ -417,7 +525,7 @@ class GeradorMaquete {
         (xb, (total - 1) * andar + niveis.platibandaTopo + 1.0, zb),
       ),
     );
-    return MaqueteGerada(modelo, planta, niveis, mestre.centro);
+    return MaqueteGerada(modelo, planta, niveis, mestre.centro, luzes: luzes);
   }
 
   static int? _indiceDaFiada(String nome) {
@@ -673,7 +781,7 @@ class GeradorMaquete {
       materiais: MateriaisMaquete.todos,
       limites: ((xa, -0.3, za), (xb, niveis.platibandaTopo + 1.0, zb)),
     );
-    return MaqueteGerada(modelo, planta, niveis, centro);
+    return MaqueteGerada(modelo, planta, niveis, centro, luzes: luzes);
   }
 
   /// Todas as peças deste pavimento.
@@ -690,6 +798,13 @@ class GeradorMaquete {
     _fachada(pecas);
     _elementosFachada(pecas);
     _acabamento(pecas);
+    if (interior && !andarSimples) {
+      final decorador = DecoradorInterior(
+          planta, centro, niveis, pecas['acabamento_arvores']!.malha,
+          reservados: _reservados);
+      decorador.decorar();
+      luzes.addAll(decorador.luzes);
+    }
     _fantasmas(fantasmas);
   }
 
@@ -760,6 +875,12 @@ class GeradorMaquete {
         final xa = math.max(r.x + 0.1, r.x1 - 2.4), xb = r.x1 - 0.1;
         final (ax, az) = _xz(xa, math.min(ya, yb));
         final (bx, bz) = _xz(xb, math.max(ya, yb));
+        (_reservados[c.id] ??= []).add((
+          xa,
+          math.min(ya, yb) - 0.6,
+          xb,
+          math.max(ya, yb) + 0.6,
+        ));
         final p = NiveisMaquete.piso;
         gourmet.caixa(
             MateriaisMaquete.tinta.nome, (ax, p, az), (bx, p + 0.86, bz));
@@ -1367,6 +1488,26 @@ class GeradorMaquete {
       };
       casca(w, _baseParede(w), topo);
     }
+    // Os vãos rebocados e pintados por dentro (os lados, o alto e o
+    // peitoril): sem isso o bloco aparece no batente e na janela. Nos
+    // andares-casca do prédio, de longe, não aparece (fica leve).
+    for (final w in andarSimples ? const <ParedePlanta>[] : _paredes) {
+      if (w.tipo != TipoParede.alvenaria) continue;
+      final e = w.espessura / 2;
+      for (final (u0, u1, y0, y1) in _vaos(w)) {
+        for (final (malha, material, f) in [
+          (reboco, MateriaisMaquete.reboco.nome, 0.02),
+          (pintura, MateriaisMaquete.tinta.nome, 0.026),
+        ]) {
+          _naParede(malha, material, w, u0, u0 + f, e + f, y0, y1);
+          _naParede(malha, material, w, u1 - f, u1, e + f, y0, y1);
+          _naParede(malha, material, w, u0, u1, e + f, y1 - f, y1);
+          if (y0 > _baseParede(w) + 0.05) {
+            _naParede(malha, material, w, u0, u1, e + f, y0, y0 + f);
+          }
+        }
+      }
+    }
     if (topo) {
       for (final b in _coberta.bordas()) {
         final w = _paredeDaBorda(b);
@@ -1488,8 +1629,7 @@ class GeradorMaquete {
                 simples: andarSimples);
           case TipoAbertura.porta:
             if (andarSimples) break;
-            _naParede(portas, MateriaisMaquete.madeiraPorta.nome, w, u0 + 0.02,
-                u1 - 0.02, 0.02, y0, y1 - 0.01);
+            _portaComBatente(portas, w, u0, u1, y0, y1);
           case TipoAbertura.portao:
             for (var u = u0 + 0.04; u < u1 - 0.02; u += 0.12) {
               _naParede(esquadrias, al, w, u, math.min(u + 0.04, u1), 0.025,
@@ -1530,13 +1670,129 @@ class GeradorMaquete {
             0.5 +
             (r.largura - 1.0) * (i + 0.5 + (sorteio() - 0.5) * 0.4) / n;
         final y = r.y + 0.5 + (r.profundidade - 1.0) * (0.3 + 0.4 * sorteio());
-        final (tx, tz) = _xz(x, y);
-        final raio = 0.42 + 0.18 * sorteio();
-        arvores.cilindro(MateriaisMaquete.arvore.nome,
-            base: (tx, 0, tz), raio: 0.045, altura: 1.1, lados: 8);
-        arvores.esfera(
-            MateriaisMaquete.arvore.nome, (tx, 1.1 + raio * 0.8, tz), raio);
+        final altura = 2.1 + 0.9 * sorteio();
+        Mobilia.arvore(
+            Moldura(arvores, origem: _xz(x, y), eixoU: (1, 0)),
+            math.min(altura, 1.2 + 3 * math.min(r.largura, r.profundidade)),
+            (semente + i) % 97);
       }
+      // Arbustos nos cantos do canteiro.
+      if (r.largura >= 1.2 && r.profundidade >= 1.2) {
+        for (final (x, y) in [
+          (r.x + 0.35, r.y + 0.35),
+          (r.x1 - 0.35, r.y + 0.35),
+          (r.x + 0.35, r.y1 - 0.35),
+          (r.x1 - 0.35, r.y1 - 0.35),
+        ]) {
+          Mobilia.arbusto(Moldura(arvores, origem: _xz(x, y), eixoU: (1, 0)),
+              0.28 + 0.12 * sorteio(), (semente++) % 89);
+        }
+      }
+    }
+    // Árvores na calçada, fora das entradas (garagem, portão, porta) e
+    // do poste.
+    if (terreo) {
+      final livres = <(double, double)>[(0.6, planta.largura - 0.6)];
+      final cortes = <(double, double)>[
+        (_posicaoPoste.$1 - 0.9, _posicaoPoste.$1 + 0.9),
+      ];
+      for (final w in planta.paredes) {
+        if ((w.de.$2 - w.ate.$2).abs() > 0.01) continue;
+        for (final a in w.aberturas) {
+          if (a.tipo.ehJanela) continue;
+          final x0 = w.pontoEm(a.inicio).$1;
+          final x1 = w.pontoEm(a.inicio + a.largura).$1;
+          cortes.add((math.min(x0, x1) - 0.8, math.max(x0, x1) + 0.8));
+        }
+      }
+      final trechos = _tirar(livres, cortes);
+      final calcada = planta.profundidade + 0.85;
+      var ultima = -10.0;
+      var k = 0;
+      for (final (a, b) in trechos) {
+        for (var x = a + 0.3; x <= b - 0.3; x += 0.2) {
+          if (x - ultima < 5.0) continue;
+          ultima = x;
+          final m = Moldura(arvores, origem: _xz(x, calcada), eixoU: (1, 0));
+          // Canteiro de terra em volta do tronco.
+          m.caixa(MateriaisMaquete.tronco.nome, -0.35, 0.35, -0.35, 0.35, 0.0,
+              0.065);
+          Mobilia.arvore(m.mover(dh: 0.065), 3.2, 31 + k++);
+        }
+      }
+    }
+    // O carro na garagem coberta, de frente para o fundo.
+    for (final c in planta.comodos) {
+      if (c.tipo != 'garagem' || !c.coberto) continue;
+      final r = c.principal;
+      final emY = r.profundidade >= r.largura;
+      final comprido = emY ? r.profundidade : r.largura;
+      final largo = emY ? r.largura : r.profundidade;
+      if (comprido < 4.7 || largo < 2.3) continue;
+      // O portão: do lado de cá (y ou x alto) ou de lá.
+      final portaoNoFim = _portaoPerto(r, emY);
+      final folga = (comprido - 4.3) / 2;
+      final (x, y) = emY
+          ? ((r.x + r.x1) / 2, portaoNoFim ? r.y + folga : r.y1 - folga)
+          : (portaoNoFim ? r.x + folga : r.x1 - folga, (r.y + r.y1) / 2);
+      final eixo = emY
+          ? (0.0, portaoNoFim ? 1.0 : -1.0)
+          : (portaoNoFim ? 1.0 : -1.0, 0.0);
+      Mobilia.carro(Moldura(arvores,
+          origem: _xz(x, y), eixoU: eixo, y0: NiveisMaquete.piso + 0.045));
+    }
+  }
+
+  /// O portão da garagem fica no lado alto (y1 ou x1) do retângulo?
+  bool _portaoPerto(RetanguloPlanta r, bool emY) {
+    for (final w in planta.paredes) {
+      for (final a in w.aberturas) {
+        if (a.tipo != TipoAbertura.portaGaragem &&
+            a.tipo != TipoAbertura.portao) {
+          continue;
+        }
+        final (px, py) = w.pontoEm(a.inicio + a.largura / 2);
+        if (emY) {
+          if (px < r.x - 0.2 || px > r.x1 + 0.2) continue;
+          if ((py - r.y1).abs() < 0.3) return true;
+          if ((py - r.y).abs() < 0.3) return false;
+        } else {
+          if (py < r.y - 0.2 || py > r.y1 + 0.2) continue;
+          if ((px - r.x1).abs() < 0.3) return true;
+          if ((px - r.x).abs() < 0.3) return false;
+        }
+      }
+    }
+    return true;
+  }
+
+  /// Porta de abrir: batente e guarnições brancos dos dois lados, a folha
+  /// de madeira e a maçaneta de alavanca dos dois lados.
+  void _portaComBatente(MalhaGerada m, ParedePlanta w, double u0, double u1,
+      double y0, double y1) {
+    final e = w.espessura / 2 + 0.026;
+    final laca = MateriaisMaquete.laca.nome;
+    final inox = MateriaisMaquete.inox.nome;
+    const b = 0.035;
+    _naParede(m, laca, w, u0, u0 + b, e + 0.002, y0, y1);
+    _naParede(m, laca, w, u1 - b, u1, e + 0.002, y0, y1);
+    _naParede(m, laca, w, u0, u1, e + 0.002, y1 - b, y1);
+    for (final s in [-1.0, 1.0]) {
+      final w0 = s * e, w1 = s * (e + 0.012);
+      _entre(m, laca, w, u0 - 0.06, u0, w0, w1, y0, y1 + 0.06);
+      _entre(m, laca, w, u1, u1 + 0.06, w0, w1, y0, y1 + 0.06);
+      _entre(m, laca, w, u0 - 0.06, u1 + 0.06, w0, w1, y1, y1 + 0.06);
+    }
+    _naParede(m, MateriaisMaquete.madeiraPorta.nome, w, u0 + b, u1 - b, 0.02,
+        y0 + 0.006, y1 - b);
+    final um = u1 - b - 0.07;
+    for (final s in [-1.0, 1.0]) {
+      _entre(m, inox, w, um - 0.028, um + 0.028, s * 0.02, s * 0.03, y0 + 0.97,
+          y0 + 1.05);
+      _entre(m, inox, w, um - 0.008, um + 0.008, s * 0.03, s * 0.065, y0 + 1.0,
+          y0 + 1.02);
+      _entre(m, inox, w, um - 0.13, um + 0.008, s * 0.05, s * 0.065, y0 + 1.0,
+          y0 + 1.02);
     }
   }
 
