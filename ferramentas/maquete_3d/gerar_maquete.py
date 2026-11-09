@@ -95,6 +95,10 @@ PILARES = [(x, z) for x in PILARES_X for z in (-ZM, ZM)] + [(-XM, 0.0), (XM, 0.0
 CX_X, CX_Z = 2.9, -2.2
 BASE_CX = (2.2, 3.6, Y_LAJE - 0.005, Y_LAJE + 0.60, -2.9, -1.5)
 Y_CX = BASE_CX[3]
+# A caixa de alvenaria que fecha a caixa d'água e os tubos depois do reboco
+# (a caixa azul à mostra ficava feia): rebocada (06), pintada (08) e com a
+# tampa, a pingadeira e o alçapão (07).
+CASA_CX = (2.0, 3.85, Y_LAJE - 0.005, Y_CX + 1.03, -3.02, -1.38)
 # Árvores [x, z, raio] (posições do protótipo, com ajuste fino para não
 # encostar na calçada nem nas cotas).
 ARVORES = [(-6.05, 5.0, 0.55), (-5.3, 5.5, 0.40), (6.2, -4.75, 0.60),
@@ -1074,17 +1078,25 @@ def juntar(*meshes):
     return out
 
 
+def caixa_da_caixa(c, f):
+    """A caixa de alvenaria da caixa d'água (f: folga da pintura)."""
+    x0, x1, y0, y1, z0, z1 = CASA_CX
+    return c.solido([(x0 - f, x1 + f, y0, y1 + f, z0 - f, z1 + f)], [])
+
+
 def reboco_e_pintura(c, pai_reboco, pai_pintura):
     # Reboco e pintura não mudam a silhueta da casa: não têm desenho (os nós
     # fantasma_fase_06 e _08 existem, vazios).
     paredes, faixa = casca(c, 0.0)
-    c.objeto_de_mesh('reboco_paredes', juntar(paredes, faixa), 'reboco', pai_reboco, 6, chanfro=0.012)
+    c.objeto_de_mesh('reboco_paredes', juntar(paredes, faixa, caixa_da_caixa(c, 0.0)), 'reboco',
+                     pai_reboco, 6, chanfro=0.012)
     m = Malha('reboco_contrapiso')
     m.caixa((-4.29, 4.29, PISO - 0.01, PISO + 0.03, -3.29, 3.29), 'argamassa', omitir=('baixo',))
     c.objeto(m, pai_reboco, pivo=(0, PISO, 0), fase=6)
 
     paredes, faixa = casca(c, 0.004)
-    c.objeto_de_mesh('pintura_paredes', juntar(paredes, faixa), 'tinta', pai_pintura, 8, chanfro=0.012)
+    c.objeto_de_mesh('pintura_paredes', juntar(paredes, faixa, caixa_da_caixa(c, 0.004)), 'tinta',
+                     pai_pintura, 8, chanfro=0.012)
 
 
 # ---- 07 revestimentos: calçada, ripado, pingadeira, peitoris e soleira
@@ -1126,6 +1138,13 @@ def revestimentos(c, pai):
             s, e = de + i * passo + 0.0025, de + (i + 1) * passo - 0.0025
             r = (s, e, y0, y1, z0, z1) if eixo == 'x' else (z0, z1, y0, y1, s, e)
             m.caixa(r, 'calcada', chanfro=0.006, seg=1, omitir=())
+    # Tampa da caixa de alvenaria da caixa d'água, a pingadeira e o alçapão.
+    x0, x1, _, yt, z0, z1 = CASA_CX
+    m.caixa((x0 - 0.05, x1 + 0.05, yt - 0.02, yt + 0.08, z0 - 0.05, z1 + 0.05), 'tinta', chanfro=0.006)
+    m.caixa((x0 - 0.07, x1 + 0.07, yt + 0.08, yt + 0.11, z0 - 0.07, z1 + 0.07), 'granito', chanfro=0.004)
+    m.caixa((CX_X - 0.35, CX_X + 0.35, yt + 0.11, yt + 0.13, CX_Z - 0.35, CX_Z + 0.35), 'aluminio_escuro',
+            chanfro=0.004)
+    m.caixa((CX_X + 0.2, CX_X + 0.28, yt + 0.13, yt + 0.15, CX_Z - 0.05, CX_Z + 0.05), 'aluminio_escuro')
     c.objeto(m, pai, pivo=(0, y0, 0), fase=7)
 
     m = Malha('revestimentos_peitoris')

@@ -75,8 +75,9 @@ void main() {
                 c.id,
         ];
         expect(dentro.luzes.map((l) => l.comodo).toSet(), cobertos.toSet());
-        // Mais pesada, mas ainda dentro do que o celular desenha.
-        expect(dentro.modelo.triangulos, lessThan(600000));
+        // Dentro do limite da maquete.
+        expect(dentro.modelo.triangulos,
+            lessThanOrEqualTo(GeradorMaquete.limiteDeTriangulos));
       });
 
       test('cada cômodo tem os móveis do tipo dele', () {

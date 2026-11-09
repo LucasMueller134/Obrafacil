@@ -49,10 +49,13 @@ void main() {
     test('$nome: gera, cabe no celular e empilha certo', () {
       final planta = ModelosPlanta.montar(pedido);
       final m = GeradorMaquete.gerar(planta);
-      // 200 mil triângulos: o celular médio desenha com folga (e o
-      // flutter_scene baixa a resolução sozinho se precisar).
-      expect(m.modelo.triangulos, lessThan(200000), reason: nome);
-      expect(escreverGlb(m.modelo).length, lessThan(10 * 1024 * 1024));
+      // O limite da maquete (o flutter_scene baixa a resolução sozinho se o
+      // aparelho não der conta).
+      expect(m.modelo.triangulos,
+          lessThanOrEqualTo(GeradorMaquete.limiteDeTriangulos),
+          reason: nome);
+      // O arquivo acompanha o limite de triângulos (uns 70 bytes cada).
+      expect(escreverGlb(m.modelo).length, lessThan(48 * 1024 * 1024));
 
       // Todos os nós do plano existem e as fiadas têm geometria.
       for (final no in PlanoMaquete.todosOsNos) {

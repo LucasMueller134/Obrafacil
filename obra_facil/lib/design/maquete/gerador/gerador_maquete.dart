@@ -354,26 +354,26 @@ class GeradorMaquete {
     if (problemas.isNotEmpty) {
       throw ArgumentError('Planta com problemas: ${problemas.join(' ')}');
     }
-    if (planta.andares.isEmpty) {
-      return GeradorMaquete._(planta,
-              blocosSimples: _muitosBlocos(planta), interior: interior)
-          ._gerar();
-    }
-    return _gerarAndares(planta, interior: interior);
+    // Na casa mobiliada (vista 360°) a obra está pronta e o reboco esconde
+    // os blocos: fiada inteira, mais leve. Na maquete de fora, bloco a
+    // bloco; só se passar do limite a alvenaria vira fiada inteira.
+    final m = _gerarCom(planta, simples: interior, interior: interior);
+    if (interior || m.modelo.triangulos <= limiteDeTriangulos) return m;
+    return _gerarCom(planta, simples: true, interior: false);
   }
 
-  /// Blocos um a um passariam do que o celular desenha com folga: vira
-  /// fiada inteira.
-  static bool _muitosBlocos(PlantaObra planta) {
-    var metros = 0.0;
-    for (var i = 0; i < planta.totalPlantas; i++) {
-      final rep = i == 0 ? 1 : planta.andares[i - 1].repeticoes;
-      for (final w in planta.planta(i).paredes) {
-        if (w.tipo == TipoParede.alvenaria) metros += w.comprimento * rep;
-      }
+  static MaqueteGerada _gerarCom(PlantaObra planta,
+      {required bool simples, required bool interior}) {
+    if (planta.andares.isEmpty) {
+      return GeradorMaquete._(planta,
+              blocosSimples: simples, interior: interior)
+          ._gerar();
     }
-    return metros / 0.4 * NosMaquete.totalFiadasParede > 5000;
+    return _gerarAndares(planta, simples: simples, interior: interior);
   }
+
+  /// Limite de triângulos da maquete, o que o celular desenha.
+  static const int limiteDeTriangulos = 700000;
 
   /// A raiz com o tabuleiro, as cotas, as fases, as peças e os fantasmas.
   static (NoGerado, NoGerado, NoGerado, Map<String, NoGerado>, List<NoGerado>)
@@ -441,8 +441,7 @@ class GeradorMaquete {
   /// As fiadas de todos os pavimentos são repartidas nas 15 etapas da
   /// alvenaria, de baixo para cima.
   static MaqueteGerada _gerarAndares(PlantaObra planta,
-      {bool interior = false}) {
-    final simples = _muitosBlocos(planta);
+      {required bool simples, bool interior = false}) {
     final predio = planta.modelo?['tipo'] == 'predio';
     final terreo = planta.planta(0);
     final mestre = GeradorMaquete._(terreo);
@@ -1443,6 +1442,34 @@ class GeradorMaquete {
     tubos.malha.caixa(MateriaisMaquete.pvc.nome,
         (x + 0.72, t0 + 0.02, z - 0.03), (x + 1.8, t0 + 0.08, z + 0.03));
     tubos.translacao = (x, t0, z);
+
+    // A caixa d'água fica fechada numa caixa de alvenaria (com os tubos
+    // dentro): rebocada na fase do reboco, pintada da cor da casa na
+    // pintura, com a tampa de concreto, a pingadeira de granito e o
+    // alçapão de inspeção. Da hidráulica até o reboco ela aparece azul,
+    // como na obra.
+    const meio = 0.95;
+    final topo = t0 + hb + 0.76 + 0.14;
+    final reboco = pecas['reboco_paredes']!.malha;
+    final pintura = pecas['pintura_paredes']!.malha;
+    final pingadeira = pecas['revestimentos_pingadeira']!.malha;
+    void bloco(MalhaGerada m, String mat, double folga, double y1) => m.caixa(
+        mat,
+        (x - meio - folga, t0, z - meio - folga),
+        (x + 1.85 + folga, y1, z + meio + folga));
+    bloco(reboco, MateriaisMaquete.reboco.nome, 0, topo);
+    bloco(pintura, MateriaisMaquete.tinta.nome, 0.006, topo - 0.002);
+    // Tampa de concreto um pouco saliente e a pingadeira em volta.
+    bloco(pingadeira, MateriaisMaquete.tinta.nome, 0.05, topo + 0.08);
+    pingadeira.caixa(
+        MateriaisMaquete.granito.nome,
+        (x - meio - 0.07, topo + 0.08, z - meio - 0.07),
+        (x + 1.85 + 0.07, topo + 0.11, z + meio + 0.07));
+    // Alçapão de inspeção sobre a caixa.
+    pingadeira.caixa(MateriaisMaquete.aluminio.nome,
+        (x - 0.35, topo + 0.11, z - 0.35), (x + 0.35, topo + 0.13, z + 0.35));
+    pingadeira.caixa(MateriaisMaquete.aluminio.nome,
+        (x + 0.2, topo + 0.13, z - 0.05), (x + 0.28, topo + 0.15, z + 0.05));
   }
 
   // ------------------------------------------------------------ 06 e 08
