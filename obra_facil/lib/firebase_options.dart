@@ -36,7 +36,8 @@ class DefaultFirebaseOptions {
   /// Sign-in method → Google → Configuração do SDK da Web). Não é segredo:
   /// vai dentro de todo app que usa o login do Google. Vazio, o botão
   /// "Entrar com o Google" não aparece.
-  static const googleWebClientId = '';
+  static const googleWebClientId =
+      '1038297734342-rfphqvgmc079ci3bndiorpgnb1fck4am.apps.googleusercontent.com';
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyCCi0msI8deseumFQeMIV82DnA4b6yzaNQ',

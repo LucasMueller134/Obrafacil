@@ -42,8 +42,7 @@ class _DbFases extends FirestoreFalso {
   Future<void> salvarFase(CronogramaFaseModel fase) async => salvas.add(fase);
 
   @override
-  Future<void> excluirFase(String obraId, String id) async =>
-      excluidas.add(id);
+  Future<void> excluirFase(String obraId, String id) async => excluidas.add(id);
 }
 
 class _App {
@@ -109,8 +108,8 @@ void main() {
 
   group('Cronograma', () {
     testWidgets('carimbo com o avanço da obra e a fase atual', (tester) async {
-      final app = await _abrir(tester, UsuariosExemplo.mestre,
-          rota: _cronograma);
+      final app =
+          await _abrir(tester, UsuariosExemplo.mestre, rota: _cronograma);
       expect(find.text('CRONOGRAMA'), findsOneWidget);
       expect(find.text('Sobrado Vila Izabel'), findsOneWidget);
       // Fundação 100 + Estrutura 100 + Alvenaria 60, de 10 fases: 26%.
@@ -118,14 +117,22 @@ void main() {
       expect(find.text('10 FASES'), findsOneWidget);
       // A situação em texto, não só na cor.
       expect(find.textContaining('Concluída'), findsNWidgets(2));
-      expect(find.textContaining('Em andamento'), findsOneWidget);
+      // A situação segue o relógio de verdade (as datas de exemplo são
+      // fixas): a Alvenaria, com 60%, fica em andamento até 13/11 e
+      // atrasada depois; as outras fases começam a contar na data delas.
+      final venceu = DateTime.now().isAfter(DateTime(2026, 11, 13));
+      expect(
+          find.textContaining(venceu
+              ? 'Atrasada · venceu 13/11'
+              : 'Em andamento · 01/09 a 13/11'),
+          findsOneWidget);
       await _fechar(tester, app);
     });
 
     testWidgets('+5 e salvar grava a fase; desfazer grava como era',
         (tester) async {
-      final app = await _abrir(tester, UsuariosExemplo.mestre,
-          rota: _cronograma);
+      final app =
+          await _abrir(tester, UsuariosExemplo.mestre, rota: _cronograma);
       await _abrirAlvenaria(tester);
       expect(find.text('FASE 03'), findsOneWidget);
       expect(find.text('60%'), findsWidgets);
@@ -150,8 +157,8 @@ void main() {
     });
 
     testWidgets('− e + param nos múltiplos de 5', (tester) async {
-      final app = await _abrir(tester, UsuariosExemplo.mestre,
-          rota: _cronograma);
+      final app =
+          await _abrir(tester, UsuariosExemplo.mestre, rota: _cronograma);
       await _abrirAlvenaria(tester);
       // Leva a 100 e volta: 100 → 95 → 90.
       await _tocar(tester, find.text('Fase pronta (100%)'));
@@ -164,8 +171,8 @@ void main() {
     });
 
     testWidgets('sem mudança, Salvar fica desabilitado', (tester) async {
-      final app = await _abrir(tester, UsuariosExemplo.mestre,
-          rota: _cronograma);
+      final app =
+          await _abrir(tester, UsuariosExemplo.mestre, rota: _cronograma);
       await _abrirAlvenaria(tester);
       final salvar = tester.widget<BotaoPrincipal>(
           find.widgetWithText(BotaoPrincipal, 'Salvar'));
@@ -186,8 +193,8 @@ void main() {
 
     testWidgets('excluir a fase; desfazer grava a mesma fase de novo',
         (tester) async {
-      final app = await _abrir(tester, UsuariosExemplo.mestre,
-          rota: _cronograma);
+      final app =
+          await _abrir(tester, UsuariosExemplo.mestre, rota: _cronograma);
       await _abrirAlvenaria(tester);
       await _tocar(tester, find.text('Excluir fase'));
       expect(app.db.excluidas, ['fase-2']);
@@ -204,8 +211,8 @@ void main() {
     });
 
     testWidgets('nova fase sugere as fases padrão que faltam', (tester) async {
-      final app = await _abrir(tester, UsuariosExemplo.mestre,
-          rota: _cronograma);
+      final app =
+          await _abrir(tester, UsuariosExemplo.mestre, rota: _cronograma);
       await _tocar(tester, find.text('Adicionar fase'));
       expect(find.text('Nova fase'), findsOneWidget);
       // O cronograma de exemplo já tem as 10 fases padrão.

@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart'
+    show TargetPlatform, defaultTargetPlatform, kIsWeb;
 import 'package:google_sign_in/google_sign_in.dart';
 
 import '../firebase_options.dart';
@@ -92,9 +94,12 @@ class AuthService {
 
   // ------------------------------------------------------------ Google
 
-  /// O login com Google está configurado neste build?
+  /// O login com Google está configurado neste build? No iPhone ele ainda
+  /// precisa do cliente iOS do Google (vem com o GoogleService-Info.plist):
+  /// até lá, o botão fica escondido.
   bool get googleDisponivel =>
-      DefaultFirebaseOptions.googleWebClientId.isNotEmpty;
+      DefaultFirebaseOptions.googleWebClientId.isNotEmpty &&
+      (kIsWeb || defaultTargetPlatform != TargetPlatform.iOS);
 
   Future<void>? _googlePronto;
 

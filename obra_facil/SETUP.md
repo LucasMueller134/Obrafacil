@@ -95,6 +95,9 @@ perfil escolhido. O e-mail do Google já vem confirmado.
 Para rodar localmente com o Google, assine o build de debug com a mesma
 chave ou cadastre também o SHA-1 da sua chave de debug.
 
+No iPhone o botão fica escondido por enquanto: lá o Google também precisa
+do cliente iOS (vem no `GoogleService-Info.plist` do app iOS no Firebase).
+
 ## 4c. iPhone (teste grátis, pelo computador)
 
 A cada push na `main`, o build **Build iOS** (Mac do GitHub) gera um `.ipa`
