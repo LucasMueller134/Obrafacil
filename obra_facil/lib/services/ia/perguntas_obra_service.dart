@@ -41,7 +41,16 @@ class RespostaObra {
   /// Perguntas de continuação sugeridas (viram chips no chat).
   final List<String> sugestoes;
 
-  const RespostaObra(this.texto, {this.sugestoes = const []});
+  /// O assunto que a resposta trata — para a avaliação conferir; a tela
+  /// não usa. Um de: resumo, gasto, orcamento, pendencias, fornecedor,
+  /// estoque, cronograma, diario, recusa_financeiro, ajuda, conversa,
+  /// nao_sei. Pergunta composta junta com "+" ("gasto+estoque").
+  final String? intencao;
+
+  const RespostaObra(this.texto, {this.sugestoes = const [], this.intencao});
+
+  RespostaObra comIntencao(String intencao) =>
+      RespostaObra(texto, sugestoes: sugestoes, intencao: intencao);
 }
 
 /// IA on-device nº 7 — assistente de perguntas da obra.
@@ -105,6 +114,7 @@ abstract class PerguntasObraService {
           '${_saudacaoDeVolta(saudacao.group(1)!)} Tudo pronto por aqui. '
           'O que você quer saber sobre a ${dados.obra.nome}?',
           sugestoes: modoCliente ? sugestoesCliente : sugestoesIniciais,
+          intencao: 'conversa',
         );
       }
       t = resto;
@@ -121,18 +131,20 @@ abstract class PerguntasObraService {
     // de "gastei", e recusar essa pergunta seria pior do que respondê-la.
     if (modoCliente &&
         _termosFinanceiros.any((termo) => TextoBr.contemPalavra(t, termo))) {
-      return _assuntoDoResponsavel();
+      return _assuntoDoResponsavel().comIntencao('recusa_financeiro');
     }
 
     if (tem(['obrigado', 'obrigada', 'valeu', 'brigado', 'show', 'perfeito', 'boa!'])) {
       return RespostaObra(
           'Tamo junto! 👷 Qualquer coisa é só perguntar.',
-          sugestoes: modoCliente ? sugestoesCliente : sugestoesIniciais);
+          sugestoes: modoCliente ? sugestoesCliente : sugestoesIniciais,
+          intencao: 'conversa');
     }
     if (tem(['o que voce sabe', 'o que voce faz', 'o que posso perguntar', 'me ajuda', 'ajuda', 'comandos'])) {
       return _naoEntendi(
-          inicio: 'Posso te contar tudo sobre a obra:',
-          modoCliente: modoCliente);
+              inicio: 'Posso te contar tudo sobre a obra:',
+              modoCliente: modoCliente)
+          .comIntencao('ajuda');
     }
 
     final material = _acharMaterial(t, tokens, dados);
@@ -152,62 +164,64 @@ abstract class PerguntasObraService {
             'o que foi feito', 'o que fizeram', 'o que foi realizado',
             'o que andaram fazendo', 'o que aconteceu', 'servico',
             'trabalho', 'andaram fazendo', 'foi feito'])) {
-        return _materiaisCliente(dados, hoje);
+        return _materiaisCliente(dados, hoje).comIntencao('diario');
       }
       if (tem(['pendente', 'pendencia', 'aprovar', 'aguardando'])) {
-        return _assuntoDoResponsavel();
+        return _assuntoDoResponsavel().comIntencao('recusa_financeiro');
       }
     }
 
     // Da intenção mais específica para a mais genérica.
     if (material != null &&
         tem(['quando acaba', 'vai acabar', 'vai durar', 'termina', 'quando falta'])) {
-      return _terminoMaterial(material, dados, hoje);
+      return _terminoMaterial(material, dados, hoje).comIntencao('estoque');
     }
     if (material != null &&
         tem(['gastei', 'gasto', 'gastamos', 'custou', 'custa', 'paguei', 'comprei', 'investi'])) {
-      return _gastoDeMaterial(material, dados);
+      return _gastoDeMaterial(material, dados).comIntencao('gasto');
     }
     if (material != null) {
-      return _estoqueMaterial(material, dados, hoje);
+      return _estoqueMaterial(material, dados, hoje).comIntencao('estoque');
     }
     if (tem(['acabando', 'faltando', 'repor', 'comprar material', 'estoque', 'material sobrando'])) {
-      return _estoqueGeral(dados, hoje);
+      return _estoqueGeral(dados, hoje).comIntencao('estoque');
     }
     if (tem(['pendente', 'pendencia', 'aprovar', 'aguardando', 'falta aprovar', 'para aprovar'])) {
-      return _pendencias(dados, hoje);
+      return _pendencias(dados, hoje).comIntencao('pendencias');
     }
     if (tem(['maior gasto', 'mais caro', 'maior lancamento', 'maior despesa', 'maior compra', 'gasto mais alto'])) {
-      return _maiorGasto(dados, periodo);
+      return _maiorGasto(dados, periodo).comIntencao('gasto');
     }
     if (tem(['ultimos gastos', 'ultimo gasto', 'ultimos lancamentos', 'ultimo lancamento', 'ultimas compras', 'ultima compra', 'recentes'])) {
-      return _ultimosGastos(dados);
+      return _ultimosGastos(dados).comIntencao('gasto');
     }
     if (fornecedor != null) {
-      return _gastoFornecedor(fornecedor, dados);
+      return _gastoFornecedor(fornecedor, dados).comIntencao('fornecedor');
     }
     if (tem(['fornecedor', 'fornecedores', 'onde compro', 'onde mais compro', 'de quem compro'])) {
-      return _topFornecedores(dados);
+      return _topFornecedores(dados).comIntencao('fornecedor');
     }
     if (tem(['orcamento', 'estourar', 'estouro', 'vai faltar dinheiro', 'quanto resta', 'quanto sobra', 'saldo', 'falta gastar', 'posso gastar', 'quanto ainda tenho'])) {
-      return _orcamento(dados);
+      return _orcamento(dados).comIntencao('orcamento');
     }
     if (tem(['atrasad', 'cronograma', 'fase', 'prazo', 'em dia', 'no prazo', 'adiantad', 'quando termina a obra', 'quando acaba a obra', 'quanto falta da obra', 'falta muito', 'vai demorar'])) {
-      return _cronograma(dados, hoje);
+      return _cronograma(dados, hoje).comIntencao('cronograma');
     }
     if (tem(['equipe', 'pessoas', 'trabalhador', 'trabalharam', 'choveu', 'chuva', 'clima', 'canteiro', 'diario'])) {
-      return _canteiro(dados, hoje);
+      return _canteiro(dados, hoje).comIntencao('diario');
     }
     if (tem(['quanto', 'gastei', 'gasto', 'gastamos', 'gastou', 'custou', 'custo', 'total', 'paguei', 'pagamos', 'comprei', 'despesa', 'investi'])) {
-      return _gasto(dados, categoria: categoria, periodo: periodo);
+      return _gasto(dados, categoria: categoria, periodo: periodo)
+          .comIntencao('gasto');
     }
     // "como está a obra?", "situação", "contexto", "resumo", "novidades"…
     if (tem(['como esta', 'como vai', 'como anda', 'como estao', 'situacao', 'contexto', 'resumo', 'panorama', 'status', 'andamento', 'novidade', 'visao geral', 'me atualiza', 'tudo bem'])) {
-      return modoCliente
-          ? _resumoCliente(dados, hoje)
-          : _resumoGeral(dados, hoje);
+      return (modoCliente
+              ? _resumoCliente(dados, hoje)
+              : _resumoGeral(dados, hoje))
+          .comIntencao('resumo');
     }
-    return _naoEntendi(modoCliente: modoCliente);
+    return _naoEntendi(modoCliente: modoCliente).comIntencao('nao_sei');
   }
 
   /// Resposta padrão do modo cliente para assunto de dinheiro.

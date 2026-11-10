@@ -284,29 +284,56 @@ class VozService {
       r"[a-zA-Zà-ÿÀ-Ý' ]{0,45})",
       caseSensitive: false);
 
+  /// Loja cujo nome começa pelo que ela vende: "na cerâmica são pedro",
+  /// "na tintas mais cor", "na elétrica real", "na hidráulica são paulo".
+  /// A palavra sozinha também é material ou serviço ("o piso da cerâmica",
+  /// "a parte elétrica"), por isso só com "no/na/em/pelo" — onde se compra
+  /// — e com um nome depois dela (sem nome, é genérico e fica vazio).
+  static final RegExp _fornecedorPeloQueVende = RegExp(
+      r'\b(?:n[oa]|em|l[aá]\s+n[oa]|ali\s+n[oa]|pel[oa])\s+'
+      r'((?:cer[aâ]mica|pedreira|el[eé]trica|hidr[aá]ulica|tintas|'
+      r'acabamentos|pisos|locadora|concreteira|serraria|metal[uú]rgica|'
+      r'vidros|esquadrias|ferro\s+velho)\b'
+      r"[a-zA-Zà-ÿÀ-Ý' ]{0,45})",
+      caseSensitive: false);
+
   /// Nome próprio capitalizado após na/no/da/do (quando a transcrição
   /// capitaliza): "no Depósito São José", "na Leroy".
   static final RegExp _fornecedorCapitalizado =
       RegExp(r'\b(?:n[oa]|d[oa]|em)\s+'
           r'([A-ZÀ-Ý][\wà-ÿ]+(?:\s+(?:d[oae]s?\s+)?[A-ZÀ-Ý][\wà-ÿ]+){0,3})');
 
-  /// Redes conhecidas ditas sem preposição ("comprei na leroy merlin").
-  static const List<String> _redesConhecidas = [
-    'leroy merlin',
-    'leroy',
-    'telhanorte',
-    'obramax',
-    'cassol',
-    'balaroti',
-    'tumelero',
-    'chatuba',
-    'dicico',
-    'sodimac',
-    'ferreira costa',
-    'tenda atacado',
-    'havan',
-    'casa do construtor',
-  ];
+  /// Redes conhecidas ditas sem preposição ("comprei na leroy merlin"),
+  /// com o nome como se escreve. Lojas da internet também são fornecedor:
+  /// "comprei pelo mercado livre".
+  static const Map<String, String> _redesConhecidas = {
+    'leroy merlin': 'Leroy Merlin',
+    'leroy': 'Leroy',
+    'telhanorte': 'Telhanorte',
+    'obramax': 'Obramax',
+    'cassol': 'Cassol',
+    'balaroti': 'Balaroti',
+    'tumelero': 'Tumelero',
+    'chatuba': 'Chatuba',
+    'dicico': 'Dicico',
+    'sodimac': 'Sodimac',
+    'ferreira costa': 'Ferreira Costa',
+    'tenda atacado': 'Tenda Atacado',
+    'havan': 'Havan',
+    'casa do construtor': 'Casa do Construtor',
+    'c&c': 'C&C',
+    'c & c': 'C&C',
+    'quero-quero': 'Quero-Quero',
+    'quero quero': 'Quero-Quero',
+    'mercado livre': 'Mercado Livre',
+    'amazon': 'Amazon',
+    'shopee': 'Shopee',
+    'magazine luiza': 'Magazine Luiza',
+    'magalu': 'Magalu',
+    'americanas': 'Americanas',
+    'assai': 'Assaí',
+    'makro': 'Makro',
+  };
 
   /// Palavras onde o nome do fornecedor termina: o resto da frase não é
   /// nome ("lá na madeireira do zé PEGUEI a madeira do telhado").
@@ -492,6 +519,22 @@ class VozService {
     'centro',
     'frente',
     'perto',
+    // o que a loja vende, dito sozinho ("na cerâmica", "na elétrica")
+    'ceramica',
+    'pedreira',
+    'eletrica',
+    'hidraulica',
+    'tintas',
+    'acabamentos',
+    'pisos',
+    'locadora',
+    'concreteira',
+    'serraria',
+    'metalurgica',
+    'vidros',
+    'esquadrias',
+    'ferro',
+    'velho',
   };
 
   /// Verbo conjugado pela terminação — encerra o nome do fornecedor.
@@ -665,8 +708,30 @@ class VozService {
       'britadeira',
       'policorte',
       'alugamos',
+      // ferramenta comprada também é equipamento, não material
+      'ferramenta',
+      'carriola',
+      'carrinho de mao',
+      'pa',
+      'enxada',
+      'picareta',
+      'marreta',
+      'martelo',
+      'trena',
+      'serrote',
+      'alicate',
+      'parafusadeira',
+      'desempenadeira',
+      'colher de pedreiro',
+      'capacete',
+      'epi',
     ],
   };
+
+  /// Nome de ferramenta que traz uma profissão dentro: a profissão ali não
+  /// é mão de obra ("comprei uma colher de pedreiro").
+  static final RegExp _ferramentaComProfissao =
+      RegExp(r'(?<![a-z])(colher|prumo|linha|nivel|lapis)\s+de\s+pedreiro');
 
   /// Sinais fortes (profissões, aluguel): pesam o dobro na classificação.
   /// "Paguei a diária do pedreiro e comprei cimento" é mão de obra,
@@ -711,25 +776,51 @@ class VozService {
       itens: localizados,
       ignorar: [if (fornecedorInfo != null) fornecedorInfo.trecho],
     );
-    final itens = _itensDoEstoque(texto, localizados, valorInfo.inicios);
+    final categoria = _classificarCategoria(texto);
+    // "paguei a diária do pedreiro 3": valor que não existe na obra é
+    // pedaço de número cortado pelo reconhecedor — fica vazio (e continua
+    // na descrição, para o usuário ver o que foi ouvido).
+    final valorAceito = !_valorImplausivel(valorInfo, categoria);
+    final itens = [
+      ..._itensDoEstoque(texto, localizados, valorInfo.inicios),
+      ..._itensPeloArtigo(texto, localizados, categoria,
+          temValor: valorAceito && valorInfo.valor != null),
+    ];
 
     return LancamentoPorVoz(
       descricao: _montarDescricao(
         texto,
         remover: [
-          ...valorInfo.trechos,
+          if (valorAceito) ...valorInfo.trechos,
           if (fornecedorInfo != null) fornecedorInfo.trecho,
         ],
         removerData: data != null,
         itens: itens,
       ),
-      valor: valorInfo.valor,
-      categoria: _classificarCategoria(texto),
+      valor: valorAceito ? valorInfo.valor : null,
+      categoria: categoria,
       fornecedorNome: fornecedorInfo?.nome,
       data: data,
       itens: itens,
       transcricao: original,
     );
+  }
+
+  /// Menor valor que se paga por um dia de alguém ou por um aluguel.
+  static const double _menorValorDeServico = 20;
+
+  /// Mão de obra ou aluguel por menos de R\$ 20, sem a moeda dita: ninguém
+  /// paga R\$ 3 de diária. É o número cortado no barulho ("trezentos" →
+  /// "3") — melhor vazio que errado. Com "reais" o usuário disse o valor
+  /// inteiro, e material barato existe ("prego 8"), então esses ficam.
+  static bool _valorImplausivel(ValorFalado info, CategoriaCusto categoria) {
+    final valor = info.valor;
+    if (valor == null || info.comMoeda) return false;
+    if (categoria != CategoriaCusto.maoDeObra &&
+        categoria != CategoriaCusto.equipamento) {
+      return false;
+    }
+    return valor < _menorValorDeServico;
   }
 
   /// Interpreta as hipóteses do reconhecedor (a 1ª é a principal;
@@ -776,6 +867,42 @@ class VozService {
     ];
   }
 
+  /// "comprei a porta da sala", "a janela de alumínio saiu 2.340": objeto
+  /// que se compra por unidade, dito com artigo no singular, é um só. Vale
+  /// só para compra (verbo de compra antes, ou a frase começa por ele e
+  /// tem valor) — "pintei a porta" não põe porta no estoque.
+  static final RegExp _objetoComArtigo = RegExp(
+      r'(?:^\s*|(?<![a-z])(?:comprei|compramos|comprou|peguei|pegamos|levei|'
+      r'levamos|trouxe|trouxemos|encomendei|encomendamos|chegou)\s+)'
+      r'a\s+(porta|janela)(?![a-z])');
+
+  static const Map<String, String> _objetosPorUnidade = {
+    'porta': 'Porta',
+    'janela': 'Janela',
+  };
+
+  static List<ItemMaterialModel> _itensPeloArtigo(
+      String texto, List<ItemNoTexto> localizados, CategoriaCusto categoria,
+      {required bool temValor}) {
+    if (categoria != CategoriaCusto.material || _aluguel.hasMatch(texto)) {
+      return const [];
+    }
+    final t = TextoBr.normalizar(texto);
+    final jaTem = {for (final i in localizados) i.item.material};
+    final itens = <ItemMaterialModel>[];
+    for (final m in _objetoComArtigo.allMatches(t)) {
+      final noComeco = t.substring(0, m.start).trim().isEmpty &&
+          !RegExp(r'^\s*[a-z]{3,}').hasMatch(m.group(0)!.split(' a ').first);
+      if (noComeco && !temValor) continue;
+      final material = _objetosPorUnidade[m.group(1)]!;
+      if (jaTem.add(material)) {
+        itens.add(
+            ItemMaterialModel(material: material, quantidade: 1, unidade: 'un'));
+      }
+    }
+    return itens;
+  }
+
   static bool _ehEquipamento(String material) =>
       TextoBr.primeiroQueCasa(TextoBr.normalizar(material), _equipamentos) !=
       null;
@@ -784,17 +911,21 @@ class VozService {
 
   static _FornecedorInfo? _extrairFornecedorInfo(String texto) {
     final normalizado = TextoBr.normalizar(texto);
-    for (final rede in _redesConhecidas) {
-      if (!TextoBr.contemPalavra(normalizado, rede)) continue;
-      final inicio = normalizado.indexOf(rede);
+    for (final rede in _redesConhecidas.entries) {
+      final inicio = _posicaoDaPalavra(normalizado, rede.key);
+      if (inicio == null) continue;
       // "na casa do construtor": a preposição sai junto da descrição.
       final preposicao =
           _preposicaoAntes.firstMatch(normalizado.substring(0, inicio));
-      return _FornecedorInfo(_capitalizarNome(rede),
-          (preposicao?.start ?? inicio, inicio + rede.length));
+      return _FornecedorInfo(
+          rede.value, (preposicao?.start ?? inicio, inicio + rede.key.length));
     }
 
-    for (final padrao in [_fornecedorComTipo, _fornecedorCapitalizado]) {
+    for (final padrao in [
+      _fornecedorComTipo,
+      _fornecedorPeloQueVende,
+      _fornecedorCapitalizado,
+    ]) {
       for (final m in padrao.allMatches(texto)) {
         final bruto = m.group(1)!;
         final inicioGrupo = m.end - bruto.length;
@@ -810,6 +941,15 @@ class VozService {
 
   static final RegExp _preposicaoAntes =
       RegExp(r'(?<![a-z0-9])(?:(?:la|ali)\s+)?(?:n[oa]|d[oa]|em|pel[oa])\s+$');
+
+  /// Onde [termo] aparece em [texto] como palavra inteira (os dois sem
+  /// acento), ou null. Diferente do `contemPalavra`, não aceita plural:
+  /// nome de loja é dito como é.
+  static int? _posicaoDaPalavra(String texto, String termo) {
+    final m = RegExp('(?<![a-z0-9])${RegExp.escape(termo)}(?![a-z0-9])')
+        .firstMatch(texto);
+    return m?.start;
+  }
 
   /// Nome feito só de tipo de loja, do que ela vende e de onde fica
   /// ("loja de material de construção", "ferragista do bairro").
@@ -840,6 +980,15 @@ class VozService {
         }
         continue;
       }
+      // "Tintas Mais Cor", "Constru Mais Barato": o "mais" faz parte do
+      // nome quando vem uma palavra comum depois — "mais 40 de frete" e
+      // "mais o frete" continuam encerrando.
+      if (i > 0 &&
+          n == 'mais' &&
+          i + 1 < palavras.length &&
+          _podeSeguirMaisNoNome(_norm(palavras[i + 1]))) {
+        continue;
+      }
       if (i > 0 &&
           (_fimDoFornecedor.contains(n) ||
               _pareceVerbo.hasMatch(n) ||
@@ -856,6 +1005,17 @@ class VozService {
 
   static String _norm(RegExpMatch m) => TextoBr.normalizar(m.group(0)!);
 
+  /// A palavra depois de "mais" continua o nome da loja ("mais cor")?
+  static bool _podeSeguirMaisNoNome(String seguinte) =>
+      seguinte.length >= 3 &&
+      !_fimDoFornecedor.contains(seguinte) &&
+      !_conectoresDoNome.contains(seguinte) &&
+      !_materiaisNoFornecedor.contains(seguinte) &&
+      !_pareceVerbo.hasMatch(seguinte) &&
+      !RegExp(r'\d').hasMatch(seguinte) &&
+      !const {'frete', 'barato', 'caro', 'cedo', 'tarde', 'nada', 'outro',
+          'outra', 'alguma', 'algum', 'pouco', 'menos'}.contains(seguinte);
+
   static String _capitalizarNome(String nome) {
     const minusculas = {'de', 'do', 'da', 'dos', 'das', 'e'};
     return nome.split(' ').where((p) => p.isNotEmpty).map((p) {
@@ -868,10 +1028,17 @@ class VozService {
   // --------------------------------------------------------- Categoria
 
   static CategoriaCusto _classificarCategoria(String texto) {
-    final t = TextoBr.normalizar(texto);
+    final normalizado = TextoBr.normalizar(texto);
+    // Sem a profissão que só dá nome à ferramenta ("colher de pedreiro").
+    final semProfissao = normalizado.replaceAllMapped(
+        _ferramentaComProfissao, (m) => '${m.group(1)} de ferramenta');
     var melhor = CategoriaCusto.outros;
     var melhorPontos = 0;
     for (final entry in _palavrasCategoria.entries) {
+      // A lista de equipamento ainda precisa achar "colher de pedreiro".
+      final t = entry.key == CategoriaCusto.equipamento
+          ? normalizado
+          : semProfissao;
       var pontos = 0;
       for (final palavra in entry.value) {
         if (!TextoBr.contemPalavra(t, palavra)) continue;

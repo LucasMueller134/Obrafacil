@@ -30,7 +30,13 @@ class ValorFalado {
   /// quantidade ("gastei 300 de cimento"): esse item não vai ao estoque.
   final Set<int> inicios;
 
-  const ValorFalado(this.valor, this.trechos, this.inicios);
+  /// O valor veio com moeda dita ("R\$", "reais", "conto"): quem fala a
+  /// moeda disse o número inteiro — o valor solto, sem ela, pode ser um
+  /// pedaço que o reconhecedor cortou ("trezentos" virou "3").
+  final bool comMoeda;
+
+  const ValorFalado(this.valor, this.trechos, this.inicios,
+      {this.comMoeda = false});
 
   // ------------------------------------------------------- Vocabulário
 
@@ -85,6 +91,12 @@ class ValorFalado {
       '(?:$_unidades|$_tempo|$_pessoasNoPlural|$_medidas)'
       r'(?![\w²³])|^\s*%');
   static final RegExp _umaPessoaDepois = RegExp('^\\s*(?:$_pessoas)\\b');
+
+  /// No canteiro o plural cai: "a diária dos 3 pedreiro", "4 peão". Número
+  /// pequeno com gente no singular logo depois é contagem, não preço —
+  /// "pedreiro 150 servente 100" continua sendo preço de cada um, porque
+  /// ninguém paga 150 pessoas.
+  static const int _maiorEquipeNoSingular = 30;
 
   /// Palavra no plural logo depois do número: algo contado ("3 vasos",
   /// "500 tijolos"). Conectores que terminam em "s" não contam.
@@ -345,6 +357,16 @@ class ValorFalado {
           r'vezes|parcelas?)\s+(?:d[oa]s?\s+[a-z]+\s+)?'
           r'((?:de|a)\s+(?:r\$\s*)?)$');
 
+  /// "6 marmitas de 18", "2 lanches a 15": coisa contada que não é material
+  /// de obra nem unidade, com o preço de cada uma logo depois. Material
+  /// fica de fora porque o "de" dele é medida ("2 portas de 80", "5 latas
+  /// de 18").
+  static final RegExp _contagemDeCoisasAntes =
+      RegExp(r'(?:^|[^\w.,])(\d+)\s+([a-z]{3,}s)\s+((?:de|a)\s+(?:r\$\s*)?)$');
+  static final RegExp _coisaComMedida = RegExp(
+      '^(?:$_unidades|$_materiaisComMedida|$_medidas|$_tempo|'
+      r'reais|contos|pilas|paus|mangos|pratas)$');
+
   /// "10 sacos de cimento DE 50 kg": o tamanho de cada um, não uma
   /// contagem — não serve de base para "a 35 cada".
   static final RegExp _especificacaoAntes = RegExp(r'(?:^|[^\w])de\s*$');
@@ -357,6 +379,15 @@ class ValorFalado {
           r'fechou(?:\s+em)?|somou|total)\s*(?:de\s+)?(?:r\$\s*)?$');
   static final RegExp _sucedeTotal =
       RegExp(r'^\s*(?:no\s+total|ao\s+todo|de\s+total|total)\b');
+
+  /// Meio de pagamento ou tipo de pagamento em volta do número: "um pix de
+  /// 380", "transferência de 500", "boleto de 230", "2 mil de entrada",
+  /// "500 de sinal" — é dinheiro, mesmo sem verbo de pagamento.
+  static final RegExp _pagamentoAntes = RegExp(
+      r'(?:^|[^\w])(?:pix|transferencia|ted|boleto|vale|adiantamento|sinal|'
+      r'entrada|gorjeta)\s+(?:de\s+|no\s+valor\s+de\s+)(?:r\$\s*)?$');
+  static final RegExp _pagamentoDepois =
+      RegExp(r'^\s*de\s+(?:entrada|sinal|adiantamento|gorjeta)\b');
 
   static final RegExp _descontoDepois = RegExp(r'^\s*de\s+desconto\b');
   static final RegExp _descontoAntes =
@@ -374,7 +405,13 @@ class ValorFalado {
           r'\s+(?:por|em|pra|para|a))\s+(?:r\$\s*)?$');
   static final RegExp _correcao =
       RegExp(r'(?:^|[^\w])(?:quer\s+dizer|ou\s+melhor|na\s+verdade|alias|digo|'
-          r'corrigindo|errei|me\s+enganei|nao\s+nao)(?![\w])');
+          r'corrigindo|corrige|errei|me\s+enganei|nao\s+nao|minto|'
+          r'pera(?:\s+ai|i)?|espera(?:\s+ai)?|opa|'
+          r'nao\s+(?:pera|perai|espera|calma|foi|era|e)(?![\w]))(?![\w])');
+
+  /// "paguei 300 não, 350": o "não" sozinho, logo antes do outro valor,
+  /// também corrige.
+  static final RegExp _naoCorrige = RegExp(r'^\s*,?\s*nao\s*,?\s*$');
   static final RegExp _contraste =
       RegExp(r'(?:^|[^\w])(?:mas|so\s+que|porem|no\s+final|no\s+fim|acabou|'
           r'desconto|chorei|pechinchei)(?![\w])');
@@ -462,6 +499,7 @@ class ValorFalado {
       valor,
       _trechos(dinheiro, itens),
       {for (final n in dinheiro) n.inicio},
+      comMoeda: dinheiro.any((n) => n.forte),
     );
   }
 
@@ -536,17 +574,16 @@ class ValorFalado {
 
   static bool _naoEhDinheiro(String antes, String depois, double valor) {
     if (_naoDinheiroDepois.hasMatch(depois)) return true;
-    if (valor == 1 && _umaPessoaDepois.hasMatch(depois)) return true;
+    if (_ehContagemDeGente(valor, depois)) return true;
     final plural = _pluralDepois.firstMatch(depois);
     if (plural != null && !_conectoresEmS.contains(plural.group(1))) {
       return true;
     }
-    // "1 vaso", "1 porta": um é quase sempre quantidade.
-    if (valor == 1 && RegExp(r'^\s+[a-z]{3,}').hasMatch(depois)) {
+    // "1 vaso", "1 porta", "1 pá": um é quase sempre quantidade — e quase
+    // sempre o artigo "um/uma" que o NumeroExtenso virou dígito.
+    if (valor == 1 && RegExp(r'^\s+[a-z]{2,}').hasMatch(depois)) {
       final palavra = RegExp(r'^\s+([a-z]+)').firstMatch(depois)!.group(1)!;
-      if (!_conectoresEmS.contains(palavra) &&
-          !const {'e', 'de', 'no', 'na', 'pro', 'pra', 'ao', 'com', 'por'}
-              .contains(palavra)) {
+      if (!_conectoresEmS.contains(palavra) && !_curtasDeLigacao.contains(palavra)) {
         return true;
       }
     }
@@ -582,6 +619,22 @@ class ValorFalado {
     return false;
   }
 
+  /// Palavras que podem vir depois de um "1" que é dinheiro ("deu 1 e 50",
+  /// "foi 1 do frete") — não são o nome de uma coisa contada.
+  static const Set<String> _curtasDeLigacao = {
+    'e', 'de', 'do', 'da', 'no', 'na', 'em', 'pro', 'pra', 'ao', 'com',
+    'por', 'ou', 'se', 'ja', 'so', 'la', 'ai', 'ta', 'ne', 'ok', 'que',
+  };
+
+  /// "3 pedreiro", "4 peão", "dos 2 servente": gente contada no singular.
+  static bool _ehContagemDeGente(double valor, String depois) {
+    if (valor == 1) return _umaPessoaDepois.hasMatch(depois);
+    return valor >= 2 &&
+        valor <= _maiorEquipeNoSingular &&
+        valor == valor.roundToDouble() &&
+        _umaPessoaDepois.hasMatch(depois);
+  }
+
   /// Procura no contexto a evidência de que o número é dinheiro.
   ///
   /// Roda também para quem já tem "reais": o preço unitário ("40 reais
@@ -615,11 +668,17 @@ class ValorFalado {
     }
 
     final contagem = _contagemDeAntes.firstMatch(antes);
+    final coisas = contagem == null ? _contagemDeCoisas(antes) : null;
     if (contagem != null) {
       evidencia = true;
       n.unidadePreco ??= '';
       n.quantidadeDireta = _lerNumeroBr(contagem.group(1)!);
       n.inicioTrecho = contagem.end - contagem.group(2)!.length;
+    } else if (coisas != null) {
+      evidencia = true;
+      n.unidadePreco ??= '';
+      n.quantidadeDireta = _lerNumeroBr(coisas.group(1)!);
+      n.inicioTrecho = coisas.end - coisas.group(3)!.length;
     }
 
     final verbo = _verboAntes.firstMatch(antes);
@@ -652,6 +711,9 @@ class ValorFalado {
     if (_descontoDepois.hasMatch(depois) || _descontoAntes.hasMatch(antes)) {
       evidencia = true;
     }
+    if (_pagamentoAntes.hasMatch(antes) || _pagamentoDepois.hasMatch(depois)) {
+      evidencia = true;
+    }
     if (!evidencia && _verboComQuemRecebeu(antes)) evidencia = true;
 
     if (n.unidadePreco == null) {
@@ -661,6 +723,16 @@ class ValorFalado {
     }
 
     if (evidencia) n.papel = _Papel.dinheiro;
+  }
+
+  static RegExpMatch? _contagemDeCoisas(String antes) {
+    final m = _contagemDeCoisasAntes.firstMatch(antes);
+    if (m == null || _coisaComMedida.hasMatch(m.group(2)!)) return null;
+    // Gente não é coisa contada: "2 pedreiros a 150 a diária por 3 dias" é
+    // diária × pessoas × dias, que a regra de equipe já resolve.
+    if (RegExp('^(?:$_pessoasNoPlural)\$').hasMatch(m.group(2)!)) return null;
+    final quantidade = _lerNumeroBr(m.group(1)!);
+    return quantidade >= 2 && quantidade <= 1000 ? m : null;
   }
 
   /// "paguei o pedreiro 250", "dei pro eletricista 200", "comprei a
@@ -710,7 +782,12 @@ class ValorFalado {
   /// anterior — onde mora o "cada saco" de "cada saco saiu 35".
   static String _janelaAntes(String antes) {
     final corte = antes.lastIndexOf(RegExp(r'[\d,.;]'));
-    final trecho = corte == -1 ? antes : antes.substring(corte + 1);
+    var trecho = corte == -1 ? antes : antes.substring(corte + 1);
+    // "a 150 cada deu 450": o "cada" colado no número anterior é dele, não
+    // deste — senão o total anunciado viraria preço unitário também.
+    if (corte != -1 && RegExp(r'\d').hasMatch(antes[corte])) {
+      trecho = trecho.replaceFirst(_unitarioDepois, ' ');
+    }
     final palavras = trecho.trim().split(RegExp(r'\s+'));
     final ultimas =
         palavras.length > 6 ? palavras.sublist(palavras.length - 6) : palavras;
@@ -800,6 +877,7 @@ class ValorFalado {
     if (_aditivo.hasMatch(lacuna)) return;
     if (_negociacaoAntes.hasMatch(antesDoNumero) ||
         _correcao.hasMatch(lacuna) ||
+        _naoCorrige.hasMatch(lacuna) ||
         (_contraste.hasMatch(lacuna) &&
             (_resultadoAntes.hasMatch(antesDoNumero) ||
                 _reducaoAntes.hasMatch(antesDoNumero)))) {
@@ -848,6 +926,19 @@ class ValorFalado {
   /// parcelas detalhadas. Com só dois números seria ambíguo (150 e 150),
   /// então a regra vale a partir de três.
   static double _somaSemTotalRepetido(List<_Numero> parcelas) {
+    // "3 latas a 150 cada, deu 450": o valor dito depois do preço unitário
+    // é a conta feita (quantidade × preço), não mais uma compra. Só vale
+    // quando o unitário multiplicou de fato e o total bate com ele.
+    if (parcelas.length == 2) {
+      bool multiplicou(_Numero n) =>
+          n.unidadePreco != null && (n.parcela - n.valor).abs() > 0.01;
+      final (a, b) = (parcelas[0], parcelas[1]);
+      if ((a.parcela - b.parcela).abs() < 0.01 &&
+          multiplicou(a) != multiplicou(b) &&
+          (a.unidadePreco == null || b.unidadePreco == null)) {
+        return a.parcela;
+      }
+    }
     if (parcelas.length >= 3) {
       for (final o in parcelas) {
         final resto = parcelas

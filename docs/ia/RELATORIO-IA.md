@@ -337,3 +337,30 @@ teste que falhava ou por um caminho concreto até a falha.
 > preenchimentos errados tenham caído. Esse resultado indica o limite das
 > regras sobre um classificador genérico e motiva o treinamento de um
 > modelo próprio com fotos de obra.
+
+## 11. Rodada de novembro de 2026
+
+**Casos novos e mais difíceis.** O lançamento por voz passou de 46 para 105 casos e o diário por voz de 31 para 84, escritos como um encarregado fala no canteiro (gíria, número por extenso, palavra cortada, data relativa, correção no meio da frase). Os números abaixo comparam o código antes e depois **no conjunto novo**; por isso o piso (`resultados/piso.json`) foi recalculado sobre ele.
+
+| Lançamento por voz (105 casos) | Antes | Depois |
+|---|---|---|
+| valor | 88% | **94%** |
+| categoria | 96% | **97%** |
+| fornecedor | 88% | **94%** |
+| data | 97% | 97% |
+| itens | 98% | **100%** |
+
+O que mudou: pagamento sem verbo ("um pix de 380", "500 de sinal"), coisa contada com preço ("6 marmitas de 18"), equipe no singular ("3 pedreiro"), correções no meio da fala ("300 não, 350", "pera, 350"), lojas conhecidas, ferramenta comprada como equipamento e valor implausível descartado. Arquivos: `valor_falado.dart` e `voz_service.dart`.
+
+**Diário por voz (84 casos):** clima 94%, pessoas 83%, fase 82%, data 93%. Os casos novos estão prontos, mas o código do diário não foi mexido nesta rodada: é o próximo passo.
+
+**Assistente "Perguntar sobre a obra": primeira medição.** Bateria nova com 177 perguntas como as pessoas escrevem no celular (abreviação, gíria, erro de digitação, perguntas compostas, 40 no modo cliente), sobre uma obra de exemplo fixa (`test/avaliacao/obra_exemplo.dart`). Rodar: `flutter test test/avaliacao/perguntas_avaliacao_test.dart`.
+
+| Assistente (177 perguntas) | Acerto |
+|---|---|
+| casos sem nenhum erro | 45% |
+| assunto certo | 60% |
+| números e fatos certos | 43% |
+| cliente sem nenhum dado de dinheiro | 98% |
+
+As regras entendem bem pergunta curta e direta, e se perdem em abreviação, gíria e pergunta composta. Por isso o assistente ficou **híbrido**: quando as regras não entendem (`RespostaObra.intencao == 'nao_sei'`), a pergunta vai para a IA própria do servidor (`assistente_ia_servidor.dart`), com um resumo da obra (`resumo_obra_ia.dart`). No modo cliente o resumo não leva nenhum dado de dinheiro, nem valores escritos no diário. Sem o endereço do servidor no build (`IA_URL`), nada muda: o app segue só com as regras, offline.

@@ -69,7 +69,7 @@ Map<String, Object?> resumoObraParaIa(DadosObraChat d,
           'clima': x.clima,
           'pessoas': x.numeroPessoas,
           if (x.fase.isNotEmpty) 'fase': x.fase,
-          'o_que': x.descricao.length > 200 ? '${x.descricao.substring(0, 200)}…' : x.descricao,
+          'o_que': _textoDoDiario(x.descricao, modoCliente),
         },
     ],
   };
@@ -130,6 +130,18 @@ PrevisaoEstoque? _previsao(EstoqueItemModel e, DadosObraChat d, DateTime ref) {
   } catch (_) {
     return null;
   }
+}
+
+/// Texto livre do diário: no modo cliente, valores em dinheiro que alguém
+/// escreveu ali ("paguei R\$ 450 de frete") viram "[valor]".
+String _textoDoDiario(String t, bool modoCliente) {
+  var texto = t.length > 200 ? '${t.substring(0, 200)}…' : t;
+  if (modoCliente) {
+    texto = texto
+        .replaceAll(RegExp(r'R\$\s*\d[\d.,]*', caseSensitive: false), '[valor]')
+        .replaceAll(RegExp(r'\d[\d.,]*\s*(reais|conto|contos|pila|pilas)\b', caseSensitive: false), '[valor]');
+  }
+  return texto;
 }
 
 String _dois(int n) => n.toString().padLeft(2, '0');

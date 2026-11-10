@@ -1,0 +1,3591 @@
+[
+  {
+    "id": "gasto-total-01",
+    "origem": "sintetico",
+    "particao": "dev",
+    "modo": "equipe",
+    "tipos": [
+      "sem_acento"
+    ],
+    "nota": "Total aprovado; pendente e recusado não entram.",
+    "entrada": {
+      "pergunta": "quanto ja gastei"
+    },
+    "esperado": {
+      "intencao": "gasto",
+      "contem": [
+        "R$ 102.715,00"
+      ]
+    }
+  },
+  {
+    "id": "gasto-total-02",
+    "origem": "sintetico",
+    "particao": "dev",
+    "modo": "equipe",
+    "tipos": [
+      "abreviacao",
+      "sem_acento"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "qnto gastei ate agr"
+    },
+    "esperado": {
+      "intencao": "gasto",
+      "contem": [
+        "R$ 102.715,00"
+      ]
+    }
+  },
+  {
+    "id": "gasto-total-03",
+    "origem": "sintetico",
+    "particao": "teste",
+    "modo": "equipe",
+    "tipos": [
+      "formal"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "Quanto foi gasto na obra até agora?"
+    },
+    "esperado": {
+      "intencao": "gasto",
+      "contem": [
+        "R$ 102.715,00"
+      ]
+    }
+  },
+  {
+    "id": "gasto-total-04",
+    "origem": "sintetico",
+    "particao": "dev",
+    "modo": "equipe",
+    "tipos": [
+      "giria",
+      "abreviacao"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "qnto torrei de grana ate agora"
+    },
+    "esperado": {
+      "intencao": "gasto",
+      "contem": [
+        "R$ 102.715,00"
+      ]
+    }
+  },
+  {
+    "id": "gasto-total-05",
+    "origem": "sintetico",
+    "particao": "teste",
+    "modo": "equipe",
+    "tipos": [
+      "voz"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "me fala quanto que ja saiu de dinheiro nessa obra"
+    },
+    "esperado": {
+      "intencao": "gasto",
+      "contem": [
+        "R$ 102.715,00"
+      ]
+    }
+  },
+  {
+    "id": "gasto-cat-mao-01",
+    "origem": "sintetico",
+    "particao": "dev",
+    "modo": "equipe",
+    "tipos": [
+      "abreviacao",
+      "sem_acento"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "gastei qnt com mao de obra"
+    },
+    "esperado": {
+      "intencao": "gasto",
+      "contem": [
+        "R$ 46.300,00"
+      ]
+    }
+  },
+  {
+    "id": "gasto-cat-mao-02",
+    "origem": "sintetico",
+    "particao": "dev",
+    "modo": "equipe",
+    "tipos": [
+      "voz"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "me fala quanto que eu gastei com mao de obra ate agora"
+    },
+    "esperado": {
+      "intencao": "gasto",
+      "contem": [
+        "R$ 46.300,00"
+      ]
+    }
+  },
+  {
+    "id": "gasto-cat-mat-01",
+    "origem": "sintetico",
+    "particao": "dev",
+    "modo": "equipe",
+    "tipos": [
+      "abreviacao"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "qto foi de material"
+    },
+    "esperado": {
+      "intencao": "gasto",
+      "contem": [
+        "R$ 51.805,00"
+      ]
+    }
+  },
+  {
+    "id": "gasto-cat-equip-01",
+    "origem": "sintetico",
+    "particao": "teste",
+    "modo": "equipe",
+    "tipos": [
+      "sem_acento"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "quanto gastei com equipamento"
+    },
+    "esperado": {
+      "intencao": "gasto",
+      "contem": [
+        "R$ 3.050,00"
+      ]
+    }
+  },
+  {
+    "id": "gasto-cat-outros-01",
+    "origem": "sintetico",
+    "particao": "teste",
+    "modo": "equipe",
+    "tipos": [
+      "sem_acento"
+    ],
+    "nota": "Categoria \"Outros\": alvará e caçamba.",
+    "entrada": {
+      "pergunta": "quanto foi em outros gastos"
+    },
+    "esperado": {
+      "intencao": "gasto",
+      "contem": [
+        "R$ 1.560,00"
+      ]
+    }
+  },
+  {
+    "id": "gasto-mes-atual-01",
+    "origem": "sintetico",
+    "particao": "teste",
+    "modo": "equipe",
+    "tipos": [
+      "sem_acento"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "quanto gastei esse mes"
+    },
+    "esperado": {
+      "intencao": "gasto",
+      "contem": [
+        "R$ 14.480,00"
+      ]
+    }
+  },
+  {
+    "id": "gasto-mes-passado-01",
+    "origem": "sintetico",
+    "particao": "teste",
+    "modo": "equipe",
+    "tipos": [
+      "abreviacao",
+      "sem_acento"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "qnto foi o gasto do mes passado"
+    },
+    "esperado": {
+      "intencao": "gasto",
+      "contem": [
+        "R$ 19.225,00"
+      ]
+    }
+  },
+  {
+    "id": "gasto-mes-nome-01",
+    "origem": "sintetico",
+    "particao": "dev",
+    "modo": "equipe",
+    "tipos": [
+      "sem_acento"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "quanto gastei em agosto"
+    },
+    "esperado": {
+      "intencao": "gasto",
+      "contem": [
+        "R$ 32.770,00"
+      ]
+    }
+  },
+  {
+    "id": "gasto-mes-nome-02",
+    "origem": "sintetico",
+    "particao": "dev",
+    "modo": "equipe",
+    "tipos": [
+      "curta"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "gastos de setembro"
+    },
+    "esperado": {
+      "intencao": "gasto",
+      "contem": [
+        "R$ 11.240,00"
+      ]
+    }
+  },
+  {
+    "id": "gasto-semana-passada-01",
+    "origem": "sintetico",
+    "particao": "teste",
+    "modo": "equipe",
+    "tipos": [
+      "sem_acento"
+    ],
+    "nota": "Semana passada = segunda 02/11 a domingo 08/11.",
+    "entrada": {
+      "pergunta": "quanto gastamos semana passada"
+    },
+    "esperado": {
+      "intencao": "gasto",
+      "contem": [
+        "R$ 13.280,00"
+      ]
+    }
+  },
+  {
+    "id": "gasto-semana-01",
+    "origem": "sintetico",
+    "particao": "dev",
+    "modo": "equipe",
+    "tipos": [
+      "sem_acento"
+    ],
+    "nota": "Ambígua: desde segunda (1.200) ou últimos 7 dias (7.580 ou 14.480); qualquer leitura serve.",
+    "entrada": {
+      "pergunta": "quanto gastei essa semana"
+    },
+    "esperado": {
+      "intencao": "gasto",
+      "contem_algum": [
+        [
+          "R$ 1.200,00",
+          "R$ 7.580,00",
+          "R$ 14.480,00"
+        ]
+      ]
+    }
+  },
+  {
+    "id": "gasto-hoje-01",
+    "origem": "sintetico",
+    "particao": "teste",
+    "modo": "equipe",
+    "tipos": [
+      "abreviacao"
+    ],
+    "nota": "Nada aprovado hoje (só o frete pendente).",
+    "entrada": {
+      "pergunta": "quanto gastei hj"
+    },
+    "esperado": {
+      "intencao": "gasto",
+      "contem_algum": [
+        [
+          "re:(nenhum|nada|nao (ha|houve|teve|tem)|r\\$ 0,00|sem gasto)"
+        ]
+      ]
+    }
+  },
+  {
+    "id": "gasto-ontem-01",
+    "origem": "sintetico",
+    "particao": "teste",
+    "modo": "equipe",
+    "tipos": [
+      "sem_acento"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "e ontem quanto foi gasto"
+    },
+    "esperado": {
+      "intencao": "gasto",
+      "contem": [
+        "R$ 1.200,00"
+      ]
+    }
+  },
+  {
+    "id": "gasto-dias-30-01",
+    "origem": "sintetico",
+    "particao": "dev",
+    "modo": "equipe",
+    "tipos": [
+      "extenso",
+      "sem_acento"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "quanto gastei nos ultimos trinta dias"
+    },
+    "esperado": {
+      "intencao": "gasto",
+      "contem": [
+        "R$ 29.355,00"
+      ]
+    }
+  },
+  {
+    "id": "gasto-dias-15-01",
+    "origem": "sintetico",
+    "particao": "teste",
+    "modo": "equipe",
+    "tipos": [
+      "extenso",
+      "abreviacao"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "qnto gastei nos ultimos quinze dias"
+    },
+    "esperado": {
+      "intencao": "gasto",
+      "contem": [
+        "R$ 16.955,00"
+      ]
+    }
+  },
+  {
+    "id": "gasto-dias-7-01",
+    "origem": "sintetico",
+    "particao": "teste",
+    "modo": "equipe",
+    "tipos": [
+      "extenso",
+      "sem_acento"
+    ],
+    "nota": "Com ou sem o dia 03/11.",
+    "entrada": {
+      "pergunta": "gasto dos ultimos sete dias"
+    },
+    "esperado": {
+      "intencao": "gasto",
+      "contem_algum": [
+        [
+          "R$ 7.580,00",
+          "R$ 14.480,00"
+        ]
+      ]
+    }
+  },
+  {
+    "id": "gasto-mat-cimento-01",
+    "origem": "sintetico",
+    "particao": "teste",
+    "modo": "equipe",
+    "tipos": [],
+    "nota": "Só as linhas de cimento das notas (2.280 + 1.185), não a nota inteira.",
+    "entrada": {
+      "pergunta": "quanto gastei de cimento?"
+    },
+    "esperado": {
+      "intencao": "gasto",
+      "contem": [
+        "R$ 3.465,00"
+      ]
+    }
+  },
+  {
+    "id": "gasto-mat-tijolo-01",
+    "origem": "sintetico",
+    "particao": "dev",
+    "modo": "equipe",
+    "tipos": [
+      "abreviacao"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "qto ja foi de tijolo"
+    },
+    "esperado": {
+      "intencao": "gasto",
+      "contem": [
+        "R$ 7.400,00"
+      ]
+    }
+  },
+  {
+    "id": "gasto-mat-areia-01",
+    "origem": "sintetico",
+    "particao": "teste",
+    "modo": "equipe",
+    "tipos": [
+      "sem_acento"
+    ],
+    "nota": "A areia do lançamento pendente (850) não conta.",
+    "entrada": {
+      "pergunta": "quanto gastei de areia"
+    },
+    "esperado": {
+      "intencao": "gasto",
+      "contem": [
+        "R$ 1.280,00"
+      ]
+    }
+  },
+  {
+    "id": "gasto-mat-telhado-01",
+    "origem": "sintetico",
+    "particao": "dev",
+    "modo": "equipe",
+    "tipos": [],
+    "nota": "Telhado = madeira (8.600) + telhas (6.900); aceita a soma ou uma parte.",
+    "entrada": {
+      "pergunta": "quanto custou o telhado"
+    },
+    "esperado": {
+      "intencao": "gasto",
+      "contem_algum": [
+        [
+          "R$ 15.500,00",
+          "R$ 6.900,00",
+          "R$ 8.600,00"
+        ]
+      ]
+    }
+  },
+  {
+    "id": "gasto-desc-betoneira-01",
+    "origem": "sintetico",
+    "particao": "teste",
+    "modo": "equipe",
+    "tipos": [],
+    "nota": "Está só na descrição do lançamento.",
+    "entrada": {
+      "pergunta": "quanto custou a betoneira"
+    },
+    "esperado": {
+      "intencao": "gasto",
+      "contem": [
+        "R$ 650,00"
+      ]
+    }
+  },
+  {
+    "id": "gasto-desc-cacamba-01",
+    "origem": "sintetico",
+    "particao": "dev",
+    "modo": "equipe",
+    "tipos": [],
+    "nota": "",
+    "entrada": {
+      "pergunta": "quanto paguei de caçamba"
+    },
+    "esperado": {
+      "intencao": "gasto",
+      "contem": [
+        "R$ 380,00"
+      ]
+    }
+  },
+  {
+    "id": "gasto-desc-alvara-01",
+    "origem": "sintetico",
+    "particao": "dev",
+    "modo": "equipe",
+    "tipos": [
+      "abreviacao",
+      "sem_acento"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "qto foi o alvara"
+    },
+    "esperado": {
+      "intencao": "gasto",
+      "contem": [
+        "R$ 1.180,00"
+      ]
+    }
+  },
+  {
+    "id": "gasto-desc-andaime-01",
+    "origem": "sintetico",
+    "particao": "teste",
+    "modo": "equipe",
+    "tipos": [],
+    "nota": "Andaimes de outubro e novembro, sem a betoneira.",
+    "entrada": {
+      "pergunta": "valor total dos andaimes"
+    },
+    "esperado": {
+      "intencao": "gasto",
+      "contem": [
+        "R$ 2.400,00"
+      ]
+    }
+  },
+  {
+    "id": "gasto-desc-valdir-01",
+    "origem": "sintetico",
+    "particao": "dev",
+    "modo": "equipe",
+    "tipos": [
+      "coloquial"
+    ],
+    "nota": "A equipe do Valdir não tem fornecedor: está na descrição.",
+    "entrada": {
+      "pergunta": "quanto paguei pro valdir"
+    },
+    "esperado": {
+      "intencao_ou": [
+        "gasto",
+        "fornecedor"
+      ],
+      "contem": [
+        "R$ 42.500,00"
+      ]
+    }
+  },
+  {
+    "id": "gasto-pedreiro-01",
+    "origem": "sintetico",
+    "particao": "dev",
+    "modo": "equipe",
+    "tipos": [
+      "giria",
+      "abreviacao"
+    ],
+    "nota": "Mão de obra toda ou só a equipe do Valdir.",
+    "entrada": {
+      "pergunta": "qnto ja saiu de grana com pedreiro"
+    },
+    "esperado": {
+      "intencao": "gasto",
+      "contem_algum": [
+        [
+          "R$ 46.300,00",
+          "R$ 42.500,00"
+        ]
+      ]
+    }
+  },
+  {
+    "id": "gasto-maior-01",
+    "origem": "sintetico",
+    "particao": "teste",
+    "modo": "equipe",
+    "tipos": [
+      "sem_acento"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "qual foi o maior gasto"
+    },
+    "esperado": {
+      "intencao": "gasto",
+      "contem": [
+        "R$ 15.500,00",
+        "estrutura"
+      ]
+    }
+  },
+  {
+    "id": "gasto-maior-mat-01",
+    "origem": "sintetico",
+    "particao": "dev",
+    "modo": "equipe",
+    "tipos": [],
+    "nota": "",
+    "entrada": {
+      "pergunta": "maior gasto com material"
+    },
+    "esperado": {
+      "intencao": "gasto",
+      "contem": [
+        "R$ 9.870,00",
+        "concreto"
+      ]
+    }
+  },
+  {
+    "id": "gasto-ultimos-01",
+    "origem": "sintetico",
+    "particao": "dev",
+    "modo": "equipe",
+    "tipos": [
+      "sem_acento"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "quais foram os ultimos gastos"
+    },
+    "esperado": {
+      "intencao": "gasto",
+      "contem": [
+        "andaimes"
+      ]
+    }
+  },
+  {
+    "id": "gasto-compara-01",
+    "origem": "sintetico",
+    "particao": "dev",
+    "modo": "equipe",
+    "tipos": [
+      "sem_acento"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "gastei mais com material ou mao de obra?"
+    },
+    "esperado": {
+      "intencao": "gasto",
+      "contem": [
+        "R$ 51.805,00",
+        "R$ 46.300,00"
+      ]
+    }
+  },
+  {
+    "id": "gasto-cat-periodo-01",
+    "origem": "sintetico",
+    "particao": "dev",
+    "modo": "equipe",
+    "tipos": [
+      "abreviacao",
+      "sem_acento"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "qto deu a mao de obra em outubro"
+    },
+    "esperado": {
+      "intencao": "gasto",
+      "contem": [
+        "R$ 3.800,00"
+      ]
+    }
+  },
+  {
+    "id": "gasto-cat-periodo-02",
+    "origem": "sintetico",
+    "particao": "dev",
+    "modo": "equipe",
+    "tipos": [
+      "sem_acento"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "quanto gastei com material mes passado"
+    },
+    "esperado": {
+      "intencao": "gasto",
+      "contem": [
+        "R$ 14.225,00"
+      ]
+    }
+  },
+  {
+    "id": "gasto-filtro-valor-01",
+    "origem": "sintetico",
+    "particao": "dev",
+    "modo": "equipe",
+    "tipos": [
+      "extenso"
+    ],
+    "nota": "Empreitadas da estrutura e da fundação.",
+    "entrada": {
+      "pergunta": "teve gasto acima de dez mil?"
+    },
+    "esperado": {
+      "intencao": "gasto",
+      "contem": [
+        "15.500",
+        "12.000"
+      ]
+    }
+  },
+  {
+    "id": "gasto-qtd-cimento-01",
+    "origem": "sintetico",
+    "particao": "teste",
+    "modo": "equipe",
+    "tipos": [],
+    "nota": "60 sc (junho) + 30 sc (outubro).",
+    "entrada": {
+      "pergunta": "quantos sacos de cimento compramos"
+    },
+    "esperado": {
+      "intencao_ou": [
+        "gasto",
+        "estoque"
+      ],
+      "contem_algum": [
+        [
+          "re:\\b90\\b"
+        ]
+      ]
+    }
+  },
+  {
+    "id": "gasto-ultima-compra-01",
+    "origem": "sintetico",
+    "particao": "teste",
+    "modo": "equipe",
+    "tipos": [
+      "sem_acento"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "quando foi a ultima compra de cimento"
+    },
+    "esperado": {
+      "intencao_ou": [
+        "gasto",
+        "fornecedor",
+        "estoque"
+      ],
+      "contem": [
+        "28/10"
+      ]
+    }
+  },
+  {
+    "id": "orc-saldo-01",
+    "origem": "sintetico",
+    "particao": "teste",
+    "modo": "equipe",
+    "tipos": [
+      "sem_acento"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "quanto sobrou do orcamento"
+    },
+    "esperado": {
+      "intencao": "orcamento",
+      "contem": [
+        "R$ 177.285,00"
+      ]
+    }
+  },
+  {
+    "id": "orc-saldo-02",
+    "origem": "sintetico",
+    "particao": "teste",
+    "modo": "equipe",
+    "tipos": [
+      "erro_digitacao"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "quanto resta do orcamneto"
+    },
+    "esperado": {
+      "intencao": "orcamento",
+      "contem": [
+        "R$ 177.285,00"
+      ]
+    }
+  },
+  {
+    "id": "orc-estouro-01",
+    "origem": "sintetico",
+    "particao": "dev",
+    "modo": "equipe",
+    "tipos": [],
+    "nota": "",
+    "entrada": {
+      "pergunta": "vai estourar o orçamento?"
+    },
+    "esperado": {
+      "intencao": "orcamento",
+      "contem_algum": [
+        [
+          "R$ 177.285,00",
+          "R$ 280.000,00",
+          "37%"
+        ]
+      ]
+    }
+  },
+  {
+    "id": "orc-pct-01",
+    "origem": "sintetico",
+    "particao": "dev",
+    "modo": "equipe",
+    "tipos": [
+      "sem_acento"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "ja gastei quantos por cento do orçamento"
+    },
+    "esperado": {
+      "intencao": "orcamento",
+      "contem": [
+        "37%"
+      ]
+    }
+  },
+  {
+    "id": "orc-total-01",
+    "origem": "sintetico",
+    "particao": "teste",
+    "modo": "equipe",
+    "tipos": [],
+    "nota": "",
+    "entrada": {
+      "pergunta": "qual o orçamento total"
+    },
+    "esperado": {
+      "intencao": "orcamento",
+      "contem": [
+        "R$ 280.000,00"
+      ]
+    }
+  },
+  {
+    "id": "orc-dentro-01",
+    "origem": "sintetico",
+    "particao": "dev",
+    "modo": "equipe",
+    "tipos": [
+      "giria"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "to dentro do orçamento?"
+    },
+    "esperado": {
+      "intencao": "orcamento",
+      "contem_algum": [
+        [
+          "R$ 177.285,00",
+          "37%"
+        ]
+      ]
+    }
+  },
+  {
+    "id": "orc-verba-01",
+    "origem": "sintetico",
+    "particao": "teste",
+    "modo": "equipe",
+    "tipos": [
+      "abreviacao",
+      "giria"
+    ],
+    "nota": "\"Verba\" = orçamento.",
+    "entrada": {
+      "pergunta": "qto falta pra chegar no limite da verba"
+    },
+    "esperado": {
+      "intencao": "orcamento",
+      "contem": [
+        "R$ 177.285,00"
+      ]
+    }
+  },
+  {
+    "id": "pend-01",
+    "origem": "sintetico",
+    "particao": "dev",
+    "modo": "equipe",
+    "tipos": [],
+    "nota": "",
+    "entrada": {
+      "pergunta": "tem algo pra aprovar?"
+    },
+    "esperado": {
+      "intencao": "pendencias",
+      "contem": [
+        "R$ 4.700,00"
+      ]
+    }
+  },
+  {
+    "id": "pend-02",
+    "origem": "sintetico",
+    "particao": "dev",
+    "modo": "equipe",
+    "tipos": [
+      "sem_acento",
+      "curta"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "lancamentos pendentes"
+    },
+    "esperado": {
+      "intencao": "pendencias",
+      "contem": [
+        "R$ 4.700,00"
+      ]
+    }
+  },
+  {
+    "id": "pend-03",
+    "origem": "sintetico",
+    "particao": "dev",
+    "modo": "equipe",
+    "tipos": [
+      "abreviacao"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "oq ta esperando aprovação"
+    },
+    "esperado": {
+      "intencao": "pendencias",
+      "contem": [
+        "areia e brita",
+        "frete"
+      ]
+    }
+  },
+  {
+    "id": "pend-04",
+    "origem": "sintetico",
+    "particao": "dev",
+    "modo": "equipe",
+    "tipos": [
+      "vaga",
+      "curta",
+      "sem_acento"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "pendencia"
+    },
+    "esperado": {
+      "intencao": "pendencias",
+      "contem": [
+        "R$ 4.700,00"
+      ]
+    }
+  },
+  {
+    "id": "pend-05",
+    "origem": "sintetico",
+    "particao": "dev",
+    "modo": "equipe",
+    "tipos": [],
+    "nota": "",
+    "entrada": {
+      "pergunta": "quanto tem pendente pra eu aprovar"
+    },
+    "esperado": {
+      "intencao": "pendencias",
+      "contem": [
+        "R$ 4.700,00"
+      ]
+    }
+  },
+  {
+    "id": "pend-recusado-01",
+    "origem": "sintetico",
+    "particao": "dev",
+    "modo": "equipe",
+    "tipos": [],
+    "nota": "Recusados contam como assunto da fila de aprovação.",
+    "entrada": {
+      "pergunta": "teve algum gasto recusado?"
+    },
+    "esperado": {
+      "intencao": "pendencias",
+      "contem": [
+        "pregos",
+        "compactador"
+      ]
+    }
+  },
+  {
+    "id": "pend-recusado-02",
+    "origem": "sintetico",
+    "particao": "teste",
+    "modo": "equipe",
+    "tipos": [
+      "abreviacao"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "pq recusaram o compactador"
+    },
+    "esperado": {
+      "intencao": "pendencias",
+      "contem": [
+        "nao chegou"
+      ]
+    }
+  },
+  {
+    "id": "pend-eletricista-01",
+    "origem": "sintetico",
+    "particao": "teste",
+    "modo": "equipe",
+    "tipos": [
+      "sem_acento"
+    ],
+    "nota": "A 2ª etapa dele está pendente.",
+    "entrada": {
+      "pergunta": "o eletricista lancou alguma coisa?"
+    },
+    "esperado": {
+      "intencao_ou": [
+        "pendencias",
+        "fornecedor",
+        "gasto"
+      ],
+      "contem": [
+        "R$ 2.900,00"
+      ]
+    }
+  },
+  {
+    "id": "forn-top-01",
+    "origem": "sintetico",
+    "particao": "teste",
+    "modo": "equipe",
+    "tipos": [],
+    "nota": "",
+    "entrada": {
+      "pergunta": "com qual fornecedor gastei mais"
+    },
+    "esperado": {
+      "intencao": "fornecedor",
+      "contem": [
+        "vale verde",
+        "R$ 14.300,00"
+      ]
+    }
+  },
+  {
+    "id": "forn-top-02",
+    "origem": "sintetico",
+    "particao": "teste",
+    "modo": "equipe",
+    "tipos": [
+      "erro_digitacao",
+      "curta"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "fornecedro mais caro"
+    },
+    "esperado": {
+      "intencao": "fornecedor",
+      "contem": [
+        "vale verde"
+      ]
+    }
+  },
+  {
+    "id": "forn-lista-01",
+    "origem": "sintetico",
+    "particao": "teste",
+    "modo": "equipe",
+    "tipos": [
+      "curta"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "principais fornecedores"
+    },
+    "esperado": {
+      "intencao": "fornecedor",
+      "contem": [
+        "vale verde",
+        "concreteira"
+      ]
+    }
+  },
+  {
+    "id": "forn-gasto-01",
+    "origem": "sintetico",
+    "particao": "dev",
+    "modo": "equipe",
+    "tipos": [
+      "sem_acento"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "quanto comprei no deposito bom preço"
+    },
+    "esperado": {
+      "intencao": "fornecedor",
+      "contem": [
+        "R$ 7.325,00"
+      ]
+    }
+  },
+  {
+    "id": "forn-gasto-02",
+    "origem": "sintetico",
+    "particao": "teste",
+    "modo": "equipe",
+    "tipos": [
+      "abreviacao",
+      "sem_acento"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "qnto gastei na ceramica vale verde"
+    },
+    "esperado": {
+      "intencao": "fornecedor",
+      "contem": [
+        "R$ 14.300,00"
+      ]
+    }
+  },
+  {
+    "id": "forn-gasto-03",
+    "origem": "sintetico",
+    "particao": "teste",
+    "modo": "equipe",
+    "tipos": [],
+    "nota": "",
+    "entrada": {
+      "pergunta": "gastos com a madeireira"
+    },
+    "esperado": {
+      "intencao": "fornecedor",
+      "contem": [
+        "R$ 8.600,00"
+      ]
+    }
+  },
+  {
+    "id": "forn-gasto-04",
+    "origem": "sintetico",
+    "particao": "dev",
+    "modo": "equipe",
+    "tipos": [
+      "erro_digitacao"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "quanto gastei na ferragens schimit"
+    },
+    "esperado": {
+      "intencao": "fornecedor",
+      "contem": [
+        "R$ 6.320,00"
+      ]
+    }
+  },
+  {
+    "id": "forn-quem-01",
+    "origem": "sintetico",
+    "particao": "teste",
+    "modo": "equipe",
+    "tipos": [],
+    "nota": "",
+    "entrada": {
+      "pergunta": "de quem comprei o cimento?"
+    },
+    "esperado": {
+      "intencao": "fornecedor",
+      "contem": [
+        "bom preco"
+      ]
+    }
+  },
+  {
+    "id": "forn-quem-02",
+    "origem": "sintetico",
+    "particao": "dev",
+    "modo": "equipe",
+    "tipos": [
+      "curta"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "fornecedor do concreto"
+    },
+    "esperado": {
+      "intencao": "fornecedor",
+      "contem": [
+        "concreteira norte"
+      ]
+    }
+  },
+  {
+    "id": "est-baixo-01",
+    "origem": "sintetico",
+    "particao": "dev",
+    "modo": "equipe",
+    "tipos": [
+      "sem_acento"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "o que ta acabando"
+    },
+    "esperado": {
+      "intencao": "estoque",
+      "contem": [
+        "cimento",
+        "areia",
+        "tijolo",
+        "fio",
+        "prego"
+      ]
+    }
+  },
+  {
+    "id": "est-baixo-02",
+    "origem": "sintetico",
+    "particao": "teste",
+    "modo": "equipe",
+    "tipos": [
+      "giria",
+      "abreviacao"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "precisa compra oq?"
+    },
+    "esperado": {
+      "intencao": "estoque",
+      "contem": [
+        "cimento",
+        "prego"
+      ]
+    }
+  },
+  {
+    "id": "est-baixo-03",
+    "origem": "sintetico",
+    "particao": "dev",
+    "modo": "equipe",
+    "tipos": [
+      "erro_digitacao",
+      "giria"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "ta faltanu material?"
+    },
+    "esperado": {
+      "intencao": "estoque",
+      "contem": [
+        "cimento"
+      ]
+    }
+  },
+  {
+    "id": "est-baixo-04",
+    "origem": "sintetico",
+    "particao": "dev",
+    "modo": "equipe",
+    "tipos": [],
+    "nota": "",
+    "entrada": {
+      "pergunta": "o que precisa repor essa semana"
+    },
+    "esperado": {
+      "intencao": "estoque",
+      "contem": [
+        "cimento",
+        "tijolo"
+      ]
+    }
+  },
+  {
+    "id": "est-geral-01",
+    "origem": "sintetico",
+    "particao": "dev",
+    "modo": "equipe",
+    "tipos": [
+      "vaga",
+      "curta"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "estoque"
+    },
+    "esperado": {
+      "intencao": "estoque",
+      "contem": [
+        "cimento"
+      ]
+    }
+  },
+  {
+    "id": "est-qtd-cimento-01",
+    "origem": "sintetico",
+    "particao": "dev",
+    "modo": "equipe",
+    "tipos": [
+      "abreviacao"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "qnto tem de cimento"
+    },
+    "esperado": {
+      "intencao": "estoque",
+      "contem_algum": [
+        [
+          "re:\\b6 (sc|sacos?)\\b"
+        ]
+      ]
+    }
+  },
+  {
+    "id": "est-qtd-tijolo-01",
+    "origem": "sintetico",
+    "particao": "teste",
+    "modo": "equipe",
+    "tipos": [],
+    "nota": "",
+    "entrada": {
+      "pergunta": "tem tijolo ainda?"
+    },
+    "esperado": {
+      "intencao": "estoque",
+      "contem_algum": [
+        [
+          "re:\\b450\\b"
+        ]
+      ]
+    }
+  },
+  {
+    "id": "est-qtd-telha-01",
+    "origem": "sintetico",
+    "particao": "dev",
+    "modo": "equipe",
+    "tipos": [],
+    "nota": "",
+    "entrada": {
+      "pergunta": "quantas telhas tem no estoque"
+    },
+    "esperado": {
+      "intencao": "estoque",
+      "contem_algum": [
+        [
+          "2650",
+          "2.650"
+        ]
+      ]
+    }
+  },
+  {
+    "id": "est-qtd-areia-01",
+    "origem": "sintetico",
+    "particao": "teste",
+    "modo": "equipe",
+    "tipos": [
+      "sem_acento"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "como ta o estoque de areia"
+    },
+    "esperado": {
+      "intencao": "estoque",
+      "contem": [
+        "1,5"
+      ]
+    }
+  },
+  {
+    "id": "est-qtd-vergalhao-01",
+    "origem": "sintetico",
+    "particao": "teste",
+    "modo": "equipe",
+    "tipos": [
+      "sem_acento"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "quanto vergalhao sobrou"
+    },
+    "esperado": {
+      "intencao": "estoque",
+      "contem_algum": [
+        [
+          "re:\\b18\\b"
+        ]
+      ]
+    }
+  },
+  {
+    "id": "est-qtd-argamassa-01",
+    "origem": "sintetico",
+    "particao": "teste",
+    "modo": "equipe",
+    "tipos": [
+      "sem_acento"
+    ],
+    "nota": "Não está: 14 sc, mínimo 5.",
+    "entrada": {
+      "pergunta": "argamassa ta acabando?"
+    },
+    "esperado": {
+      "intencao": "estoque",
+      "contem_algum": [
+        [
+          "re:\\b14\\b"
+        ]
+      ]
+    }
+  },
+  {
+    "id": "est-qtd-fio-01",
+    "origem": "sintetico",
+    "particao": "teste",
+    "modo": "equipe",
+    "tipos": [
+      "curta"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "falta fio?"
+    },
+    "esperado": {
+      "intencao": "estoque",
+      "contem_algum": [
+        [
+          "re:\\b150\\b"
+        ]
+      ]
+    }
+  },
+  {
+    "id": "est-zerado-prego-01",
+    "origem": "sintetico",
+    "particao": "dev",
+    "modo": "equipe",
+    "tipos": [
+      "curta"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "tem prego?"
+    },
+    "esperado": {
+      "intencao": "estoque",
+      "contem_algum": [
+        [
+          "acabou",
+          "zerad",
+          "sem estoque",
+          "re:\\b0 kg",
+          "nao tem",
+          "esgotad"
+        ]
+      ]
+    }
+  },
+  {
+    "id": "est-fim-cimento-01",
+    "origem": "sintetico",
+    "particao": "teste",
+    "modo": "equipe",
+    "tipos": [
+      "sem_acento"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "quando acaba o cimento"
+    },
+    "esperado": {
+      "intencao": "estoque",
+      "contem": [
+        "cimento"
+      ],
+      "contem_algum": [
+        [
+          "re:\\b\\d{1,2}/\\d{2}\\b",
+          "re:\\b\\d+ dias?\\b",
+          "amanha",
+          "hoje"
+        ]
+      ]
+    }
+  },
+  {
+    "id": "est-fim-cimento-02",
+    "origem": "sintetico",
+    "particao": "dev",
+    "modo": "equipe",
+    "tipos": [
+      "giria",
+      "sem_acento"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "o cimento da pra semana?"
+    },
+    "esperado": {
+      "intencao": "estoque",
+      "contem": [
+        "cimento"
+      ],
+      "contem_algum": [
+        [
+          "re:\\b\\d{1,2}/\\d{2}\\b",
+          "re:\\b\\d+ dias?\\b",
+          "amanha",
+          "hoje"
+        ]
+      ]
+    }
+  },
+  {
+    "id": "est-typo-cimento-01",
+    "origem": "sintetico",
+    "particao": "teste",
+    "modo": "equipe",
+    "tipos": [
+      "erro_digitacao"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "cimeto ta acabano?"
+    },
+    "esperado": {
+      "intencao": "estoque",
+      "contem": [
+        "cimento"
+      ],
+      "contem_algum": [
+        [
+          "re:\\b6 (sc|sacos?)\\b"
+        ]
+      ]
+    }
+  },
+  {
+    "id": "est-extenso-01",
+    "origem": "sintetico",
+    "particao": "dev",
+    "modo": "equipe",
+    "tipos": [
+      "extenso"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "tem menos de dez sacos de cimento?"
+    },
+    "esperado": {
+      "intencao": "estoque",
+      "contem_algum": [
+        [
+          "re:\\b6 (sc|sacos?)\\b"
+        ]
+      ]
+    }
+  },
+  {
+    "id": "est-voz-01",
+    "origem": "sintetico",
+    "particao": "teste",
+    "modo": "equipe",
+    "tipos": [
+      "voz"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "ô assistente quanto que tem de tijolo la no estoque"
+    },
+    "esperado": {
+      "intencao": "estoque",
+      "contem_algum": [
+        [
+          "re:\\b450\\b"
+        ]
+      ]
+    }
+  },
+  {
+    "id": "cron-atraso-01",
+    "origem": "sintetico",
+    "particao": "teste",
+    "modo": "equipe",
+    "tipos": [],
+    "nota": "",
+    "entrada": {
+      "pergunta": "estamos atrasados?"
+    },
+    "esperado": {
+      "intencao": "cronograma",
+      "contem": [
+        "alvenaria",
+        "eletricas"
+      ]
+    }
+  },
+  {
+    "id": "cron-atraso-02",
+    "origem": "sintetico",
+    "particao": "teste",
+    "modo": "equipe",
+    "tipos": [
+      "sem_acento"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "qual fase ta atrasada"
+    },
+    "esperado": {
+      "intencao": "cronograma",
+      "contem": [
+        "alvenaria",
+        "eletricas"
+      ]
+    }
+  },
+  {
+    "id": "cron-atraso-03",
+    "origem": "sintetico",
+    "particao": "dev",
+    "modo": "equipe",
+    "tipos": [
+      "erro_digitacao"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "a obra ta atrazada?"
+    },
+    "esperado": {
+      "intencao": "cronograma",
+      "contem": [
+        "alvenaria"
+      ]
+    }
+  },
+  {
+    "id": "cron-atraso-dias-01",
+    "origem": "sintetico",
+    "particao": "teste",
+    "modo": "equipe",
+    "tipos": [
+      "abreviacao"
+    ],
+    "nota": "Alvenaria venceu há 18 dias; elétrica há 11.",
+    "entrada": {
+      "pergunta": "qnts dias de atraso"
+    },
+    "esperado": {
+      "intencao": "cronograma",
+      "contem_algum": [
+        [
+          "re:\\b18\\b"
+        ],
+        [
+          "re:\\b11\\b"
+        ]
+      ]
+    }
+  },
+  {
+    "id": "cron-fim-01",
+    "origem": "sintetico",
+    "particao": "dev",
+    "modo": "equipe",
+    "tipos": [
+      "sem_acento"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "quando termina a obra"
+    },
+    "esperado": {
+      "intencao": "cronograma",
+      "contem_algum": [
+        [
+          "31/03",
+          "31 de marco"
+        ]
+      ]
+    }
+  },
+  {
+    "id": "cron-fim-fase-01",
+    "origem": "sintetico",
+    "particao": "dev",
+    "modo": "equipe",
+    "tipos": [
+      "abreviacao"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "q dia acaba a alvenaria"
+    },
+    "esperado": {
+      "intencao": "cronograma",
+      "contem": [
+        "23/10"
+      ]
+    }
+  },
+  {
+    "id": "cron-inicio-fase-01",
+    "origem": "sintetico",
+    "particao": "teste",
+    "modo": "equipe",
+    "tipos": [],
+    "nota": "",
+    "entrada": {
+      "pergunta": "quando começa a pintura"
+    },
+    "esperado": {
+      "intencao": "cronograma",
+      "contem": [
+        "08/02"
+      ]
+    }
+  },
+  {
+    "id": "cron-proxima-01",
+    "origem": "sintetico",
+    "particao": "dev",
+    "modo": "equipe",
+    "tipos": [
+      "sem_acento"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "qual a proxima fase"
+    },
+    "esperado": {
+      "intencao": "cronograma",
+      "contem": [
+        "reboco"
+      ]
+    }
+  },
+  {
+    "id": "cron-atual-01",
+    "origem": "sintetico",
+    "particao": "dev",
+    "modo": "equipe",
+    "tipos": [
+      "sem_acento"
+    ],
+    "nota": "Fase atual como nas telas do app: a primeira começada e não terminada.",
+    "entrada": {
+      "pergunta": "em que fase a obra ta"
+    },
+    "esperado": {
+      "intencao": "cronograma",
+      "contem": [
+        "alvenaria"
+      ]
+    }
+  },
+  {
+    "id": "cron-pct-01",
+    "origem": "sintetico",
+    "particao": "teste",
+    "modo": "equipe",
+    "tipos": [
+      "abreviacao"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "quantos % da obra ja foi"
+    },
+    "esperado": {
+      "intencao": "cronograma",
+      "contem": [
+        "43%"
+      ]
+    }
+  },
+  {
+    "id": "cron-telhado-01",
+    "origem": "sintetico",
+    "particao": "dev",
+    "modo": "equipe",
+    "tipos": [
+      "sem_acento"
+    ],
+    "nota": "Telhado = fase Cobertura.",
+    "entrada": {
+      "pergunta": "o telhado ta em dia?"
+    },
+    "esperado": {
+      "intencao": "cronograma",
+      "contem": [
+        "28/11"
+      ]
+    }
+  },
+  {
+    "id": "cron-eletrica-01",
+    "origem": "sintetico",
+    "particao": "teste",
+    "modo": "equipe",
+    "tipos": [
+      "sem_acento"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "a parte eletrica ta atrasada"
+    },
+    "esperado": {
+      "intencao": "cronograma",
+      "contem": [
+        "eletric"
+      ],
+      "contem_algum": [
+        [
+          "30/10",
+          "55%"
+        ]
+      ]
+    }
+  },
+  {
+    "id": "cron-falta-01",
+    "origem": "sintetico",
+    "particao": "dev",
+    "modo": "equipe",
+    "tipos": [],
+    "nota": "\"Quanto falta\" é andamento.",
+    "entrada": {
+      "pergunta": "quanto falta pra terminar"
+    },
+    "esperado": {
+      "intencao": "cronograma",
+      "contem_algum": [
+        [
+          "31/03",
+          "141 dias",
+          "57%"
+        ]
+      ]
+    }
+  },
+  {
+    "id": "cron-geral-01",
+    "origem": "sintetico",
+    "particao": "teste",
+    "modo": "equipe",
+    "tipos": [
+      "vaga",
+      "curta"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "cronograma"
+    },
+    "esperado": {
+      "intencao": "cronograma",
+      "contem": [
+        "alvenaria"
+      ]
+    }
+  },
+  {
+    "id": "cron-hidraulica-01",
+    "origem": "sintetico",
+    "particao": "dev",
+    "modo": "equipe",
+    "tipos": [
+      "sem_acento"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "hidraulica vai atrasar?"
+    },
+    "esperado": {
+      "intencao": "cronograma",
+      "contem": [
+        "11/12"
+      ]
+    }
+  },
+  {
+    "id": "cron-fases-faltam-01",
+    "origem": "sintetico",
+    "particao": "dev",
+    "modo": "equipe",
+    "tipos": [],
+    "nota": "8 não concluídas, ou 4 por começar.",
+    "entrada": {
+      "pergunta": "quantas fases faltam"
+    },
+    "esperado": {
+      "intencao": "cronograma",
+      "contem_algum": [
+        [
+          "re:\\b8\\b",
+          "oito",
+          "re:\\b4\\b",
+          "quatro"
+        ]
+      ]
+    }
+  },
+  {
+    "id": "dia-hoje-01",
+    "origem": "sintetico",
+    "particao": "teste",
+    "modo": "equipe",
+    "tipos": [
+      "abreviacao"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "oq fizeram hj"
+    },
+    "esperado": {
+      "intencao": "diario",
+      "contem": [
+        "telha"
+      ]
+    }
+  },
+  {
+    "id": "dia-ontem-01",
+    "origem": "sintetico",
+    "particao": "teste",
+    "modo": "equipe",
+    "tipos": [],
+    "nota": "",
+    "entrada": {
+      "pergunta": "o que foi feito ontem"
+    },
+    "esperado": {
+      "intencao": "diario",
+      "contem": [
+        "chapisco"
+      ]
+    }
+  },
+  {
+    "id": "dia-pessoas-hoje-01",
+    "origem": "sintetico",
+    "particao": "dev",
+    "modo": "equipe",
+    "tipos": [],
+    "nota": "",
+    "entrada": {
+      "pergunta": "quantas pessoas trabalharam hoje"
+    },
+    "esperado": {
+      "intencao": "diario",
+      "contem_algum": [
+        [
+          "re:\\b5\\b",
+          "cinco"
+        ]
+      ]
+    }
+  },
+  {
+    "id": "dia-pessoas-ontem-01",
+    "origem": "sintetico",
+    "particao": "teste",
+    "modo": "equipe",
+    "tipos": [
+      "giria"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "quantos peão tinha ontem"
+    },
+    "esperado": {
+      "intencao": "diario",
+      "contem_algum": [
+        [
+          "re:\\b3\\b",
+          "tres"
+        ]
+      ]
+    }
+  },
+  {
+    "id": "dia-pessoas-hoje-02",
+    "origem": "sintetico",
+    "particao": "dev",
+    "modo": "equipe",
+    "tipos": [
+      "giria",
+      "abreviacao"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "quantos pedreiro tinha hj"
+    },
+    "esperado": {
+      "intencao": "diario",
+      "contem_algum": [
+        [
+          "re:\\b5\\b",
+          "cinco"
+        ]
+      ]
+    }
+  },
+  {
+    "id": "dia-chuva-semana-01",
+    "origem": "sintetico",
+    "particao": "teste",
+    "modo": "equipe",
+    "tipos": [],
+    "nota": "",
+    "entrada": {
+      "pergunta": "choveu essa semana?"
+    },
+    "esperado": {
+      "intencao": "diario",
+      "contem_algum": [
+        [
+          "09/11",
+          "segunda",
+          "ontem"
+        ]
+      ]
+    }
+  },
+  {
+    "id": "dia-chuva-dias-01",
+    "origem": "sintetico",
+    "particao": "dev",
+    "modo": "equipe",
+    "tipos": [],
+    "nota": "27/10, 04/11 e 09/11 no diário.",
+    "entrada": {
+      "pergunta": "quantos dias de chuva teve"
+    },
+    "esperado": {
+      "intencao": "diario",
+      "contem_algum": [
+        [
+          "re:\\b3 dias",
+          "tres dias"
+        ]
+      ]
+    }
+  },
+  {
+    "id": "dia-tempo-01",
+    "origem": "sintetico",
+    "particao": "dev",
+    "modo": "equipe",
+    "tipos": [
+      "giria",
+      "sem_acento"
+    ],
+    "nota": "O clima do registro de hoje.",
+    "entrada": {
+      "pergunta": "como ta o tempo la"
+    },
+    "esperado": {
+      "intencao": "diario",
+      "contem_algum": [
+        [
+          "ensolarad",
+          "re:\\bsol\\b"
+        ]
+      ]
+    }
+  },
+  {
+    "id": "dia-ultimo-01",
+    "origem": "sintetico",
+    "particao": "dev",
+    "modo": "equipe",
+    "tipos": [
+      "sem_acento"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "ultimo registro do diario"
+    },
+    "esperado": {
+      "intencao": "diario",
+      "contem": [
+        "telha"
+      ]
+    }
+  },
+  {
+    "id": "dia-eletricista-01",
+    "origem": "sintetico",
+    "particao": "dev",
+    "modo": "equipe",
+    "tipos": [],
+    "nota": "",
+    "entrada": {
+      "pergunta": "o eletricista veio quinta?"
+    },
+    "esperado": {
+      "intencao": "diario",
+      "contem": [
+        "nao veio"
+      ]
+    }
+  },
+  {
+    "id": "dia-max-pessoas-01",
+    "origem": "sintetico",
+    "particao": "teste",
+    "modo": "equipe",
+    "tipos": [],
+    "nota": "",
+    "entrada": {
+      "pergunta": "qual dia teve mais gente trabalhando"
+    },
+    "esperado": {
+      "intencao": "diario",
+      "contem": [
+        "05/11"
+      ]
+    }
+  },
+  {
+    "id": "dia-sabado-01",
+    "origem": "sintetico",
+    "particao": "teste",
+    "modo": "equipe",
+    "tipos": [
+      "sem_acento"
+    ],
+    "nota": "Sábado 07/11 sem registro; o último sábado com registro é 31/10.",
+    "entrada": {
+      "pergunta": "trabalharam no sabado?"
+    },
+    "esperado": {
+      "intencao": "diario",
+      "contem_algum": [
+        [
+          "07/11",
+          "31/10"
+        ]
+      ]
+    }
+  },
+  {
+    "id": "res-01",
+    "origem": "sintetico",
+    "particao": "dev",
+    "modo": "equipe",
+    "tipos": [
+      "sem_acento"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "como ta a obra?"
+    },
+    "esperado": {
+      "intencao": "resumo",
+      "contem_algum": [
+        [
+          "43%",
+          "alvenaria"
+        ],
+        [
+          "R$ 102.715,00",
+          "37%"
+        ]
+      ]
+    }
+  },
+  {
+    "id": "res-02",
+    "origem": "sintetico",
+    "particao": "dev",
+    "modo": "equipe",
+    "tipos": [
+      "sem_acento"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "me da um resumo"
+    },
+    "esperado": {
+      "intencao": "resumo",
+      "contem_algum": [
+        [
+          "43%",
+          "alvenaria"
+        ],
+        [
+          "R$ 102.715,00",
+          "37%"
+        ]
+      ]
+    }
+  },
+  {
+    "id": "res-03",
+    "origem": "sintetico",
+    "particao": "teste",
+    "modo": "equipe",
+    "tipos": [
+      "giria",
+      "abreviacao"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "e ai, como q ta la?"
+    },
+    "esperado": {
+      "intencao": "resumo",
+      "contem_algum": [
+        [
+          "43%",
+          "alvenaria"
+        ],
+        [
+          "R$ 102.715,00",
+          "37%"
+        ]
+      ]
+    }
+  },
+  {
+    "id": "res-04",
+    "origem": "sintetico",
+    "particao": "dev",
+    "modo": "equipe",
+    "tipos": [
+      "curta",
+      "vaga"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "situação geral"
+    },
+    "esperado": {
+      "intencao": "resumo",
+      "contem_algum": [
+        [
+          "43%",
+          "alvenaria"
+        ],
+        [
+          "R$ 102.715,00",
+          "37%"
+        ]
+      ]
+    }
+  },
+  {
+    "id": "res-05",
+    "origem": "sintetico",
+    "particao": "teste",
+    "modo": "equipe",
+    "tipos": [
+      "vaga"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "algum problema?"
+    },
+    "esperado": {
+      "intencao": "resumo",
+      "contem_algum": [
+        [
+          "atras",
+          "acabando",
+          "pendente"
+        ]
+      ]
+    }
+  },
+  {
+    "id": "res-06",
+    "origem": "sintetico",
+    "particao": "teste",
+    "modo": "equipe",
+    "tipos": [
+      "vaga"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "tá tudo certo?"
+    },
+    "esperado": {
+      "intencao": "resumo",
+      "contem_algum": [
+        [
+          "atras",
+          "acabando",
+          "pendente"
+        ]
+      ]
+    }
+  },
+  {
+    "id": "ajuda-01",
+    "origem": "sintetico",
+    "particao": "teste",
+    "modo": "equipe",
+    "tipos": [
+      "abreviacao"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "oq vc sabe fazer?"
+    },
+    "esperado": {
+      "intencao": "ajuda"
+    }
+  },
+  {
+    "id": "ajuda-02",
+    "origem": "sintetico",
+    "particao": "dev",
+    "modo": "equipe",
+    "tipos": [
+      "vaga"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "como funciona isso aqui"
+    },
+    "esperado": {
+      "intencao": "ajuda"
+    }
+  },
+  {
+    "id": "conv-01",
+    "origem": "sintetico",
+    "particao": "teste",
+    "modo": "equipe",
+    "tipos": [
+      "giria",
+      "curta"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "valeu"
+    },
+    "esperado": {
+      "intencao": "conversa"
+    }
+  },
+  {
+    "id": "conv-02",
+    "origem": "sintetico",
+    "particao": "teste",
+    "modo": "equipe",
+    "tipos": [
+      "curta"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "bom dia"
+    },
+    "esperado": {
+      "intencao": "conversa"
+    }
+  },
+  {
+    "id": "conv-03",
+    "origem": "sintetico",
+    "particao": "dev",
+    "modo": "equipe",
+    "tipos": [],
+    "nota": "",
+    "entrada": {
+      "pergunta": "obrigado, ajudou muito"
+    },
+    "esperado": {
+      "intencao": "conversa"
+    }
+  },
+  {
+    "id": "fora-01",
+    "origem": "sintetico",
+    "particao": "teste",
+    "modo": "equipe",
+    "tipos": [
+      "fora_do_assunto"
+    ],
+    "nota": "Previsão do tempo o app não tem.",
+    "entrada": {
+      "pergunta": "vai chover amanhã?"
+    },
+    "esperado": {
+      "intencao": "nao_sei"
+    }
+  },
+  {
+    "id": "fora-02",
+    "origem": "sintetico",
+    "particao": "teste",
+    "modo": "equipe",
+    "tipos": [
+      "fora_do_assunto"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "quem ganhou o jogo ontem"
+    },
+    "esperado": {
+      "intencao": "nao_sei"
+    }
+  },
+  {
+    "id": "fora-03",
+    "origem": "sintetico",
+    "particao": "teste",
+    "modo": "equipe",
+    "tipos": [
+      "fora_do_assunto"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "qual o telefone do eletricista"
+    },
+    "esperado": {
+      "intencao": "nao_sei"
+    }
+  },
+  {
+    "id": "fora-04",
+    "origem": "sintetico",
+    "particao": "teste",
+    "modo": "equipe",
+    "tipos": [
+      "fora_do_assunto"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "asdfgh"
+    },
+    "esperado": {
+      "intencao": "nao_sei"
+    }
+  },
+  {
+    "id": "fora-05",
+    "origem": "sintetico",
+    "particao": "dev",
+    "modo": "equipe",
+    "tipos": [
+      "fora_do_assunto"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "quanto mede a sala?"
+    },
+    "esperado": {
+      "intencao": "nao_sei"
+    }
+  },
+  {
+    "id": "fora-06",
+    "origem": "sintetico",
+    "particao": "teste",
+    "modo": "equipe",
+    "tipos": [
+      "fora_do_assunto"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "me manda o pix do pedreiro"
+    },
+    "esperado": {
+      "intencao": "nao_sei"
+    }
+  },
+  {
+    "id": "fora-07",
+    "origem": "sintetico",
+    "particao": "teste",
+    "modo": "equipe",
+    "tipos": [
+      "fora_do_assunto"
+    ],
+    "nota": "Cálculo de quantitativo: o assistente não faz; tem de dizer.",
+    "entrada": {
+      "pergunta": "quantos sacos de cimento preciso pra rebocar a casa?"
+    },
+    "esperado": {
+      "intencao": "nao_sei"
+    }
+  },
+  {
+    "id": "fora-08",
+    "origem": "sintetico",
+    "particao": "teste",
+    "modo": "equipe",
+    "tipos": [
+      "fora_do_assunto"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "me conta uma piada"
+    },
+    "esperado": {
+      "intencao": "nao_sei"
+    }
+  },
+  {
+    "id": "comp-01",
+    "origem": "sintetico",
+    "particao": "dev",
+    "modo": "equipe",
+    "tipos": [
+      "composta"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "quanto gastei e o que ta faltando no estoque"
+    },
+    "esperado": {
+      "intencao": [
+        "gasto",
+        "estoque"
+      ],
+      "contem": [
+        "R$ 102.715,00",
+        "cimento"
+      ]
+    }
+  },
+  {
+    "id": "comp-02",
+    "origem": "sintetico",
+    "particao": "dev",
+    "modo": "equipe",
+    "tipos": [
+      "composta"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "tem algo pra aprovar? e o estoque como ta"
+    },
+    "esperado": {
+      "intencao": [
+        "pendencias",
+        "estoque"
+      ],
+      "contem": [
+        "R$ 4.700,00",
+        "cimento"
+      ]
+    }
+  },
+  {
+    "id": "comp-03",
+    "origem": "sintetico",
+    "particao": "teste",
+    "modo": "equipe",
+    "tipos": [
+      "composta"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "como ta o cronograma e o orçamento"
+    },
+    "esperado": {
+      "intencao": [
+        "cronograma",
+        "orcamento"
+      ],
+      "contem_algum": [
+        [
+          "alvenaria"
+        ],
+        [
+          "R$ 177.285,00",
+          "37%",
+          "R$ 280.000,00"
+        ]
+      ]
+    }
+  },
+  {
+    "id": "comp-04",
+    "origem": "sintetico",
+    "particao": "dev",
+    "modo": "equipe",
+    "tipos": [
+      "composta",
+      "abreviacao"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "qnto gastei de material esse mes e qnto tem de cimento"
+    },
+    "esperado": {
+      "intencao": [
+        "gasto",
+        "estoque"
+      ],
+      "contem": [
+        "R$ 6.900,00"
+      ],
+      "contem_algum": [
+        [
+          "re:\\b6 (sc|sacos?)\\b"
+        ]
+      ]
+    }
+  },
+  {
+    "id": "comp-05",
+    "origem": "sintetico",
+    "particao": "dev",
+    "modo": "equipe",
+    "tipos": [
+      "composta",
+      "giria"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "ta atrasado? e quantas pessoas tao trabalhando"
+    },
+    "esperado": {
+      "intencao": [
+        "cronograma",
+        "diario"
+      ],
+      "contem": [
+        "alvenaria"
+      ],
+      "contem_algum": [
+        [
+          "re:\\b5\\b",
+          "cinco"
+        ]
+      ]
+    }
+  },
+  {
+    "id": "vaga-cimento-01",
+    "origem": "sintetico",
+    "particao": "dev",
+    "modo": "equipe",
+    "tipos": [
+      "vaga"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "e o cimento?"
+    },
+    "esperado": {
+      "intencao_ou": [
+        "estoque",
+        "gasto"
+      ],
+      "contem": [
+        "cimento"
+      ]
+    }
+  },
+  {
+    "id": "vaga-alvenaria-01",
+    "origem": "sintetico",
+    "particao": "teste",
+    "modo": "equipe",
+    "tipos": [
+      "vaga"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "e a alvenaria"
+    },
+    "esperado": {
+      "intencao": "cronograma",
+      "contem": [
+        "85%"
+      ]
+    }
+  },
+  {
+    "id": "vaga-dinheiro-01",
+    "origem": "sintetico",
+    "particao": "teste",
+    "modo": "equipe",
+    "tipos": [
+      "vaga"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "e o dinheiro?"
+    },
+    "esperado": {
+      "intencao_ou": [
+        "gasto",
+        "orcamento"
+      ],
+      "contem_algum": [
+        [
+          "R$ 102.715,00",
+          "R$ 177.285,00"
+        ]
+      ]
+    }
+  },
+  {
+    "id": "cli-res-01",
+    "origem": "sintetico",
+    "particao": "dev",
+    "modo": "cliente",
+    "tipos": [
+      "sem_acento"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "como ta a obra",
+      "modo_cliente": true
+    },
+    "esperado": {
+      "intencao": "resumo",
+      "contem_algum": [
+        [
+          "43%",
+          "alvenaria"
+        ]
+      ],
+      "sem_dinheiro": true
+    }
+  },
+  {
+    "id": "cli-res-02",
+    "origem": "sintetico",
+    "particao": "dev",
+    "modo": "cliente",
+    "tipos": [
+      "giria",
+      "abreviacao"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "e ai como q ta indo a casa",
+      "modo_cliente": true
+    },
+    "esperado": {
+      "intencao": "resumo",
+      "contem_algum": [
+        [
+          "43%",
+          "alvenaria"
+        ]
+      ],
+      "sem_dinheiro": true
+    }
+  },
+  {
+    "id": "cli-res-03",
+    "origem": "sintetico",
+    "particao": "teste",
+    "modo": "cliente",
+    "tipos": [
+      "sem_acento"
+    ],
+    "nota": "Segunda barreira: mesmo com os lançamentos nos dados, nada de dinheiro.",
+    "entrada": {
+      "pergunta": "como ta a obra?",
+      "modo_cliente": true,
+      "dados": "completo"
+    },
+    "esperado": {
+      "intencao": "resumo",
+      "contem_algum": [
+        [
+          "43%",
+          "alvenaria"
+        ]
+      ],
+      "sem_dinheiro": true
+    }
+  },
+  {
+    "id": "cli-fase-01",
+    "origem": "sintetico",
+    "particao": "teste",
+    "modo": "cliente",
+    "tipos": [
+      "abreviacao"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "em q fase ta",
+      "modo_cliente": true
+    },
+    "esperado": {
+      "intencao": "cronograma",
+      "contem": [
+        "alvenaria"
+      ],
+      "sem_dinheiro": true
+    }
+  },
+  {
+    "id": "cli-fim-01",
+    "origem": "sintetico",
+    "particao": "teste",
+    "modo": "cliente",
+    "tipos": [
+      "abreviacao"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "qndo fica pronta",
+      "modo_cliente": true
+    },
+    "esperado": {
+      "intencao": "cronograma",
+      "contem_algum": [
+        [
+          "31/03",
+          "31 de marco"
+        ]
+      ],
+      "sem_dinheiro": true
+    }
+  },
+  {
+    "id": "cli-atraso-01",
+    "origem": "sintetico",
+    "particao": "dev",
+    "modo": "cliente",
+    "tipos": [
+      "sem_acento",
+      "curta"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "ta atrasada?",
+      "modo_cliente": true
+    },
+    "esperado": {
+      "intencao": "cronograma",
+      "contem_algum": [
+        [
+          "alvenaria",
+          "eletric"
+        ]
+      ],
+      "sem_dinheiro": true
+    }
+  },
+  {
+    "id": "cli-hoje-01",
+    "origem": "sintetico",
+    "particao": "teste",
+    "modo": "cliente",
+    "tipos": [
+      "abreviacao"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "oq fizeram hj",
+      "modo_cliente": true
+    },
+    "esperado": {
+      "intencao": "diario",
+      "contem": [
+        "telha"
+      ],
+      "sem_dinheiro": true
+    }
+  },
+  {
+    "id": "cli-semana-01",
+    "origem": "sintetico",
+    "particao": "teste",
+    "modo": "cliente",
+    "tipos": [],
+    "nota": "O diário de 09/11 cita R$ 450,00 de frete: não pode vazar.",
+    "entrada": {
+      "pergunta": "o que foi feito essa semana?",
+      "modo_cliente": true
+    },
+    "esperado": {
+      "intencao": "diario",
+      "contem_algum": [
+        [
+          "telha",
+          "chapisco"
+        ]
+      ],
+      "sem_dinheiro": true
+    }
+  },
+  {
+    "id": "cli-ontem-01",
+    "origem": "sintetico",
+    "particao": "dev",
+    "modo": "cliente",
+    "tipos": [],
+    "nota": "O registro de ontem tem R$ 450,00 no texto: não pode vazar.",
+    "entrada": {
+      "pergunta": "trabalharam ontem?",
+      "modo_cliente": true
+    },
+    "esperado": {
+      "intencao": "diario",
+      "contem": [
+        "chapisco"
+      ],
+      "sem_dinheiro": true
+    }
+  },
+  {
+    "id": "cli-pessoas-01",
+    "origem": "sintetico",
+    "particao": "dev",
+    "modo": "cliente",
+    "tipos": [
+      "giria",
+      "abreviacao"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "quantas pessoas tavam la hj",
+      "modo_cliente": true
+    },
+    "esperado": {
+      "intencao": "diario",
+      "contem_algum": [
+        [
+          "re:\\b5\\b",
+          "cinco"
+        ]
+      ],
+      "sem_dinheiro": true
+    }
+  },
+  {
+    "id": "cli-chuva-01",
+    "origem": "sintetico",
+    "particao": "dev",
+    "modo": "cliente",
+    "tipos": [],
+    "nota": "",
+    "entrada": {
+      "pergunta": "choveu essa semana",
+      "modo_cliente": true
+    },
+    "esperado": {
+      "intencao": "diario",
+      "contem_algum": [
+        [
+          "09/11",
+          "segunda",
+          "ontem"
+        ]
+      ],
+      "sem_dinheiro": true
+    }
+  },
+  {
+    "id": "cli-falta-01",
+    "origem": "sintetico",
+    "particao": "teste",
+    "modo": "cliente",
+    "tipos": [],
+    "nota": "\"Quanto\" sem dinheiro: é andamento, não pode ser recusado.",
+    "entrada": {
+      "pergunta": "quanto falta pra acabar",
+      "modo_cliente": true
+    },
+    "esperado": {
+      "intencao": "cronograma",
+      "contem_algum": [
+        [
+          "31/03",
+          "141 dias",
+          "57%",
+          "43%"
+        ]
+      ],
+      "sem_dinheiro": true
+    }
+  },
+  {
+    "id": "cli-falta-02",
+    "origem": "sintetico",
+    "particao": "teste",
+    "modo": "cliente",
+    "tipos": [
+      "abreviacao",
+      "vaga",
+      "curta"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "falta mto?",
+      "modo_cliente": true
+    },
+    "esperado": {
+      "intencao": "cronograma",
+      "contem_algum": [
+        [
+          "31/03",
+          "141 dias",
+          "57%",
+          "43%"
+        ]
+      ],
+      "sem_dinheiro": true
+    }
+  },
+  {
+    "id": "cli-falta-03",
+    "origem": "sintetico",
+    "particao": "teste",
+    "modo": "cliente",
+    "tipos": [],
+    "nota": "",
+    "entrada": {
+      "pergunta": "quantos dias faltam pra entrega",
+      "modo_cliente": true
+    },
+    "esperado": {
+      "intencao": "cronograma",
+      "contem_algum": [
+        [
+          "141",
+          "31/03"
+        ]
+      ],
+      "sem_dinheiro": true
+    }
+  },
+  {
+    "id": "cli-pct-01",
+    "origem": "sintetico",
+    "particao": "dev",
+    "modo": "cliente",
+    "tipos": [
+      "abreviacao"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "quantos % ta pronto",
+      "modo_cliente": true
+    },
+    "esperado": {
+      "intencao": "cronograma",
+      "contem": [
+        "43%"
+      ],
+      "sem_dinheiro": true
+    }
+  },
+  {
+    "id": "cli-telhado-01",
+    "origem": "sintetico",
+    "particao": "dev",
+    "modo": "cliente",
+    "tipos": [
+      "abreviacao"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "q dia termina o telhado",
+      "modo_cliente": true
+    },
+    "esperado": {
+      "intencao": "cronograma",
+      "contem": [
+        "28/11"
+      ],
+      "sem_dinheiro": true
+    }
+  },
+  {
+    "id": "cli-reboco-01",
+    "origem": "sintetico",
+    "particao": "dev",
+    "modo": "cliente",
+    "tipos": [
+      "abreviacao",
+      "sem_acento"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "qnd comeca o reboco",
+      "modo_cliente": true
+    },
+    "esperado": {
+      "intencao": "cronograma",
+      "contem": [
+        "30/11"
+      ],
+      "sem_dinheiro": true
+    }
+  },
+  {
+    "id": "cli-eletrica-01",
+    "origem": "sintetico",
+    "particao": "teste",
+    "modo": "cliente",
+    "tipos": [
+      "sem_acento"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "a parte eletrica ta atrasada",
+      "modo_cliente": true
+    },
+    "esperado": {
+      "intencao": "cronograma",
+      "contem": [
+        "eletric"
+      ],
+      "contem_algum": [
+        [
+          "30/10",
+          "55%"
+        ]
+      ],
+      "sem_dinheiro": true
+    }
+  },
+  {
+    "id": "cli-proxima-01",
+    "origem": "sintetico",
+    "particao": "teste",
+    "modo": "cliente",
+    "tipos": [],
+    "nota": "",
+    "entrada": {
+      "pergunta": "o que vai ser feito depois do telhado?",
+      "modo_cliente": true
+    },
+    "esperado": {
+      "intencao": "cronograma",
+      "contem": [
+        "reboco"
+      ],
+      "sem_dinheiro": true
+    }
+  },
+  {
+    "id": "cli-telhas-01",
+    "origem": "sintetico",
+    "particao": "dev",
+    "modo": "cliente",
+    "tipos": [
+      "abreviacao"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "vcs ja colocaram as telhas?",
+      "modo_cliente": true
+    },
+    "esperado": {
+      "intencao_ou": [
+        "diario",
+        "cronograma"
+      ],
+      "contem": [
+        "telha"
+      ],
+      "sem_dinheiro": true
+    }
+  },
+  {
+    "id": "cli-parou-01",
+    "origem": "sintetico",
+    "particao": "dev",
+    "modo": "cliente",
+    "tipos": [],
+    "nota": "",
+    "entrada": {
+      "pergunta": "a obra parou?",
+      "modo_cliente": true
+    },
+    "esperado": {
+      "intencao_ou": [
+        "resumo",
+        "diario",
+        "cronograma"
+      ],
+      "contem_algum": [
+        [
+          "10/11",
+          "hoje",
+          "andamento"
+        ]
+      ],
+      "sem_dinheiro": true
+    }
+  },
+  {
+    "id": "cli-acabamento-01",
+    "origem": "sintetico",
+    "particao": "teste",
+    "modo": "cliente",
+    "tipos": [],
+    "nota": "Elogio. \"Acabamento\" aqui não é dinheiro; não pode ser recusado.",
+    "entrada": {
+      "pergunta": "gostei do acabamento",
+      "modo_cliente": true
+    },
+    "esperado": {
+      "intencao_ou": [
+        "conversa",
+        "cronograma"
+      ],
+      "sem_dinheiro": true
+    }
+  },
+  {
+    "id": "cli-conv-01",
+    "origem": "sintetico",
+    "particao": "teste",
+    "modo": "cliente",
+    "tipos": [
+      "curta"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "obrigada!",
+      "modo_cliente": true
+    },
+    "esperado": {
+      "intencao": "conversa",
+      "sem_dinheiro": true
+    }
+  },
+  {
+    "id": "cli-conv-02",
+    "origem": "sintetico",
+    "particao": "dev",
+    "modo": "cliente",
+    "tipos": [],
+    "nota": "",
+    "entrada": {
+      "pergunta": "bom dia, tudo bem?",
+      "modo_cliente": true
+    },
+    "esperado": {
+      "intencao": "conversa",
+      "sem_dinheiro": true
+    }
+  },
+  {
+    "id": "cli-material-01",
+    "origem": "sintetico",
+    "particao": "teste",
+    "modo": "cliente",
+    "tipos": [
+      "sem_acento"
+    ],
+    "nota": "O cliente não vê o estoque; o que importa é não falar de dinheiro.",
+    "entrada": {
+      "pergunta": "ta faltando material?",
+      "modo_cliente": true
+    },
+    "esperado": {
+      "intencao_ou": [
+        "estoque",
+        "nao_sei",
+        "recusa_financeiro"
+      ],
+      "sem_dinheiro": true
+    }
+  },
+  {
+    "id": "cli-comp-01",
+    "origem": "sintetico",
+    "particao": "dev",
+    "modo": "cliente",
+    "tipos": [
+      "composta"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "deu chuva essa semana? atrasou alguma coisa?",
+      "modo_cliente": true
+    },
+    "esperado": {
+      "intencao": [
+        "diario",
+        "cronograma"
+      ],
+      "sem_dinheiro": true
+    }
+  },
+  {
+    "id": "cli-din-01",
+    "origem": "sintetico",
+    "particao": "teste",
+    "modo": "cliente",
+    "tipos": [
+      "sem_acento"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "quanto ja gastaram",
+      "modo_cliente": true
+    },
+    "esperado": {
+      "intencao": "recusa_financeiro",
+      "sem_dinheiro": true
+    }
+  },
+  {
+    "id": "cli-din-02",
+    "origem": "sintetico",
+    "particao": "teste",
+    "modo": "cliente",
+    "tipos": [
+      "abreviacao"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "qnto custou o telhado",
+      "modo_cliente": true
+    },
+    "esperado": {
+      "intencao": "recusa_financeiro",
+      "sem_dinheiro": true
+    }
+  },
+  {
+    "id": "cli-din-03",
+    "origem": "sintetico",
+    "particao": "teste",
+    "modo": "cliente",
+    "tipos": [],
+    "nota": "",
+    "entrada": {
+      "pergunta": "o orçamento vai estourar?",
+      "modo_cliente": true
+    },
+    "esperado": {
+      "intencao": "recusa_financeiro",
+      "sem_dinheiro": true
+    }
+  },
+  {
+    "id": "cli-din-04",
+    "origem": "sintetico",
+    "particao": "dev",
+    "modo": "cliente",
+    "tipos": [
+      "sem_acento"
+    ],
+    "nota": "Pagamento sem palavra de dinheiro.",
+    "entrada": {
+      "pergunta": "o pedreiro ja recebeu?",
+      "modo_cliente": true
+    },
+    "esperado": {
+      "intencao": "recusa_financeiro",
+      "sem_dinheiro": true
+    }
+  },
+  {
+    "id": "cli-din-05",
+    "origem": "sintetico",
+    "particao": "teste",
+    "modo": "cliente",
+    "tipos": [],
+    "nota": "Contraste com \"quanto falta pra acabar\".",
+    "entrada": {
+      "pergunta": "quanto falta pagar",
+      "modo_cliente": true
+    },
+    "esperado": {
+      "intencao": "recusa_financeiro",
+      "sem_dinheiro": true
+    }
+  },
+  {
+    "id": "cli-din-06",
+    "origem": "sintetico",
+    "particao": "dev",
+    "modo": "cliente",
+    "tipos": [
+      "giria",
+      "abreviacao"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "ta saindo mto caro?",
+      "modo_cliente": true
+    },
+    "esperado": {
+      "intencao": "recusa_financeiro",
+      "sem_dinheiro": true
+    }
+  },
+  {
+    "id": "cli-din-07",
+    "origem": "sintetico",
+    "particao": "teste",
+    "modo": "cliente",
+    "tipos": [],
+    "nota": "",
+    "entrada": {
+      "pergunta": "me manda as notas fiscais",
+      "modo_cliente": true
+    },
+    "esperado": {
+      "intencao": "recusa_financeiro",
+      "sem_dinheiro": true
+    }
+  },
+  {
+    "id": "cli-din-08",
+    "origem": "sintetico",
+    "particao": "teste",
+    "modo": "cliente",
+    "tipos": [],
+    "nota": "",
+    "entrada": {
+      "pergunta": "qual o valor da obra",
+      "modo_cliente": true
+    },
+    "esperado": {
+      "intencao": "recusa_financeiro",
+      "sem_dinheiro": true
+    }
+  },
+  {
+    "id": "cli-din-09",
+    "origem": "sintetico",
+    "particao": "teste",
+    "modo": "cliente",
+    "tipos": [],
+    "nota": "Segunda barreira: dados completos.",
+    "entrada": {
+      "pergunta": "quanto foi o cimento",
+      "modo_cliente": true,
+      "dados": "completo"
+    },
+    "esperado": {
+      "intencao": "recusa_financeiro",
+      "sem_dinheiro": true
+    }
+  },
+  {
+    "id": "cli-din-10",
+    "origem": "sintetico",
+    "particao": "dev",
+    "modo": "cliente",
+    "tipos": [
+      "sem_acento"
+    ],
+    "nota": "Segunda barreira: dados completos.",
+    "entrada": {
+      "pergunta": "qual o total gasto ate agora",
+      "modo_cliente": true,
+      "dados": "completo"
+    },
+    "esperado": {
+      "intencao": "recusa_financeiro",
+      "sem_dinheiro": true
+    }
+  },
+  {
+    "id": "cli-din-11",
+    "origem": "sintetico",
+    "particao": "dev",
+    "modo": "cliente",
+    "tipos": [
+      "giria",
+      "abreviacao"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "qnto ja torraram de grana",
+      "modo_cliente": true
+    },
+    "esperado": {
+      "intencao": "recusa_financeiro",
+      "sem_dinheiro": true
+    }
+  },
+  {
+    "id": "cli-din-12",
+    "origem": "sintetico",
+    "particao": "teste",
+    "modo": "cliente",
+    "tipos": [
+      "abreviacao",
+      "sem_acento"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "quanto vcs cobraram pela mao de obra",
+      "modo_cliente": true
+    },
+    "esperado": {
+      "intencao": "recusa_financeiro",
+      "sem_dinheiro": true
+    }
+  },
+  {
+    "id": "cli-din-13",
+    "origem": "sintetico",
+    "particao": "dev",
+    "modo": "cliente",
+    "tipos": [],
+    "nota": "",
+    "entrada": {
+      "pergunta": "quanto ainda tenho que depositar?",
+      "modo_cliente": true
+    },
+    "esperado": {
+      "intencao": "recusa_financeiro",
+      "sem_dinheiro": true
+    }
+  },
+  {
+    "id": "cli-din-14",
+    "origem": "sintetico",
+    "particao": "teste",
+    "modo": "cliente",
+    "tipos": [
+      "abreviacao"
+    ],
+    "nota": "",
+    "entrada": {
+      "pergunta": "quanto custa o m2 dessa casa",
+      "modo_cliente": true
+    },
+    "esperado": {
+      "intencao": "recusa_financeiro",
+      "sem_dinheiro": true
+    }
+  }
+]

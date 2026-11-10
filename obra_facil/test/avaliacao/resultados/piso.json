@@ -1,16 +1,16 @@
 {
   "voz_lancamento": {
-    "valor": 0.913,
-    "categoria": 0.9783,
-    "fornecedor": 0.913,
-    "data": 0.9783,
+    "valor": 0.9429,
+    "categoria": 0.9712,
+    "fornecedor": 0.9417,
+    "data": 0.9714,
     "itens": 1.0
   },
   "voz_diario": {
-    "clima": 0.9,
-    "pessoas": 0.871,
-    "fase": 0.7931,
-    "data": 0.9
+    "clima": 0.9398,
+    "pessoas": 0.8293,
+    "fase": 0.8205,
+    "data": 0.9318
   },
   "ocr_notas": {
     "fornecedor": 0.95,

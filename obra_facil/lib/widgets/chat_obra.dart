@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
 import '../design/design.dart';
+import '../services/ia/assistente_ia_servidor.dart';
 import '../services/ia/perguntas_obra_service.dart';
+import '../services/ia/resumo_obra_ia.dart';
 import '../services/ia/voz_service.dart';
 
 /// Conversa com o assistente da obra — usada pela equipe no relatório e
@@ -18,10 +20,20 @@ class ChatObra extends StatefulWidget {
   final DadosObraChat dados;
   final bool modoCliente;
 
+  /// `dono`, `mestre` ou `cliente`: vai para a IA do servidor, que responde
+  /// conforme o perfil. Sem ele: cliente no [modoCliente], senão dono.
+  final String? perfil;
+
+  /// A IA do servidor, para o que as regras não entendem. Sem endereço no
+  /// build (IA_URL), fica desligada e o chat é só regras, offline.
+  final AssistenteIaServidor? ia;
+
   const ChatObra({
     super.key,
     required this.dados,
     this.modoCliente = false,
+    this.perfil,
+    this.ia,
   });
 
   @override
@@ -33,6 +45,7 @@ class _ChatObraState extends State<ChatObra>
   final _campoCtrl = TextEditingController();
   final _scrollCtrl = ScrollController();
   final _voz = VozService();
+  late final AssistenteIaServidor _ia = widget.ia ?? AssistenteIaServidor();
   bool _ouvindoVoz = false;
   late final List<MensagemChat> _mensagens = [
     MensagemChat(
@@ -73,12 +86,46 @@ class _ChatObraState extends State<ChatObra>
       widget.dados,
       modoCliente: widget.modoCliente,
     );
+    final perguntarIa = resposta.intencao == 'nao_sei' && _ia.ligado;
+    final historico = [
+      for (final m in _mensagens.skip(1).toList().reversed.take(6).toList().reversed)
+        {'role': m.deUsuario ? 'user' : 'assistant', 'content': m.texto},
+    ];
     setState(() {
       _mensagens.add(MensagemChat(pergunta, deUsuario: true));
-      _mensagens.add(MensagemChat(resposta.texto,
-          deUsuario: false, sugestoes: resposta.sugestoes));
+      _mensagens.add(perguntarIa
+          ? const MensagemChat('Não achei isso nas respostas rápidas. Perguntando à IA…',
+              deUsuario: false)
+          : MensagemChat(resposta.texto,
+              deUsuario: false, sugestoes: resposta.sugestoes));
       _campoCtrl.clear();
     });
+    if (perguntarIa) unawaited(_perguntarIa(pergunta, resposta, historico));
+    _rolarParaOFim();
+  }
+
+  /// As regras não entenderam: a IA do servidor responde com o resumo da
+  /// obra. Se ela falhar (sem internet, servidor fora), fica a resposta das
+  /// regras.
+  Future<void> _perguntarIa(
+      String pergunta, RespostaObra dasRegras, List<Map<String, String>> historico) async {
+    final indice = _mensagens.length - 1;
+    final ia = await _ia.perguntar(
+      pergunta: pergunta,
+      perfil: widget.perfil ?? (widget.modoCliente ? 'cliente' : 'dono'),
+      obra: resumoObraParaIa(widget.dados, modoCliente: widget.modoCliente),
+      historico: historico,
+    );
+    if (!mounted || indice >= _mensagens.length) return;
+    setState(() {
+      _mensagens[indice] = ia != null
+          ? MensagemChat(ia.texto, deUsuario: false)
+          : MensagemChat(dasRegras.texto, deUsuario: false, sugestoes: dasRegras.sugestoes);
+    });
+    _rolarParaOFim();
+  }
+
+  void _rolarParaOFim() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollCtrl.hasClients) {
         _scrollCtrl.animateTo(

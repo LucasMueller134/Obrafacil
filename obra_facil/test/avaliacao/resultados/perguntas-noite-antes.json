@@ -1,0 +1,1653 @@
+{
+  "perguntas": {
+    "casos": 177,
+    "casos_perfeitos": 79,
+    "campos": {
+      "intencao": {
+        "avaliados": 177,
+        "acertos": 106,
+        "errados": 23,
+        "omitidos": 45,
+        "inventados": 3,
+        "acuracia": 0.5989
+      },
+      "fatos": {
+        "avaliados": 145,
+        "acertos": 63,
+        "errados": 48,
+        "omitidos": 34,
+        "inventados": 0,
+        "acuracia": 0.4345
+      },
+      "sem_dinheiro": {
+        "avaliados": 40,
+        "acertos": 39,
+        "errados": 1,
+        "omitidos": 0,
+        "inventados": 0,
+        "acuracia": 0.975
+      }
+    },
+    "por_particao": {
+      "dev": {
+        "casos": 87,
+        "casos_perfeitos": 40,
+        "campos": {
+          "intencao": {
+            "avaliados": 87,
+            "acertos": 52,
+            "errados": 9,
+            "omitidos": 25,
+            "inventados": 1,
+            "acuracia": 0.5977
+          },
+          "fatos": {
+            "avaliados": 77,
+            "acertos": 38,
+            "errados": 23,
+            "omitidos": 16,
+            "inventados": 0,
+            "acuracia": 0.4935
+          },
+          "sem_dinheiro": {
+            "avaliados": 18,
+            "acertos": 17,
+            "errados": 1,
+            "omitidos": 0,
+            "inventados": 0,
+            "acuracia": 0.9444
+          }
+        }
+      },
+      "teste": {
+        "casos": 90,
+        "casos_perfeitos": 39,
+        "campos": {
+          "intencao": {
+            "avaliados": 90,
+            "acertos": 54,
+            "errados": 14,
+            "omitidos": 20,
+            "inventados": 2,
+            "acuracia": 0.6
+          },
+          "fatos": {
+            "avaliados": 68,
+            "acertos": 25,
+            "errados": 25,
+            "omitidos": 18,
+            "inventados": 0,
+            "acuracia": 0.3676
+          },
+          "sem_dinheiro": {
+            "avaliados": 22,
+            "acertos": 22,
+            "errados": 0,
+            "omitidos": 0,
+            "inventados": 0,
+            "acuracia": 1.0
+          }
+        }
+      }
+    },
+    "por_modo": {
+      "equipe": {
+        "casos": 137,
+        "casos_perfeitos": 65,
+        "campos": {
+          "intencao": {
+            "avaliados": 137,
+            "acertos": 89,
+            "errados": 14,
+            "omitidos": 31,
+            "inventados": 3,
+            "acuracia": 0.6496
+          },
+          "fatos": {
+            "avaliados": 124,
+            "acertos": 58,
+            "errados": 42,
+            "omitidos": 24,
+            "inventados": 0,
+            "acuracia": 0.4677
+          }
+        }
+      },
+      "cliente": {
+        "casos": 40,
+        "casos_perfeitos": 14,
+        "campos": {
+          "intencao": {
+            "avaliados": 40,
+            "acertos": 17,
+            "errados": 9,
+            "omitidos": 14,
+            "inventados": 0,
+            "acuracia": 0.425
+          },
+          "fatos": {
+            "avaliados": 21,
+            "acertos": 5,
+            "errados": 6,
+            "omitidos": 10,
+            "inventados": 0,
+            "acuracia": 0.2381
+          },
+          "sem_dinheiro": {
+            "avaliados": 40,
+            "acertos": 39,
+            "errados": 1,
+            "omitidos": 0,
+            "inventados": 0,
+            "acuracia": 0.975
+          }
+        }
+      }
+    },
+    "por_tipo": {
+      "abreviacao": {
+        "casos": 40,
+        "casos_perfeitos": 9
+      },
+      "coloquial": {
+        "casos": 1,
+        "casos_perfeitos": 0
+      },
+      "composta": {
+        "casos": 6,
+        "casos_perfeitos": 0
+      },
+      "curta": {
+        "casos": 16,
+        "casos_perfeitos": 13
+      },
+      "erro_digitacao": {
+        "casos": 6,
+        "casos_perfeitos": 3
+      },
+      "extenso": {
+        "casos": 5,
+        "casos_perfeitos": 2
+      },
+      "fora_do_assunto": {
+        "casos": 8,
+        "casos_perfeitos": 5
+      },
+      "formal": {
+        "casos": 1,
+        "casos_perfeitos": 1
+      },
+      "giria": {
+        "casos": 17,
+        "casos_perfeitos": 6
+      },
+      "modo_cliente": {
+        "casos": 40,
+        "casos_perfeitos": 14
+      },
+      "sem_acento": {
+        "casos": 56,
+        "casos_perfeitos": 30
+      },
+      "vaga": {
+        "casos": 11,
+        "casos_perfeitos": 5
+      },
+      "voz": {
+        "casos": 3,
+        "casos_perfeitos": 3
+      }
+    },
+    "falhas": [
+      {
+        "id": "gasto-total-04",
+        "particao": "dev",
+        "modo": "equipe",
+        "pergunta": "qnto torrei de grana ate agora",
+        "intencao": {
+          "esperado": "gasto",
+          "obtido": "nao_sei"
+        },
+        "fatos": {
+          "faltam": [
+            "R$ 102.715,00"
+          ]
+        },
+        "resposta": "Não entendi essa — mas sei responder sobre gastos (\"quanto gastei com material este mês?\"), orçamento (\"vai estourar?\"), estoque (\"quando acaba o cimento?\"), fornecedores, cronograma, pendências, equipe e um resumo geral (\"como está a obra?\"). Tenta uma dessas 👇"
+      },
+      {
+        "id": "gasto-cat-mat-01",
+        "particao": "dev",
+        "modo": "equipe",
+        "pergunta": "qto foi de material",
+        "intencao": {
+          "esperado": "gasto",
+          "obtido": "nao_sei"
+        },
+        "fatos": {
+          "faltam": [
+            "R$ 51.805,00"
+          ]
+        },
+        "resposta": "Não entendi essa — mas sei responder sobre gastos (\"quanto gastei com material este mês?\"), orçamento (\"vai estourar?\"), estoque (\"quando acaba o cimento?\"), fornecedores, cronograma, pendências, equipe e um resumo geral (\"como está a obra?\"). Tenta uma dessas 👇"
+      },
+      {
+        "id": "gasto-cat-outros-01",
+        "particao": "teste",
+        "modo": "equipe",
+        "pergunta": "quanto foi em outros gastos",
+        "fatos": {
+          "faltam": [
+            "R$ 1.560,00"
+          ]
+        },
+        "resposta": "Você gastou R$ 102.715,00, em 19 lançamentos aprovados. O maior peso é material, com R$ 51.805,00 (50%). Isso representa 37% do orçamento."
+      },
+      {
+        "id": "gasto-semana-passada-01",
+        "particao": "teste",
+        "modo": "equipe",
+        "pergunta": "quanto gastamos semana passada",
+        "fatos": {
+          "faltam": [
+            "R$ 13.280,00"
+          ]
+        },
+        "resposta": "Você gastou R$ 9.375,00 na semana passada, em 2 lançamentos aprovados. O maior peso é material, com R$ 9.375,00 (100%)."
+      },
+      {
+        "id": "gasto-hoje-01",
+        "particao": "teste",
+        "modo": "equipe",
+        "pergunta": "quanto gastei hj",
+        "fatos": {
+          "faltam": [
+            "um de re:(nenhum|nada|nao (ha|houve|teve|tem)|r\\$ 0,00|sem gasto)"
+          ]
+        },
+        "resposta": "Você gastou R$ 102.715,00, em 19 lançamentos aprovados. O maior peso é material, com R$ 51.805,00 (50%). Isso representa 37% do orçamento."
+      },
+      {
+        "id": "gasto-dias-30-01",
+        "particao": "dev",
+        "modo": "equipe",
+        "pergunta": "quanto gastei nos ultimos trinta dias",
+        "fatos": {
+          "faltam": [
+            "R$ 29.355,00"
+          ]
+        },
+        "resposta": "Você gastou R$ 102.715,00, em 19 lançamentos aprovados. O maior peso é material, com R$ 51.805,00 (50%). Isso representa 37% do orçamento."
+      },
+      {
+        "id": "gasto-dias-15-01",
+        "particao": "teste",
+        "modo": "equipe",
+        "pergunta": "qnto gastei nos ultimos quinze dias",
+        "fatos": {
+          "faltam": [
+            "R$ 16.955,00"
+          ]
+        },
+        "resposta": "Você gastou R$ 102.715,00, em 19 lançamentos aprovados. O maior peso é material, com R$ 51.805,00 (50%). Isso representa 37% do orçamento."
+      },
+      {
+        "id": "gasto-mat-cimento-01",
+        "particao": "teste",
+        "modo": "equipe",
+        "pergunta": "quanto gastei de cimento?",
+        "fatos": {
+          "faltam": [
+            "R$ 3.465,00"
+          ]
+        },
+        "resposta": "Com Cimento você gastou R$ 7.325,00 em 2 lançamentos. O mais recente foi \"Cimento e argamassa\" em 28/10/2026."
+      },
+      {
+        "id": "gasto-mat-tijolo-01",
+        "particao": "dev",
+        "modo": "equipe",
+        "pergunta": "qto ja foi de tijolo",
+        "intencao": {
+          "esperado": "gasto",
+          "obtido": "estoque"
+        },
+        "fatos": {
+          "faltam": [
+            "R$ 7.400,00"
+          ]
+        },
+        "resposta": "Tem 450 un de Tijolo 6 furos no estoque — abaixo do mínimo de 500 un! No ritmo de consumo atual, deve acabar por volta de 15/11/2026 (~5 dias)."
+      },
+      {
+        "id": "gasto-mat-areia-01",
+        "particao": "teste",
+        "modo": "equipe",
+        "pergunta": "quanto gastei de areia",
+        "fatos": {
+          "faltam": [
+            "R$ 1.280,00"
+          ]
+        },
+        "resposta": "Com Areia você gastou R$ 4.850,00 em 1 lançamento. O mais recente foi \"Cimento, areia e brita da fundação\" em 03/06/2026."
+      },
+      {
+        "id": "gasto-desc-betoneira-01",
+        "particao": "teste",
+        "modo": "equipe",
+        "pergunta": "quanto custou a betoneira",
+        "fatos": {
+          "faltam": [
+            "R$ 650,00"
+          ]
+        },
+        "resposta": "Você gastou R$ 3.050,00 com equipamento, em 3 lançamentos aprovados. O maior foi \"Andaimes (outubro)\" (R$ 1.200,00). Isso representa 1% do orçamento."
+      },
+      {
+        "id": "gasto-desc-cacamba-01",
+        "particao": "dev",
+        "modo": "equipe",
+        "pergunta": "quanto paguei de caçamba",
+        "fatos": {
+          "faltam": [
+            "R$ 380,00"
+          ]
+        },
+        "resposta": "Você gastou R$ 102.715,00, em 19 lançamentos aprovados. O maior peso é material, com R$ 51.805,00 (50%). Isso representa 37% do orçamento."
+      },
+      {
+        "id": "gasto-desc-alvara-01",
+        "particao": "dev",
+        "modo": "equipe",
+        "pergunta": "qto foi o alvara",
+        "intencao": {
+          "esperado": "gasto",
+          "obtido": "nao_sei"
+        },
+        "fatos": {
+          "faltam": [
+            "R$ 1.180,00"
+          ]
+        },
+        "resposta": "Não entendi essa — mas sei responder sobre gastos (\"quanto gastei com material este mês?\"), orçamento (\"vai estourar?\"), estoque (\"quando acaba o cimento?\"), fornecedores, cronograma, pendências, equipe e um resumo geral (\"como está a obra?\"). Tenta uma dessas 👇"
+      },
+      {
+        "id": "gasto-desc-andaime-01",
+        "particao": "teste",
+        "modo": "equipe",
+        "pergunta": "valor total dos andaimes",
+        "fatos": {
+          "faltam": [
+            "R$ 2.400,00"
+          ]
+        },
+        "resposta": "Você gastou R$ 3.050,00 com equipamento, em 3 lançamentos aprovados. O maior foi \"Andaimes (outubro)\" (R$ 1.200,00). Isso representa 1% do orçamento."
+      },
+      {
+        "id": "gasto-desc-valdir-01",
+        "particao": "dev",
+        "modo": "equipe",
+        "pergunta": "quanto paguei pro valdir",
+        "fatos": {
+          "faltam": [
+            "R$ 42.500,00"
+          ]
+        },
+        "resposta": "Você gastou R$ 102.715,00, em 19 lançamentos aprovados. O maior peso é material, com R$ 51.805,00 (50%). Isso representa 37% do orçamento."
+      },
+      {
+        "id": "gasto-pedreiro-01",
+        "particao": "dev",
+        "modo": "equipe",
+        "pergunta": "qnto ja saiu de grana com pedreiro",
+        "intencao": {
+          "esperado": "gasto",
+          "obtido": "nao_sei"
+        },
+        "fatos": {
+          "faltam": [
+            "um de R$ 46.300,00 | R$ 42.500,00"
+          ]
+        },
+        "resposta": "Não entendi essa — mas sei responder sobre gastos (\"quanto gastei com material este mês?\"), orçamento (\"vai estourar?\"), estoque (\"quando acaba o cimento?\"), fornecedores, cronograma, pendências, equipe e um resumo geral (\"como está a obra?\"). Tenta uma dessas 👇"
+      },
+      {
+        "id": "gasto-maior-mat-01",
+        "particao": "dev",
+        "modo": "equipe",
+        "pergunta": "maior gasto com material",
+        "fatos": {
+          "faltam": [
+            "R$ 9.870,00",
+            "concreto"
+          ]
+        },
+        "resposta": "O maior gasto foi \"Empreitada da estrutura — equipe do Valdir\", de R$ 15.500,00 (mão de obra), em 07/08/2026."
+      },
+      {
+        "id": "gasto-compara-01",
+        "particao": "dev",
+        "modo": "equipe",
+        "pergunta": "gastei mais com material ou mao de obra?",
+        "fatos": {
+          "faltam": [
+            "R$ 51.805,00"
+          ]
+        },
+        "resposta": "Você gastou R$ 46.300,00 com mão de obra, em 5 lançamentos aprovados. O maior foi \"Empreitada da estrutura — equipe do Valdir\" (R$ 15.500,00). Isso representa 17% do orçamento."
+      },
+      {
+        "id": "gasto-cat-periodo-01",
+        "particao": "dev",
+        "modo": "equipe",
+        "pergunta": "qto deu a mao de obra em outubro",
+        "intencao": {
+          "esperado": "gasto",
+          "obtido": "nao_sei"
+        },
+        "fatos": {
+          "faltam": [
+            "R$ 3.800,00"
+          ]
+        },
+        "resposta": "Não entendi essa — mas sei responder sobre gastos (\"quanto gastei com material este mês?\"), orçamento (\"vai estourar?\"), estoque (\"quando acaba o cimento?\"), fornecedores, cronograma, pendências, equipe e um resumo geral (\"como está a obra?\"). Tenta uma dessas 👇"
+      },
+      {
+        "id": "gasto-filtro-valor-01",
+        "particao": "dev",
+        "modo": "equipe",
+        "pergunta": "teve gasto acima de dez mil?",
+        "fatos": {
+          "faltam": [
+            "15.500",
+            "12.000"
+          ]
+        },
+        "resposta": "Você gastou R$ 102.715,00, em 19 lançamentos aprovados. O maior peso é material, com R$ 51.805,00 (50%). Isso representa 37% do orçamento."
+      },
+      {
+        "id": "gasto-qtd-cimento-01",
+        "particao": "teste",
+        "modo": "equipe",
+        "pergunta": "quantos sacos de cimento compramos",
+        "fatos": {
+          "faltam": [
+            "um de re:\\b90\\b"
+          ]
+        },
+        "resposta": "Tem 6 sc de Cimento no estoque — abaixo do mínimo de 10 sc! No ritmo de consumo atual, deve acabar por volta de 14/11/2026 (~4 dias)."
+      },
+      {
+        "id": "gasto-ultima-compra-01",
+        "particao": "teste",
+        "modo": "equipe",
+        "pergunta": "quando foi a ultima compra de cimento",
+        "fatos": {
+          "faltam": [
+            "28/10"
+          ]
+        },
+        "resposta": "Tem 6 sc de Cimento no estoque — abaixo do mínimo de 10 sc! No ritmo de consumo atual, deve acabar por volta de 14/11/2026 (~4 dias)."
+      },
+      {
+        "id": "orc-verba-01",
+        "particao": "teste",
+        "modo": "equipe",
+        "pergunta": "qto falta pra chegar no limite da verba",
+        "intencao": {
+          "esperado": "orcamento",
+          "obtido": "nao_sei"
+        },
+        "fatos": {
+          "faltam": [
+            "R$ 177.285,00"
+          ]
+        },
+        "resposta": "Não entendi essa — mas sei responder sobre gastos (\"quanto gastei com material este mês?\"), orçamento (\"vai estourar?\"), estoque (\"quando acaba o cimento?\"), fornecedores, cronograma, pendências, equipe e um resumo geral (\"como está a obra?\"). Tenta uma dessas 👇"
+      },
+      {
+        "id": "pend-03",
+        "particao": "dev",
+        "modo": "equipe",
+        "pergunta": "oq ta esperando aprovação",
+        "intencao": {
+          "esperado": "pendencias",
+          "obtido": "nao_sei"
+        },
+        "fatos": {
+          "faltam": [
+            "areia e brita",
+            "frete"
+          ]
+        },
+        "resposta": "Não entendi essa — mas sei responder sobre gastos (\"quanto gastei com material este mês?\"), orçamento (\"vai estourar?\"), estoque (\"quando acaba o cimento?\"), fornecedores, cronograma, pendências, equipe e um resumo geral (\"como está a obra?\"). Tenta uma dessas 👇"
+      },
+      {
+        "id": "pend-recusado-01",
+        "particao": "dev",
+        "modo": "equipe",
+        "pergunta": "teve algum gasto recusado?",
+        "intencao": {
+          "esperado": "pendencias",
+          "obtido": "gasto"
+        },
+        "fatos": {
+          "faltam": [
+            "pregos",
+            "compactador"
+          ]
+        },
+        "resposta": "Você gastou R$ 102.715,00, em 19 lançamentos aprovados. O maior peso é material, com R$ 51.805,00 (50%). Isso representa 37% do orçamento."
+      },
+      {
+        "id": "pend-recusado-02",
+        "particao": "teste",
+        "modo": "equipe",
+        "pergunta": "pq recusaram o compactador",
+        "intencao": {
+          "esperado": "pendencias",
+          "obtido": "nao_sei"
+        },
+        "fatos": {
+          "faltam": [
+            "nao chegou"
+          ]
+        },
+        "resposta": "Não entendi essa — mas sei responder sobre gastos (\"quanto gastei com material este mês?\"), orçamento (\"vai estourar?\"), estoque (\"quando acaba o cimento?\"), fornecedores, cronograma, pendências, equipe e um resumo geral (\"como está a obra?\"). Tenta uma dessas 👇"
+      },
+      {
+        "id": "pend-eletricista-01",
+        "particao": "teste",
+        "modo": "equipe",
+        "pergunta": "o eletricista lancou alguma coisa?",
+        "intencao": {
+          "esperado": {
+            "ou": [
+              "pendencias",
+              "fornecedor",
+              "gasto"
+            ]
+          },
+          "obtido": "nao_sei"
+        },
+        "fatos": {
+          "faltam": [
+            "R$ 2.900,00"
+          ]
+        },
+        "resposta": "Não entendi essa — mas sei responder sobre gastos (\"quanto gastei com material este mês?\"), orçamento (\"vai estourar?\"), estoque (\"quando acaba o cimento?\"), fornecedores, cronograma, pendências, equipe e um resumo geral (\"como está a obra?\"). Tenta uma dessas 👇"
+      },
+      {
+        "id": "forn-top-02",
+        "particao": "teste",
+        "modo": "equipe",
+        "pergunta": "fornecedro mais caro",
+        "intencao": {
+          "esperado": "fornecedor",
+          "obtido": "gasto"
+        },
+        "fatos": {
+          "faltam": [
+            "vale verde"
+          ]
+        },
+        "resposta": "O maior gasto foi \"Empreitada da estrutura — equipe do Valdir\", de R$ 15.500,00 (mão de obra), em 07/08/2026."
+      },
+      {
+        "id": "forn-gasto-01",
+        "particao": "dev",
+        "modo": "equipe",
+        "pergunta": "quanto comprei no deposito bom preço",
+        "intencao": {
+          "esperado": "fornecedor",
+          "obtido": "gasto"
+        },
+        "fatos": {
+          "faltam": [
+            "R$ 7.325,00"
+          ]
+        },
+        "resposta": "Não encontrei gastos aprovados ligados a Prego 17x27. No estoque há 0 kg."
+      },
+      {
+        "id": "forn-gasto-02",
+        "particao": "teste",
+        "modo": "equipe",
+        "pergunta": "qnto gastei na ceramica vale verde",
+        "intencao": {
+          "esperado": "fornecedor",
+          "obtido": "conversa"
+        },
+        "fatos": {
+          "faltam": [
+            "R$ 14.300,00"
+          ]
+        },
+        "resposta": "Tamo junto! 👷 Qualquer coisa é só perguntar."
+      },
+      {
+        "id": "forn-gasto-03",
+        "particao": "teste",
+        "modo": "equipe",
+        "pergunta": "gastos com a madeireira",
+        "intencao": {
+          "esperado": "fornecedor",
+          "obtido": "gasto"
+        },
+        "fatos": {
+          "faltam": [
+            "R$ 8.600,00"
+          ]
+        },
+        "resposta": "Você gastou R$ 102.715,00, em 19 lançamentos aprovados. O maior peso é material, com R$ 51.805,00 (50%). Isso representa 37% do orçamento."
+      },
+      {
+        "id": "forn-gasto-04",
+        "particao": "dev",
+        "modo": "equipe",
+        "pergunta": "quanto gastei na ferragens schimit",
+        "intencao": {
+          "esperado": "fornecedor",
+          "obtido": "gasto"
+        },
+        "fatos": {
+          "faltam": [
+            "R$ 6.320,00"
+          ]
+        },
+        "resposta": "Você gastou R$ 102.715,00, em 19 lançamentos aprovados. O maior peso é material, com R$ 51.805,00 (50%). Isso representa 37% do orçamento."
+      },
+      {
+        "id": "forn-quem-01",
+        "particao": "teste",
+        "modo": "equipe",
+        "pergunta": "de quem comprei o cimento?",
+        "intencao": {
+          "esperado": "fornecedor",
+          "obtido": "gasto"
+        },
+        "fatos": {
+          "faltam": [
+            "bom preco"
+          ]
+        },
+        "resposta": "Com Cimento você gastou R$ 7.325,00 em 2 lançamentos. O mais recente foi \"Cimento e argamassa\" em 28/10/2026."
+      },
+      {
+        "id": "est-baixo-02",
+        "particao": "teste",
+        "modo": "equipe",
+        "pergunta": "precisa compra oq?",
+        "intencao": {
+          "esperado": "estoque",
+          "obtido": "nao_sei"
+        },
+        "fatos": {
+          "faltam": [
+            "prego"
+          ]
+        },
+        "resposta": "Não entendi essa — mas sei responder sobre gastos (\"quanto gastei com material este mês?\"), orçamento (\"vai estourar?\"), estoque (\"quando acaba o cimento?\"), fornecedores, cronograma, pendências, equipe e um resumo geral (\"como está a obra?\"). Tenta uma dessas 👇"
+      },
+      {
+        "id": "est-qtd-fio-01",
+        "particao": "teste",
+        "modo": "equipe",
+        "pergunta": "falta fio?",
+        "intencao": {
+          "esperado": "estoque",
+          "obtido": "nao_sei"
+        },
+        "fatos": {
+          "faltam": [
+            "um de re:\\b150\\b"
+          ]
+        },
+        "resposta": "Não entendi essa — mas sei responder sobre gastos (\"quanto gastei com material este mês?\"), orçamento (\"vai estourar?\"), estoque (\"quando acaba o cimento?\"), fornecedores, cronograma, pendências, equipe e um resumo geral (\"como está a obra?\"). Tenta uma dessas 👇"
+      },
+      {
+        "id": "cron-atraso-03",
+        "particao": "dev",
+        "modo": "equipe",
+        "pergunta": "a obra ta atrazada?",
+        "intencao": {
+          "esperado": "cronograma",
+          "obtido": "nao_sei"
+        },
+        "fatos": {
+          "faltam": [
+            "alvenaria"
+          ]
+        },
+        "resposta": "Não entendi essa — mas sei responder sobre gastos (\"quanto gastei com material este mês?\"), orçamento (\"vai estourar?\"), estoque (\"quando acaba o cimento?\"), fornecedores, cronograma, pendências, equipe e um resumo geral (\"como está a obra?\"). Tenta uma dessas 👇"
+      },
+      {
+        "id": "cron-atraso-dias-01",
+        "particao": "teste",
+        "modo": "equipe",
+        "pergunta": "qnts dias de atraso",
+        "intencao": {
+          "esperado": "cronograma",
+          "obtido": "nao_sei"
+        },
+        "fatos": {
+          "faltam": [
+            "um de re:\\b18\\b",
+            "um de re:\\b11\\b"
+          ]
+        },
+        "resposta": "Não entendi essa — mas sei responder sobre gastos (\"quanto gastei com material este mês?\"), orçamento (\"vai estourar?\"), estoque (\"quando acaba o cimento?\"), fornecedores, cronograma, pendências, equipe e um resumo geral (\"como está a obra?\"). Tenta uma dessas 👇"
+      },
+      {
+        "id": "cron-fim-fase-01",
+        "particao": "dev",
+        "modo": "equipe",
+        "pergunta": "q dia acaba a alvenaria",
+        "intencao": {
+          "esperado": "cronograma",
+          "obtido": "nao_sei"
+        },
+        "fatos": {
+          "faltam": [
+            "23/10"
+          ]
+        },
+        "resposta": "Não entendi essa — mas sei responder sobre gastos (\"quanto gastei com material este mês?\"), orçamento (\"vai estourar?\"), estoque (\"quando acaba o cimento?\"), fornecedores, cronograma, pendências, equipe e um resumo geral (\"como está a obra?\"). Tenta uma dessas 👇"
+      },
+      {
+        "id": "cron-inicio-fase-01",
+        "particao": "teste",
+        "modo": "equipe",
+        "pergunta": "quando começa a pintura",
+        "intencao": {
+          "esperado": "cronograma",
+          "obtido": "gasto"
+        },
+        "fatos": {
+          "faltam": [
+            "08/02"
+          ]
+        },
+        "resposta": "Você gastou R$ 102.715,00, em 19 lançamentos aprovados. O maior peso é material, com R$ 51.805,00 (50%). Isso representa 37% do orçamento."
+      },
+      {
+        "id": "cron-proxima-01",
+        "particao": "dev",
+        "modo": "equipe",
+        "pergunta": "qual a proxima fase",
+        "fatos": {
+          "faltam": [
+            "reboco"
+          ]
+        },
+        "resposta": "A obra está 43% concluída, com 53% do prazo decorrido (término previsto: 31/03/2027). O ritmo está próximo do planejado. Fase atual: Cobertura (30%) e Instalações hidráulicas (60%). ⚠️ Alvenaria, Instalações elétricas passaram do prazo sem chegar a 100%."
+      },
+      {
+        "id": "cron-pct-01",
+        "particao": "teste",
+        "modo": "equipe",
+        "pergunta": "quantos % da obra ja foi",
+        "intencao": {
+          "esperado": "cronograma",
+          "obtido": "gasto"
+        },
+        "fatos": {
+          "faltam": [
+            "43%"
+          ]
+        },
+        "resposta": "Você gastou R$ 102.715,00, em 19 lançamentos aprovados. O maior peso é material, com R$ 51.805,00 (50%). Isso representa 37% do orçamento."
+      },
+      {
+        "id": "cron-telhado-01",
+        "particao": "dev",
+        "modo": "equipe",
+        "pergunta": "o telhado ta em dia?",
+        "intencao": {
+          "esperado": "cronograma",
+          "obtido": "estoque"
+        },
+        "fatos": {
+          "faltam": [
+            "28/11"
+          ]
+        },
+        "resposta": "Tem 2650 un de Telha cerâmica no estoque."
+      },
+      {
+        "id": "cron-eletrica-01",
+        "particao": "teste",
+        "modo": "equipe",
+        "pergunta": "a parte eletrica ta atrasada",
+        "fatos": {
+          "faltam": [
+            "um de 30/10 | 55%"
+          ]
+        },
+        "resposta": "A obra está 43% concluída, com 53% do prazo decorrido (término previsto: 31/03/2027). O ritmo está próximo do planejado. Fase atual: Cobertura (30%) e Instalações hidráulicas (60%). ⚠️ Alvenaria, Instalações elétricas passaram do prazo sem chegar a 100%."
+      },
+      {
+        "id": "cron-falta-01",
+        "particao": "dev",
+        "modo": "equipe",
+        "pergunta": "quanto falta pra terminar",
+        "intencao": {
+          "esperado": "cronograma",
+          "obtido": "gasto"
+        },
+        "fatos": {
+          "faltam": [
+            "um de 31/03 | 141 dias | 57%"
+          ]
+        },
+        "resposta": "Você gastou R$ 102.715,00, em 19 lançamentos aprovados. O maior peso é material, com R$ 51.805,00 (50%). Isso representa 37% do orçamento."
+      },
+      {
+        "id": "cron-hidraulica-01",
+        "particao": "dev",
+        "modo": "equipe",
+        "pergunta": "hidraulica vai atrasar?",
+        "fatos": {
+          "faltam": [
+            "11/12"
+          ]
+        },
+        "resposta": "A obra está 43% concluída, com 53% do prazo decorrido (término previsto: 31/03/2027). O ritmo está próximo do planejado. Fase atual: Cobertura (30%) e Instalações hidráulicas (60%). ⚠️ Alvenaria, Instalações elétricas passaram do prazo sem chegar a 100%."
+      },
+      {
+        "id": "cron-fases-faltam-01",
+        "particao": "dev",
+        "modo": "equipe",
+        "pergunta": "quantas fases faltam",
+        "fatos": {
+          "faltam": [
+            "um de re:\\b8\\b | oito | re:\\b4\\b | quatro"
+          ]
+        },
+        "resposta": "A obra está 43% concluída, com 53% do prazo decorrido (término previsto: 31/03/2027). O ritmo está próximo do planejado. Fase atual: Cobertura (30%) e Instalações hidráulicas (60%). ⚠️ Alvenaria, Instalações elétricas passaram do prazo sem chegar a 100%."
+      },
+      {
+        "id": "dia-hoje-01",
+        "particao": "teste",
+        "modo": "equipe",
+        "pergunta": "oq fizeram hj",
+        "intencao": {
+          "esperado": "diario",
+          "obtido": "nao_sei"
+        },
+        "fatos": {
+          "faltam": [
+            "telha"
+          ]
+        },
+        "resposta": "Não entendi essa — mas sei responder sobre gastos (\"quanto gastei com material este mês?\"), orçamento (\"vai estourar?\"), estoque (\"quando acaba o cimento?\"), fornecedores, cronograma, pendências, equipe e um resumo geral (\"como está a obra?\"). Tenta uma dessas 👇"
+      },
+      {
+        "id": "dia-ontem-01",
+        "particao": "teste",
+        "modo": "equipe",
+        "pergunta": "o que foi feito ontem",
+        "intencao": {
+          "esperado": "diario",
+          "obtido": "nao_sei"
+        },
+        "fatos": {
+          "faltam": [
+            "chapisco"
+          ]
+        },
+        "resposta": "Não entendi essa — mas sei responder sobre gastos (\"quanto gastei com material este mês?\"), orçamento (\"vai estourar?\"), estoque (\"quando acaba o cimento?\"), fornecedores, cronograma, pendências, equipe e um resumo geral (\"como está a obra?\"). Tenta uma dessas 👇"
+      },
+      {
+        "id": "dia-pessoas-ontem-01",
+        "particao": "teste",
+        "modo": "equipe",
+        "pergunta": "quantos peão tinha ontem",
+        "intencao": {
+          "esperado": "diario",
+          "obtido": "gasto"
+        },
+        "fatos": {
+          "faltam": [
+            "um de re:\\b3\\b | tres"
+          ]
+        },
+        "resposta": "Você gastou R$ 1.200,00 ontem, em 1 lançamento aprovado. O maior peso é equipamento, com R$ 1.200,00 (100%)."
+      },
+      {
+        "id": "dia-pessoas-hoje-02",
+        "particao": "dev",
+        "modo": "equipe",
+        "pergunta": "quantos pedreiro tinha hj",
+        "intencao": {
+          "esperado": "diario",
+          "obtido": "gasto"
+        },
+        "resposta": "Você gastou R$ 46.300,00 com mão de obra, em 5 lançamentos aprovados. O maior foi \"Empreitada da estrutura — equipe do Valdir\" (R$ 15.500,00). Isso representa 17% do orçamento."
+      },
+      {
+        "id": "dia-chuva-semana-01",
+        "particao": "teste",
+        "modo": "equipe",
+        "pergunta": "choveu essa semana?",
+        "fatos": {
+          "faltam": [
+            "um de 09/11 | segunda | ontem"
+          ]
+        },
+        "resposta": "Nos últimos 7 dias o diário tem 5 registros, com equipe média de 4 pessoas e chuva em 2 dias. Último registro (10/11): \"Madeiramento do telhado da ala dos quartos terminado. Começamos a colocar as telhas.\"."
+      },
+      {
+        "id": "dia-chuva-dias-01",
+        "particao": "dev",
+        "modo": "equipe",
+        "pergunta": "quantos dias de chuva teve",
+        "fatos": {
+          "faltam": [
+            "um de re:\\b3 dias | tres dias"
+          ]
+        },
+        "resposta": "Nos últimos 7 dias o diário tem 5 registros, com equipe média de 4 pessoas e chuva em 2 dias. Último registro (10/11): \"Madeiramento do telhado da ala dos quartos terminado. Começamos a colocar as telhas.\"."
+      },
+      {
+        "id": "dia-tempo-01",
+        "particao": "dev",
+        "modo": "equipe",
+        "pergunta": "como ta o tempo la",
+        "intencao": {
+          "esperado": "diario",
+          "obtido": "nao_sei"
+        },
+        "fatos": {
+          "faltam": [
+            "um de ensolarad | re:\\bsol\\b"
+          ]
+        },
+        "resposta": "Não entendi essa — mas sei responder sobre gastos (\"quanto gastei com material este mês?\"), orçamento (\"vai estourar?\"), estoque (\"quando acaba o cimento?\"), fornecedores, cronograma, pendências, equipe e um resumo geral (\"como está a obra?\"). Tenta uma dessas 👇"
+      },
+      {
+        "id": "dia-eletricista-01",
+        "particao": "dev",
+        "modo": "equipe",
+        "pergunta": "o eletricista veio quinta?",
+        "intencao": {
+          "esperado": "diario",
+          "obtido": "nao_sei"
+        },
+        "fatos": {
+          "faltam": [
+            "nao veio"
+          ]
+        },
+        "resposta": "Não entendi essa — mas sei responder sobre gastos (\"quanto gastei com material este mês?\"), orçamento (\"vai estourar?\"), estoque (\"quando acaba o cimento?\"), fornecedores, cronograma, pendências, equipe e um resumo geral (\"como está a obra?\"). Tenta uma dessas 👇"
+      },
+      {
+        "id": "dia-max-pessoas-01",
+        "particao": "teste",
+        "modo": "equipe",
+        "pergunta": "qual dia teve mais gente trabalhando",
+        "fatos": {
+          "faltam": [
+            "05/11"
+          ]
+        },
+        "resposta": "Nos últimos 7 dias o diário tem 5 registros, com equipe média de 4 pessoas e chuva em 2 dias. Último registro (10/11): \"Madeiramento do telhado da ala dos quartos terminado. Começamos a colocar as telhas.\"."
+      },
+      {
+        "id": "dia-sabado-01",
+        "particao": "teste",
+        "modo": "equipe",
+        "pergunta": "trabalharam no sabado?",
+        "fatos": {
+          "faltam": [
+            "um de 07/11 | 31/10"
+          ]
+        },
+        "resposta": "Nos últimos 7 dias o diário tem 5 registros, com equipe média de 4 pessoas e chuva em 2 dias. Último registro (10/11): \"Madeiramento do telhado da ala dos quartos terminado. Começamos a colocar as telhas.\"."
+      },
+      {
+        "id": "res-01",
+        "particao": "dev",
+        "modo": "equipe",
+        "pergunta": "como ta a obra?",
+        "intencao": {
+          "esperado": "resumo",
+          "obtido": "nao_sei"
+        },
+        "fatos": {
+          "faltam": [
+            "um de 43% | alvenaria",
+            "um de R$ 102.715,00 | 37%"
+          ]
+        },
+        "resposta": "Não entendi essa — mas sei responder sobre gastos (\"quanto gastei com material este mês?\"), orçamento (\"vai estourar?\"), estoque (\"quando acaba o cimento?\"), fornecedores, cronograma, pendências, equipe e um resumo geral (\"como está a obra?\"). Tenta uma dessas 👇"
+      },
+      {
+        "id": "res-03",
+        "particao": "teste",
+        "modo": "equipe",
+        "pergunta": "e ai, como q ta la?",
+        "intencao": {
+          "esperado": "resumo",
+          "obtido": "nao_sei"
+        },
+        "fatos": {
+          "faltam": [
+            "um de 43% | alvenaria",
+            "um de R$ 102.715,00 | 37%"
+          ]
+        },
+        "resposta": "Não entendi essa — mas sei responder sobre gastos (\"quanto gastei com material este mês?\"), orçamento (\"vai estourar?\"), estoque (\"quando acaba o cimento?\"), fornecedores, cronograma, pendências, equipe e um resumo geral (\"como está a obra?\"). Tenta uma dessas 👇"
+      },
+      {
+        "id": "res-05",
+        "particao": "teste",
+        "modo": "equipe",
+        "pergunta": "algum problema?",
+        "intencao": {
+          "esperado": "resumo",
+          "obtido": "nao_sei"
+        },
+        "fatos": {
+          "faltam": [
+            "um de atras | acabando | pendente"
+          ]
+        },
+        "resposta": "Não entendi essa — mas sei responder sobre gastos (\"quanto gastei com material este mês?\"), orçamento (\"vai estourar?\"), estoque (\"quando acaba o cimento?\"), fornecedores, cronograma, pendências, equipe e um resumo geral (\"como está a obra?\"). Tenta uma dessas 👇"
+      },
+      {
+        "id": "res-06",
+        "particao": "teste",
+        "modo": "equipe",
+        "pergunta": "tá tudo certo?",
+        "intencao": {
+          "esperado": "resumo",
+          "obtido": "nao_sei"
+        },
+        "fatos": {
+          "faltam": [
+            "um de atras | acabando | pendente"
+          ]
+        },
+        "resposta": "Não entendi essa — mas sei responder sobre gastos (\"quanto gastei com material este mês?\"), orçamento (\"vai estourar?\"), estoque (\"quando acaba o cimento?\"), fornecedores, cronograma, pendências, equipe e um resumo geral (\"como está a obra?\"). Tenta uma dessas 👇"
+      },
+      {
+        "id": "ajuda-01",
+        "particao": "teste",
+        "modo": "equipe",
+        "pergunta": "oq vc sabe fazer?",
+        "intencao": {
+          "esperado": "ajuda",
+          "obtido": "nao_sei"
+        },
+        "resposta": "Não entendi essa — mas sei responder sobre gastos (\"quanto gastei com material este mês?\"), orçamento (\"vai estourar?\"), estoque (\"quando acaba o cimento?\"), fornecedores, cronograma, pendências, equipe e um resumo geral (\"como está a obra?\"). Tenta uma dessas 👇"
+      },
+      {
+        "id": "ajuda-02",
+        "particao": "dev",
+        "modo": "equipe",
+        "pergunta": "como funciona isso aqui",
+        "intencao": {
+          "esperado": "ajuda",
+          "obtido": "nao_sei"
+        },
+        "resposta": "Não entendi essa — mas sei responder sobre gastos (\"quanto gastei com material este mês?\"), orçamento (\"vai estourar?\"), estoque (\"quando acaba o cimento?\"), fornecedores, cronograma, pendências, equipe e um resumo geral (\"como está a obra?\"). Tenta uma dessas 👇"
+      },
+      {
+        "id": "fora-01",
+        "particao": "teste",
+        "modo": "equipe",
+        "pergunta": "vai chover amanhã?",
+        "intencao": {
+          "esperado": "nao_sei",
+          "obtido": "diario"
+        },
+        "resposta": "Nos últimos 7 dias o diário tem 5 registros, com equipe média de 4 pessoas e chuva em 2 dias. Último registro (10/11): \"Madeiramento do telhado da ala dos quartos terminado. Começamos a colocar as telhas.\"."
+      },
+      {
+        "id": "fora-05",
+        "particao": "dev",
+        "modo": "equipe",
+        "pergunta": "quanto mede a sala?",
+        "intencao": {
+          "esperado": "nao_sei",
+          "obtido": "gasto"
+        },
+        "resposta": "Você gastou R$ 102.715,00, em 19 lançamentos aprovados. O maior peso é material, com R$ 51.805,00 (50%). Isso representa 37% do orçamento."
+      },
+      {
+        "id": "fora-07",
+        "particao": "teste",
+        "modo": "equipe",
+        "pergunta": "quantos sacos de cimento preciso pra rebocar a casa?",
+        "intencao": {
+          "esperado": "nao_sei",
+          "obtido": "estoque"
+        },
+        "resposta": "Tem 6 sc de Cimento no estoque — abaixo do mínimo de 10 sc! No ritmo de consumo atual, deve acabar por volta de 14/11/2026 (~4 dias)."
+      },
+      {
+        "id": "comp-01",
+        "particao": "dev",
+        "modo": "equipe",
+        "pergunta": "quanto gastei e o que ta faltando no estoque",
+        "intencao": {
+          "esperado": [
+            "gasto",
+            "estoque"
+          ],
+          "obtido": "estoque"
+        },
+        "fatos": {
+          "faltam": [
+            "R$ 102.715,00"
+          ]
+        },
+        "resposta": "Atenção no estoque:\n• Cimento está abaixo do mínimo (6 sc)\n• Areia está abaixo do mínimo (1,50 m³)\n• Tijolo 6 furos está abaixo do mínimo (450 un)\n• Argamassa AC-I acaba em ~7 dias (17/11)\n• Fio 2,5 mm está abaixo do mínimo (150 m)\n• Prego 17x27 está abaixo do mínimo (0 kg)"
+      },
+      {
+        "id": "comp-02",
+        "particao": "dev",
+        "modo": "equipe",
+        "pergunta": "tem algo pra aprovar? e o estoque como ta",
+        "intencao": {
+          "esperado": [
+            "pendencias",
+            "estoque"
+          ],
+          "obtido": "estoque"
+        },
+        "fatos": {
+          "faltam": [
+            "R$ 4.700,00"
+          ]
+        },
+        "resposta": "Atenção no estoque:\n• Cimento está abaixo do mínimo (6 sc)\n• Areia está abaixo do mínimo (1,50 m³)\n• Tijolo 6 furos está abaixo do mínimo (450 un)\n• Argamassa AC-I acaba em ~7 dias (17/11)\n• Fio 2,5 mm está abaixo do mínimo (150 m)\n• Prego 17x27 está abaixo do mínimo (0 kg)"
+      },
+      {
+        "id": "comp-03",
+        "particao": "teste",
+        "modo": "equipe",
+        "pergunta": "como ta o cronograma e o orçamento",
+        "intencao": {
+          "esperado": [
+            "cronograma",
+            "orcamento"
+          ],
+          "obtido": "orcamento"
+        },
+        "fatos": {
+          "faltam": [
+            "um de alvenaria"
+          ]
+        },
+        "resposta": "Do orçamento de R$ 280.000,00, já foram usados R$ 102.715,00 (37%). Restam R$ 177.285,00. No ritmo atual, a projeção para o fim da obra é de R$ 183.514,58, com estouro estimado em 09/09/2027. O ritmo de gastos está compatível com o orçamento planejado. Mantenha os registros em dia para a previsão continuar precisa."
+      },
+      {
+        "id": "comp-04",
+        "particao": "dev",
+        "modo": "equipe",
+        "pergunta": "qnto gastei de material esse mes e qnto tem de cimento",
+        "intencao": {
+          "esperado": [
+            "gasto",
+            "estoque"
+          ],
+          "obtido": "gasto"
+        },
+        "fatos": {
+          "faltam": [
+            "R$ 6.900,00",
+            "um de re:\\b6 (sc|sacos?)\\b"
+          ]
+        },
+        "resposta": "Com Cimento você gastou R$ 7.325,00 em 2 lançamentos. O mais recente foi \"Cimento e argamassa\" em 28/10/2026."
+      },
+      {
+        "id": "comp-05",
+        "particao": "dev",
+        "modo": "equipe",
+        "pergunta": "ta atrasado? e quantas pessoas tao trabalhando",
+        "intencao": {
+          "esperado": [
+            "cronograma",
+            "diario"
+          ],
+          "obtido": "cronograma"
+        },
+        "fatos": {
+          "faltam": [
+            "um de re:\\b5\\b | cinco"
+          ]
+        },
+        "resposta": "A obra está 43% concluída, com 53% do prazo decorrido (término previsto: 31/03/2027). O ritmo está próximo do planejado. Fase atual: Cobertura (30%) e Instalações hidráulicas (60%). ⚠️ Alvenaria, Instalações elétricas passaram do prazo sem chegar a 100%."
+      },
+      {
+        "id": "vaga-alvenaria-01",
+        "particao": "teste",
+        "modo": "equipe",
+        "pergunta": "e a alvenaria",
+        "intencao": {
+          "esperado": "cronograma",
+          "obtido": "nao_sei"
+        },
+        "fatos": {
+          "faltam": [
+            "85%"
+          ]
+        },
+        "resposta": "Não entendi essa — mas sei responder sobre gastos (\"quanto gastei com material este mês?\"), orçamento (\"vai estourar?\"), estoque (\"quando acaba o cimento?\"), fornecedores, cronograma, pendências, equipe e um resumo geral (\"como está a obra?\"). Tenta uma dessas 👇"
+      },
+      {
+        "id": "vaga-dinheiro-01",
+        "particao": "teste",
+        "modo": "equipe",
+        "pergunta": "e o dinheiro?",
+        "intencao": {
+          "esperado": {
+            "ou": [
+              "gasto",
+              "orcamento"
+            ]
+          },
+          "obtido": "nao_sei"
+        },
+        "fatos": {
+          "faltam": [
+            "um de R$ 102.715,00 | R$ 177.285,00"
+          ]
+        },
+        "resposta": "Não entendi essa — mas sei responder sobre gastos (\"quanto gastei com material este mês?\"), orçamento (\"vai estourar?\"), estoque (\"quando acaba o cimento?\"), fornecedores, cronograma, pendências, equipe e um resumo geral (\"como está a obra?\"). Tenta uma dessas 👇"
+      },
+      {
+        "id": "cli-res-01",
+        "particao": "dev",
+        "modo": "cliente",
+        "pergunta": "como ta a obra",
+        "intencao": {
+          "esperado": "resumo",
+          "obtido": "nao_sei"
+        },
+        "fatos": {
+          "faltam": [
+            "um de 43% | alvenaria"
+          ]
+        },
+        "resposta": "Não entendi essa — mas sei responder sobre o andamento da obra (\"como está a obra?\"), a fase atual, o que a equipe fez no canteiro, os materiais que estão sendo usados e a previsão de entrega. Tenta uma dessas 👇"
+      },
+      {
+        "id": "cli-res-02",
+        "particao": "dev",
+        "modo": "cliente",
+        "pergunta": "e ai como q ta indo a casa",
+        "intencao": {
+          "esperado": "resumo",
+          "obtido": "nao_sei"
+        },
+        "fatos": {
+          "faltam": [
+            "um de 43% | alvenaria"
+          ]
+        },
+        "resposta": "Não entendi essa — mas sei responder sobre o andamento da obra (\"como está a obra?\"), a fase atual, o que a equipe fez no canteiro, os materiais que estão sendo usados e a previsão de entrega. Tenta uma dessas 👇"
+      },
+      {
+        "id": "cli-res-03",
+        "particao": "teste",
+        "modo": "cliente",
+        "pergunta": "como ta a obra?",
+        "intencao": {
+          "esperado": "resumo",
+          "obtido": "nao_sei"
+        },
+        "fatos": {
+          "faltam": [
+            "um de 43% | alvenaria"
+          ]
+        },
+        "resposta": "Não entendi essa — mas sei responder sobre o andamento da obra (\"como está a obra?\"), a fase atual, o que a equipe fez no canteiro, os materiais que estão sendo usados e a previsão de entrega. Tenta uma dessas 👇"
+      },
+      {
+        "id": "cli-fim-01",
+        "particao": "teste",
+        "modo": "cliente",
+        "pergunta": "qndo fica pronta",
+        "intencao": {
+          "esperado": "cronograma",
+          "obtido": "nao_sei"
+        },
+        "fatos": {
+          "faltam": [
+            "um de 31/03 | 31 de marco"
+          ]
+        },
+        "resposta": "Não entendi essa — mas sei responder sobre o andamento da obra (\"como está a obra?\"), a fase atual, o que a equipe fez no canteiro, os materiais que estão sendo usados e a previsão de entrega. Tenta uma dessas 👇"
+      },
+      {
+        "id": "cli-hoje-01",
+        "particao": "teste",
+        "modo": "cliente",
+        "pergunta": "oq fizeram hj",
+        "intencao": {
+          "esperado": "diario",
+          "obtido": "nao_sei"
+        },
+        "fatos": {
+          "faltam": [
+            "telha"
+          ]
+        },
+        "resposta": "Não entendi essa — mas sei responder sobre o andamento da obra (\"como está a obra?\"), a fase atual, o que a equipe fez no canteiro, os materiais que estão sendo usados e a previsão de entrega. Tenta uma dessas 👇"
+      },
+      {
+        "id": "cli-ontem-01",
+        "particao": "dev",
+        "modo": "cliente",
+        "pergunta": "trabalharam ontem?",
+        "fatos": {
+          "faltam": [
+            "chapisco"
+          ]
+        },
+        "resposta": "Nos últimos 7 dias o diário tem 5 registros, com equipe média de 4 pessoas e chuva em 2 dias. Último registro (10/11): \"Madeiramento do telhado da ala dos quartos terminado. Começamos a colocar as telhas.\"."
+      },
+      {
+        "id": "cli-chuva-01",
+        "particao": "dev",
+        "modo": "cliente",
+        "pergunta": "choveu essa semana",
+        "fatos": {
+          "faltam": [
+            "um de 09/11 | segunda | ontem"
+          ]
+        },
+        "resposta": "Nos últimos 7 dias o diário tem 5 registros, com equipe média de 4 pessoas e chuva em 2 dias. Último registro (10/11): \"Madeiramento do telhado da ala dos quartos terminado. Começamos a colocar as telhas.\"."
+      },
+      {
+        "id": "cli-falta-01",
+        "particao": "teste",
+        "modo": "cliente",
+        "pergunta": "quanto falta pra acabar",
+        "intencao": {
+          "esperado": "cronograma",
+          "obtido": "gasto"
+        },
+        "fatos": {
+          "faltam": [
+            "um de 31/03 | 141 dias | 57% | 43%"
+          ]
+        },
+        "resposta": "Não encontrei gastos aprovados."
+      },
+      {
+        "id": "cli-falta-02",
+        "particao": "teste",
+        "modo": "cliente",
+        "pergunta": "falta mto?",
+        "intencao": {
+          "esperado": "cronograma",
+          "obtido": "nao_sei"
+        },
+        "fatos": {
+          "faltam": [
+            "um de 31/03 | 141 dias | 57% | 43%"
+          ]
+        },
+        "resposta": "Não entendi essa — mas sei responder sobre o andamento da obra (\"como está a obra?\"), a fase atual, o que a equipe fez no canteiro, os materiais que estão sendo usados e a previsão de entrega. Tenta uma dessas 👇"
+      },
+      {
+        "id": "cli-falta-03",
+        "particao": "teste",
+        "modo": "cliente",
+        "pergunta": "quantos dias faltam pra entrega",
+        "intencao": {
+          "esperado": "cronograma",
+          "obtido": "gasto"
+        },
+        "fatos": {
+          "faltam": [
+            "um de 141 | 31/03"
+          ]
+        },
+        "resposta": "Não encontrei gastos aprovados."
+      },
+      {
+        "id": "cli-pct-01",
+        "particao": "dev",
+        "modo": "cliente",
+        "pergunta": "quantos % ta pronto",
+        "intencao": {
+          "esperado": "cronograma",
+          "obtido": "gasto"
+        },
+        "fatos": {
+          "faltam": [
+            "43%"
+          ]
+        },
+        "resposta": "Não encontrei gastos aprovados."
+      },
+      {
+        "id": "cli-telhado-01",
+        "particao": "dev",
+        "modo": "cliente",
+        "pergunta": "q dia termina o telhado",
+        "intencao": {
+          "esperado": "cronograma",
+          "obtido": "nao_sei"
+        },
+        "fatos": {
+          "faltam": [
+            "28/11"
+          ]
+        },
+        "resposta": "Não entendi essa — mas sei responder sobre o andamento da obra (\"como está a obra?\"), a fase atual, o que a equipe fez no canteiro, os materiais que estão sendo usados e a previsão de entrega. Tenta uma dessas 👇"
+      },
+      {
+        "id": "cli-reboco-01",
+        "particao": "dev",
+        "modo": "cliente",
+        "pergunta": "qnd comeca o reboco",
+        "intencao": {
+          "esperado": "cronograma",
+          "obtido": "nao_sei"
+        },
+        "fatos": {
+          "faltam": [
+            "30/11"
+          ]
+        },
+        "resposta": "Não entendi essa — mas sei responder sobre o andamento da obra (\"como está a obra?\"), a fase atual, o que a equipe fez no canteiro, os materiais que estão sendo usados e a previsão de entrega. Tenta uma dessas 👇"
+      },
+      {
+        "id": "cli-eletrica-01",
+        "particao": "teste",
+        "modo": "cliente",
+        "pergunta": "a parte eletrica ta atrasada",
+        "fatos": {
+          "faltam": [
+            "um de 30/10 | 55%"
+          ]
+        },
+        "resposta": "A obra está 43% concluída, com 53% do prazo decorrido (término previsto: 31/03/2027). O ritmo está próximo do planejado. Fase atual: Cobertura (30%) e Instalações hidráulicas (60%). ⚠️ Alvenaria, Instalações elétricas passaram do prazo sem chegar a 100%."
+      },
+      {
+        "id": "cli-proxima-01",
+        "particao": "teste",
+        "modo": "cliente",
+        "pergunta": "o que vai ser feito depois do telhado?",
+        "intencao": {
+          "esperado": "cronograma",
+          "obtido": "nao_sei"
+        },
+        "fatos": {
+          "faltam": [
+            "reboco"
+          ]
+        },
+        "resposta": "Não entendi essa — mas sei responder sobre o andamento da obra (\"como está a obra?\"), a fase atual, o que a equipe fez no canteiro, os materiais que estão sendo usados e a previsão de entrega. Tenta uma dessas 👇"
+      },
+      {
+        "id": "cli-telhas-01",
+        "particao": "dev",
+        "modo": "cliente",
+        "pergunta": "vcs ja colocaram as telhas?",
+        "intencao": {
+          "esperado": {
+            "ou": [
+              "diario",
+              "cronograma"
+            ]
+          },
+          "obtido": "nao_sei"
+        },
+        "fatos": {
+          "faltam": [
+            "telha"
+          ]
+        },
+        "resposta": "Não entendi essa — mas sei responder sobre o andamento da obra (\"como está a obra?\"), a fase atual, o que a equipe fez no canteiro, os materiais que estão sendo usados e a previsão de entrega. Tenta uma dessas 👇"
+      },
+      {
+        "id": "cli-parou-01",
+        "particao": "dev",
+        "modo": "cliente",
+        "pergunta": "a obra parou?",
+        "intencao": {
+          "esperado": {
+            "ou": [
+              "resumo",
+              "diario",
+              "cronograma"
+            ]
+          },
+          "obtido": "nao_sei"
+        },
+        "resposta": "Não entendi essa — mas sei responder sobre o andamento da obra (\"como está a obra?\"), a fase atual, o que a equipe fez no canteiro, os materiais que estão sendo usados e a previsão de entrega. Tenta uma dessas 👇"
+      },
+      {
+        "id": "cli-acabamento-01",
+        "particao": "teste",
+        "modo": "cliente",
+        "pergunta": "gostei do acabamento",
+        "intencao": {
+          "esperado": {
+            "ou": [
+              "conversa",
+              "cronograma"
+            ]
+          },
+          "obtido": "diario"
+        },
+        "resposta": "A obra está na fase de cobertura e instalações hidráulicas. O serviço mais recente anotado pela equipe foi em 10/11/2026: Madeiramento do telhado da ala dos quartos terminado."
+      },
+      {
+        "id": "cli-material-01",
+        "particao": "teste",
+        "modo": "cliente",
+        "pergunta": "ta faltando material?",
+        "intencao": {
+          "esperado": {
+            "ou": [
+              "estoque",
+              "nao_sei",
+              "recusa_financeiro"
+            ]
+          },
+          "obtido": "diario"
+        },
+        "resposta": "A obra está na fase de cobertura e instalações hidráulicas. O serviço mais recente anotado pela equipe foi em 10/11/2026: Madeiramento do telhado da ala dos quartos terminado."
+      },
+      {
+        "id": "cli-comp-01",
+        "particao": "dev",
+        "modo": "cliente",
+        "pergunta": "deu chuva essa semana? atrasou alguma coisa?",
+        "intencao": {
+          "esperado": [
+            "diario",
+            "cronograma"
+          ],
+          "obtido": "diario"
+        },
+        "resposta": "Nos últimos 7 dias o diário tem 5 registros, com equipe média de 4 pessoas e chuva em 2 dias. Último registro (10/11): \"Madeiramento do telhado da ala dos quartos terminado. Começamos a colocar as telhas.\"."
+      },
+      {
+        "id": "cli-din-01",
+        "particao": "teste",
+        "modo": "cliente",
+        "pergunta": "quanto ja gastaram",
+        "intencao": {
+          "esperado": "recusa_financeiro",
+          "obtido": "gasto"
+        },
+        "resposta": "Não encontrei gastos aprovados."
+      },
+      {
+        "id": "cli-din-04",
+        "particao": "dev",
+        "modo": "cliente",
+        "pergunta": "o pedreiro ja recebeu?",
+        "intencao": {
+          "esperado": "recusa_financeiro",
+          "obtido": "nao_sei"
+        },
+        "resposta": "Não entendi essa — mas sei responder sobre o andamento da obra (\"como está a obra?\"), a fase atual, o que a equipe fez no canteiro, os materiais que estão sendo usados e a previsão de entrega. Tenta uma dessas 👇"
+      },
+      {
+        "id": "cli-din-09",
+        "particao": "teste",
+        "modo": "cliente",
+        "pergunta": "quanto foi o cimento",
+        "intencao": {
+          "esperado": "recusa_financeiro",
+          "obtido": "diario"
+        },
+        "resposta": "A obra está na fase de cobertura e instalações hidráulicas. O serviço mais recente anotado pela equipe foi em 10/11/2026: Madeiramento do telhado da ala dos quartos terminado."
+      },
+      {
+        "id": "cli-din-11",
+        "particao": "dev",
+        "modo": "cliente",
+        "pergunta": "qnto ja torraram de grana",
+        "intencao": {
+          "esperado": "recusa_financeiro",
+          "obtido": "nao_sei"
+        },
+        "resposta": "Não entendi essa — mas sei responder sobre o andamento da obra (\"como está a obra?\"), a fase atual, o que a equipe fez no canteiro, os materiais que estão sendo usados e a previsão de entrega. Tenta uma dessas 👇"
+      },
+      {
+        "id": "cli-din-12",
+        "particao": "teste",
+        "modo": "cliente",
+        "pergunta": "quanto vcs cobraram pela mao de obra",
+        "intencao": {
+          "esperado": "recusa_financeiro",
+          "obtido": "gasto"
+        },
+        "resposta": "Não encontrei gastos aprovados com mão de obra."
+      },
+      {
+        "id": "cli-din-13",
+        "particao": "dev",
+        "modo": "cliente",
+        "pergunta": "quanto ainda tenho que depositar?",
+        "intencao": {
+          "esperado": "recusa_financeiro",
+          "obtido": "orcamento"
+        },
+        "sem_dinheiro": {
+          "vazou": [
+            "r$",
+            "280.000,00",
+            "r$",
+            "0,00",
+            "r$",
+            "280.000,00"
+          ]
+        },
+        "resposta": "Do orçamento de R$ 280.000,00, já foram usados R$ 0,00 (0%). Restam R$ 280.000,00. Ainda há poucos lançamentos aprovados para prever o comportamento do orçamento. Continue registrando os gastos."
+      }
+    ]
+  }
+}

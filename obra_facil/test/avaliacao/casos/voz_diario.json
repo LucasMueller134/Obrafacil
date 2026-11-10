@@ -465,5 +465,785 @@
       "pessoas": 4,
       "data": "2026-07-03"
     }
+  },
+  {
+    "id": "voz-diario-garoa-massa-corrida",
+    "origem": "sintetico",
+    "particao": "dev",
+    "nota": "'garoou' = Chuvoso; massa corrida = Pintura (preparo); 'o pintor e o ajudante' = 2.",
+    "entrada": {
+      "transcricao": "garoou a manhã inteira o pintor e o ajudante passaram massa corrida nos quartos"
+    },
+    "esperado": {
+      "clima": "Chuvoso",
+      "pessoas": 2,
+      "fase": "Pintura"
+    }
+  },
+  {
+    "id": "voz-diario-toro-alvenaria",
+    "origem": "sintetico",
+    "particao": "dev",
+    "nota": "'toró' = Chuva forte; 3 pedreiros + 2 serventes = 5; levantar parede = Alvenaria.",
+    "entrada": {
+      "transcricao": "caiu um toró depois do almoço e a turma parou mas de manhã deu pra levantar a parede do quarto vieram 3 pedreiros e 2 serventes"
+    },
+    "esperado": {
+      "clima": "Chuva forte",
+      "pessoas": 5,
+      "fase": "Alvenaria"
+    }
+  },
+  {
+    "id": "voz-diario-sol-rachando-madeiramento",
+    "origem": "sintetico",
+    "particao": "teste",
+    "nota": "'sol rachando' = Ensolarado; madeiramento do telhado = Cobertura; telhadista + 2 ajudantes = 3.",
+    "entrada": {
+      "transcricao": "sol rachando hoje o telhadista e 2 ajudantes fizeram o madeiramento do telhado"
+    },
+    "esperado": {
+      "clima": "Ensolarado",
+      "pessoas": 3,
+      "fase": "Cobertura",
+      "data": "2026-07-06"
+    }
+  },
+  {
+    "id": "voz-diario-ceu-limpo-sapatas",
+    "origem": "sintetico",
+    "particao": "teste",
+    "nota": "'céu limpo' = Ensolarado; cavar sapatas = Fundação; 'eu e mais 4' = 5.",
+    "entrada": {
+      "transcricao": "dia de céu limpo cavamos as sapatas da frente eu e mais 4 peão"
+    },
+    "esperado": {
+      "clima": "Ensolarado",
+      "pessoas": 5,
+      "fase": "Fundação"
+    }
+  },
+  {
+    "id": "voz-diario-so-eletricista-tempo-fechado",
+    "origem": "sintetico",
+    "particao": "teste",
+    "nota": "'veio só o eletricista' ('só' não é sol) = 1; 'tempo fechado' = Nublado; quadro e fios = elétrica.",
+    "entrada": {
+      "transcricao": "tempo fechado o dia inteiro veio só o eletricista passou os fios e montou o quadro de distribuição"
+    },
+    "esperado": {
+      "clima": "Nublado",
+      "pessoas": 1,
+      "fase": "Instalações elétricas"
+    }
+  },
+  {
+    "id": "voz-diario-solo-radier",
+    "origem": "sintetico",
+    "particao": "teste",
+    "nota": "'solo' não é sol; compactar o solo pro radier = Fundação; 4 serventes + o operador = 5.",
+    "entrada": {
+      "transcricao": "hoje compactamos o solo pro radier vieram 4 serventes e o operador da placa"
+    },
+    "esperado": {
+      "clima": null,
+      "pessoas": 5,
+      "fase": "Fundação",
+      "data": "2026-07-06"
+    }
+  },
+  {
+    "id": "voz-diario-soleira-nao-e-sol",
+    "origem": "sintetico",
+    "particao": "teste",
+    "nota": "'soleiras' não é sol; 'eu e o ajudante' = 2; fase (soleira e rodapé) não avaliada.",
+    "entrada": {
+      "transcricao": "assentamos as soleiras de granito das portas e o rodapé eu e o ajudante"
+    },
+    "esperado": {
+      "clima": null,
+      "pessoas": 2
+    }
+  },
+  {
+    "id": "voz-diario-molhar-laje-cura",
+    "origem": "sintetico",
+    "particao": "teste",
+    "nota": "Molhar a laje pra cura não é chuva; desformar vigas = Estrutura; 2 carpinteiros + 1 servente = 3.",
+    "entrada": {
+      "transcricao": "hoje o serviço foi molhar a laje pra curar o concreto e desformar as vigas do térreo 2 carpinteiro e 1 servente"
+    },
+    "esperado": {
+      "clima": null,
+      "pessoas": 3,
+      "fase": "Estrutura",
+      "data": "2026-07-06"
+    }
+  },
+  {
+    "id": "voz-diario-previsao-amanha-concretagem",
+    "origem": "sintetico",
+    "particao": "dev",
+    "nota": "Chuva é previsão de amanhã; hoje 'sol forte'; 'amanhã' não é a data; 5 + 3 = 8.",
+    "entrada": {
+      "transcricao": "amanhã tem previsão de chuva então hoje adiantamos a concretagem da laje sol forte 5 pedreiros e 3 serventes"
+    },
+    "esperado": {
+      "clima": "Ensolarado",
+      "pessoas": 8,
+      "fase": "Estrutura",
+      "data": "2026-07-06"
+    }
+  },
+  {
+    "id": "voz-diario-relatorio-de-ontem-emboco",
+    "origem": "sintetico",
+    "particao": "dev",
+    "nota": "'relatório de ontem' = 2026-07-05; 'choveu forte' = Chuva forte; emboço = Reboco e contrapiso.",
+    "entrada": {
+      "transcricao": "relatório de ontem choveu forte de tarde fizemos o emboço do banheiro 2 pedreiros"
+    },
+    "esperado": {
+      "clima": "Chuva forte",
+      "pessoas": 2,
+      "fase": "Reboco e contrapiso",
+      "data": "2026-07-05"
+    }
+  },
+  {
+    "id": "voz-diario-granizo-telhas-alvenaria",
+    "origem": "sintetico",
+    "particao": "dev",
+    "nota": "Granizo = Chuva forte; as telhas quebradas são o estrago, a fase do dia é a alvenaria do muro; '4 pessoas'.",
+    "entrada": {
+      "transcricao": "caiu granizo no fim da tarde quebrou umas telhas da edícula a turma tava fazendo a alvenaria do muro 4 pessoas"
+    },
+    "esperado": {
+      "clima": "Chuva forte",
+      "pessoas": 4,
+      "fase": "Alvenaria"
+    }
+  },
+  {
+    "id": "voz-diario-dia-30-primeira-demao",
+    "origem": "sintetico",
+    "particao": "dev",
+    "nota": "'dia 30' no passado = 2026-06-30; 'primeira demão' não é número de pessoas; 'tempo bom' = Ensolarado.",
+    "entrada": {
+      "transcricao": "dia 30 o pintor e 2 ajudantes deram a primeira demão de tinta na fachada tempo bom"
+    },
+    "esperado": {
+      "clima": "Ensolarado",
+      "pessoas": 3,
+      "fase": "Pintura",
+      "data": "2026-06-30"
+    }
+  },
+  {
+    "id": "voz-diario-dia-1o-formas-pilares",
+    "origem": "sintetico",
+    "particao": "dev",
+    "nota": "'dia 1º' = 2026-07-01; 'primeiro andar' não é data; formas dos pilares = Estrutura.",
+    "entrada": {
+      "transcricao": "dia 1º armamos as formas dos pilares do primeiro andar 3 carpinteiros"
+    },
+    "esperado": {
+      "clima": null,
+      "pessoas": 3,
+      "fase": "Estrutura",
+      "data": "2026-07-01"
+    }
+  },
+  {
+    "id": "voz-diario-quarta-passada-agua-fria",
+    "origem": "sintetico",
+    "particao": "dev",
+    "nota": "'quarta-feira passada' = 2026-07-01; chuva fina = Chuvoso; tubulação de água fria = hidráulica.",
+    "entrada": {
+      "transcricao": "quarta-feira passada chuva fina o dia todo o encanador passou a tubulação de água fria da cozinha com um ajudante"
+    },
+    "esperado": {
+      "clima": "Chuvoso",
+      "pessoas": 2,
+      "fase": "Instalações hidráulicas",
+      "data": "2026-07-01"
+    }
+  },
+  {
+    "id": "voz-diario-hoje-segunda-reboco",
+    "origem": "sintetico",
+    "particao": "teste",
+    "nota": "'hoje segunda feira' = 2026-07-06 (não a segunda passada); 'tá nublado' = Nublado.",
+    "entrada": {
+      "transcricao": "hoje segunda feira começamos o reboco da parte de cima 2 pedreiros e um servente e o tempo tá nublado"
+    },
+    "esperado": {
+      "clima": "Nublado",
+      "pessoas": 3,
+      "fase": "Reboco e contrapiso",
+      "data": "2026-07-06"
+    }
+  },
+  {
+    "id": "voz-diario-segunda-passada-temporal-ninguem",
+    "origem": "sintetico",
+    "particao": "dev",
+    "nota": "'segunda passada' = 2026-06-29; temporal = Chuva forte; ninguém trabalhou, então sem fase.",
+    "entrada": {
+      "transcricao": "segunda passada não veio ninguém por causa do temporal"
+    },
+    "esperado": {
+      "clima": "Chuva forte",
+      "fase": null,
+      "data": "2026-06-29"
+    }
+  },
+  {
+    "id": "voz-diario-era-pra-vir-5",
+    "origem": "sintetico",
+    "particao": "dev",
+    "nota": "'era pra vir 5 mas só vieram 3': vale 3; 'só' não é sol, mas 'sol' no fim é.",
+    "entrada": {
+      "transcricao": "era pra vir 5 mas só vieram 3 pedreiros hoje subimos as paredes do banheiro sol"
+    },
+    "esperado": {
+      "clima": "Ensolarado",
+      "pessoas": 3,
+      "fase": "Alvenaria",
+      "data": "2026-07-06"
+    }
+  },
+  {
+    "id": "voz-diario-faltou-servente",
+    "origem": "sintetico",
+    "particao": "dev",
+    "nota": "'faltou o servente' não conta; 'ficaram só os 2 pedreiros' = 2; assentar bloco = Alvenaria.",
+    "entrada": {
+      "transcricao": "faltou o servente hoje ficaram só os 2 pedreiros assentando bloco na edícula"
+    },
+    "esperado": {
+      "clima": null,
+      "pessoas": 2,
+      "fase": "Alvenaria",
+      "data": "2026-07-06"
+    }
+  },
+  {
+    "id": "voz-diario-nomes-proprios-cobertura",
+    "origem": "sintetico",
+    "particao": "teste",
+    "nota": "Equipe por nome ('eu o tonho e o zezinho' = 3); cobertura da garagem = Cobertura; dia nublado.",
+    "entrada": {
+      "transcricao": "eu o tonho e o zezinho fizemos a cobertura da garagem com telha de fibrocimento dia nublado"
+    },
+    "esperado": {
+      "clima": "Nublado",
+      "pessoas": 3,
+      "fase": "Cobertura"
+    }
+  },
+  {
+    "id": "voz-diario-equipes-mistas-sem-fase",
+    "origem": "sintetico",
+    "particao": "teste",
+    "nota": "Equipes de frentes diferentes: 3 do gesso + 2 da elétrica + o mestre = 6; duas frentes, fase não avaliada.",
+    "entrada": {
+      "transcricao": "hoje vieram 3 do gesso 2 da elétrica e o mestre de obras o gesso fez o forro e a elétrica passou os fios"
+    },
+    "esperado": {
+      "clima": null,
+      "pessoas": 6,
+      "data": "2026-07-06"
+    }
+  },
+  {
+    "id": "voz-diario-mestre-mais-6-estacas",
+    "origem": "sintetico",
+    "particao": "dev",
+    "nota": "'o mestre mais 6 peões' = 7; estacas = Fundação; 'debaixo de chuva' = Chuvoso.",
+    "entrada": {
+      "transcricao": "o mestre mais 6 peões concretaram as estacas da frente debaixo de chuva"
+    },
+    "esperado": {
+      "clima": "Chuvoso",
+      "pessoas": 7,
+      "fase": "Fundação"
+    }
+  },
+  {
+    "id": "voz-diario-horario-nao-e-pessoas",
+    "origem": "sintetico",
+    "particao": "dev",
+    "nota": "Horários '7:00' e '17:00' não são pessoas; 'os dois pedreiros e o servente' = 3; rebocar = Reboco.",
+    "entrada": {
+      "transcricao": "trabalhamos das 7:00 às 17:00 rebocando a fachada lateral os dois pedreiros e o servente"
+    },
+    "esperado": {
+      "clima": null,
+      "pessoas": 3,
+      "fase": "Reboco e contrapiso"
+    }
+  },
+  {
+    "id": "voz-diario-rejunte-ontem-metros",
+    "origem": "sintetico",
+    "particao": "dev",
+    "nota": "'80 metros' não é pessoas; rejuntar porcelanato = Revestimentos; 'ontem' = 2026-07-05.",
+    "entrada": {
+      "transcricao": "rejuntamos 80 metros de porcelanato ontem eu e o azulejista"
+    },
+    "esperado": {
+      "clima": null,
+      "pessoas": 2,
+      "fase": "Revestimentos",
+      "data": "2026-07-05"
+    }
+  },
+  {
+    "id": "voz-diario-caminhoes-concreto-10-homens",
+    "origem": "sintetico",
+    "particao": "dev",
+    "nota": "'3 caminhões' e '8:00' e '2º' não são pessoas; '10 homens' = 10; laje = Estrutura.",
+    "entrada": {
+      "transcricao": "chegaram 3 caminhões de concreto às 8:00 e concretamos a laje do 2º pavimento com 10 homens"
+    },
+    "esperado": {
+      "clima": null,
+      "pessoas": 10,
+      "fase": "Estrutura"
+    }
+  },
+  {
+    "id": "voz-diario-demaos-selador",
+    "origem": "sintetico",
+    "particao": "dev",
+    "nota": "'2 demãos' não é pessoas; 'eu e o pintor' = 2; 'sol de rachar' = Ensolarado.",
+    "entrada": {
+      "transcricao": "passamos 2 demãos de selador e uma de tinta acrílica no muro eu e o pintor sol de rachar"
+    },
+    "esperado": {
+      "clima": "Ensolarado",
+      "pessoas": 2,
+      "fase": "Pintura"
+    }
+  },
+  {
+    "id": "voz-diario-rasgar-parede-conduite",
+    "origem": "sintetico",
+    "particao": "dev",
+    "nota": "Rasgar parede pra conduíte e caixinhas 4 por 2 = Instalações elétricas (não Alvenaria); '4 por 2' não é pessoas.",
+    "entrada": {
+      "transcricao": "rasgamos as paredes pra passar os conduítes e chumbamos as caixinhas 4 por 2 o eletricista e 2 ajudantes"
+    },
+    "esperado": {
+      "clima": null,
+      "pessoas": 3,
+      "fase": "Instalações elétricas"
+    }
+  },
+  {
+    "id": "voz-diario-quebrar-piso-esgoto",
+    "origem": "sintetico",
+    "particao": "dev",
+    "nota": "Quebrar o piso pra refazer o esgoto = Instalações hidráulicas (não Revestimentos).",
+    "entrada": {
+      "transcricao": "quebramos o piso do banheiro pra refazer o esgoto que tava entupido o encanador e o servente"
+    },
+    "esperado": {
+      "clima": null,
+      "pessoas": 2,
+      "fase": "Instalações hidráulicas"
+    }
+  },
+  {
+    "id": "voz-diario-ferro-sapatas-fundacao",
+    "origem": "sintetico",
+    "particao": "teste",
+    "nota": "Cortar e dobrar o ferro das sapatas = Fundação (ferro não é sempre Estrutura).",
+    "entrada": {
+      "transcricao": "hoje cortamos e dobramos o ferro das sapatas 2 armadores"
+    },
+    "esperado": {
+      "clima": null,
+      "pessoas": 2,
+      "fase": "Fundação",
+      "data": "2026-07-06"
+    }
+  },
+  {
+    "id": "voz-diario-madeira-assoalho-laje",
+    "origem": "sintetico",
+    "particao": "dev",
+    "nota": "Madeira do assoalho e escoras da laje = Estrutura (não Cobertura); 'eram 4' = 4.",
+    "entrada": {
+      "transcricao": "os carpinteiro montaram o assoalho de madeira pra laje e as escoras eram 4"
+    },
+    "esperado": {
+      "clima": null,
+      "pessoas": 4,
+      "fase": "Estrutura"
+    }
+  },
+  {
+    "id": "voz-diario-calhas-rufos-sozinho",
+    "origem": "sintetico",
+    "particao": "dev",
+    "nota": "Calhas e rufos = Cobertura; funileiro 'sozinho' = 1; dia nublado.",
+    "entrada": {
+      "transcricao": "o funileiro colocou as calhas e os rufos sozinho dia nublado"
+    },
+    "esperado": {
+      "clima": "Nublado",
+      "pessoas": 1,
+      "fase": "Cobertura"
+    }
+  },
+  {
+    "id": "voz-diario-limpeza-descarregar-bloco",
+    "origem": "sintetico",
+    "particao": "teste",
+    "nota": "Só limpeza e descarga de bloco: nenhuma fase executada; 3 serventes; sol.",
+    "entrada": {
+      "transcricao": "hoje foi só limpeza da obra e descarregamos o caminhão de bloco 3 serventes sol"
+    },
+    "esperado": {
+      "clima": "Ensolarado",
+      "pessoas": 3,
+      "fase": null,
+      "data": "2026-07-06"
+    }
+  },
+  {
+    "id": "voz-diario-choveu-ninguem-trabalhou",
+    "origem": "sintetico",
+    "particao": "teste",
+    "nota": "Choveu o dia inteiro sem dizer forte = Chuvoso; ninguém trabalhou: sem fase.",
+    "entrada": {
+      "transcricao": "choveu o dia inteiro ninguém trabalhou"
+    },
+    "esperado": {
+      "clima": "Chuvoso",
+      "fase": null
+    }
+  },
+  {
+    "id": "voz-diario-solzao-lixar-massa",
+    "origem": "sintetico",
+    "particao": "teste",
+    "nota": "'solzão' = Ensolarado; lixar massa e passar selador = Pintura; 'os 2 pintores' = 2.",
+    "entrada": {
+      "transcricao": "um solzão danado hoje os 2 pintores lixaram a massa da sala e passaram selador"
+    },
+    "esperado": {
+      "clima": "Ensolarado",
+      "pessoas": 2,
+      "fase": "Pintura",
+      "data": "2026-07-06"
+    }
+  },
+  {
+    "id": "voz-diario-extenso-quatro-cinco-alvenaria",
+    "origem": "sintetico",
+    "particao": "dev",
+    "nota": "Números por extenso: quatro + cinco = 9; 'segundo pavimento' não é pessoas.",
+    "entrada": {
+      "transcricao": "dia nublado quatro pedreiros e cinco serventes levantaram a alvenaria do segundo pavimento"
+    },
+    "esperado": {
+      "clima": "Nublado",
+      "pessoas": 9,
+      "fase": "Alvenaria"
+    }
+  },
+  {
+    "id": "voz-diario-equipe-de-6-cumeeira",
+    "origem": "sintetico",
+    "particao": "teste",
+    "nota": "'a equipe de 6' = 6; telhado e cumeeira = Cobertura.",
+    "entrada": {
+      "transcricao": "a equipe de 6 terminou o telhado e começou a colocar a cumeeira"
+    },
+    "esperado": {
+      "clima": null,
+      "pessoas": 6,
+      "fase": "Cobertura"
+    }
+  },
+  {
+    "id": "voz-diario-ruido-pinto-res-textura",
+    "origem": "sintetico",
+    "particao": "teste",
+    "nota": "Ruído 'pinto res' = pintores (sem número: pessoas vazio); textura = Pintura; 'tava nublado'.",
+    "entrada": {
+      "transcricao": "os pinto res passaram a textura no muro da frente tava nublado",
+      "alternativas": [
+        [
+          "os pinto res passaram a textura no muro da frente tava nublado",
+          0.55
+        ],
+        [
+          "os pintores passaram a textura no muro da frente tava nublado",
+          0.44
+        ]
+      ]
+    },
+    "esperado": {
+      "clima": "Nublado",
+      "pessoas": null,
+      "fase": "Pintura"
+    }
+  },
+  {
+    "id": "voz-diario-ruido-por-celanato",
+    "origem": "sintetico",
+    "particao": "dev",
+    "nota": "Ruído 'por celanato' = porcelanato (Revestimentos); 'eu e mais um' = 2.",
+    "entrada": {
+      "transcricao": "a gente assentou o por celanato da varanda eu e mais um"
+    },
+    "esperado": {
+      "clima": null,
+      "pessoas": 2,
+      "fase": "Revestimentos"
+    }
+  },
+  {
+    "id": "voz-diario-massa-grossa-reboco",
+    "origem": "sintetico",
+    "particao": "teste",
+    "nota": "'massa grossa' = reboco (não massa corrida de pintura); 2 + 1 = 3; sol.",
+    "entrada": {
+      "transcricao": "passamos a massa grossa na parede da cozinha sol o dia todo 2 pedreiros e um servente"
+    },
+    "esperado": {
+      "clima": "Ensolarado",
+      "pessoas": 3,
+      "fase": "Reboco e contrapiso"
+    }
+  },
+  {
+    "id": "voz-diario-principal-azulejo-vazamento",
+    "origem": "sintetico",
+    "particao": "dev",
+    "nota": "Fase principal é o azulejo (o dia todo); o encanador só veio ver um vazamento; 2 + 1 = 3.",
+    "entrada": {
+      "transcricao": "o dia todo foi assentando azulejo na cozinha só no final da tarde o encanador veio ver um vazamento 2 azulejistas e o encanador"
+    },
+    "esperado": {
+      "clima": null,
+      "pessoas": 3,
+      "fase": "Revestimentos"
+    }
+  },
+  {
+    "id": "voz-diario-ontem-dia-5-domingo",
+    "origem": "sintetico",
+    "particao": "teste",
+    "nota": "'ontem dia 5 domingo' = 2026-07-05; terminar a laje = Estrutura; '6 pessoas'.",
+    "entrada": {
+      "transcricao": "ontem dia 5 domingo fizemos hora extra pra terminar a laje 6 pessoas"
+    },
+    "esperado": {
+      "clima": null,
+      "pessoas": 6,
+      "fase": "Estrutura",
+      "data": "2026-07-05"
+    }
+  },
+  {
+    "id": "voz-diario-dia-10-futuro-armacao",
+    "origem": "sintetico",
+    "particao": "dev",
+    "nota": "'dia 10 vem o caminhão' é futuro, não a data do diário; hoje = 2026-07-06; armação da laje = Estrutura.",
+    "entrada": {
+      "transcricao": "dia 10 vem o caminhão de concreto hoje terminamos a armação da laje 3 armadores"
+    },
+    "esperado": {
+      "clima": null,
+      "pessoas": 3,
+      "fase": "Estrutura",
+      "data": "2026-07-06"
+    }
+  },
+  {
+    "id": "voz-diario-semana-que-vem-pintura",
+    "origem": "sintetico",
+    "particao": "teste",
+    "nota": "'semana que vem começa a pintura' é futuro: a fase de hoje é o reboco interno.",
+    "entrada": {
+      "transcricao": "semana que vem começa a pintura hoje terminou o reboco interno 2 pedreiros"
+    },
+    "esperado": {
+      "clima": null,
+      "pessoas": 2,
+      "fase": "Reboco e contrapiso",
+      "data": "2026-07-06"
+    }
+  },
+  {
+    "id": "voz-diario-sexta-sol-calcada",
+    "origem": "sintetico",
+    "particao": "dev",
+    "nota": "'sexta feira' no passado = 2026-07-03; pedreiro sozinho = 1; calçada fora das fases (não avaliada).",
+    "entrada": {
+      "transcricao": "sexta feira deu sol e o pedreiro sozinho fez a calçada da frente"
+    },
+    "esperado": {
+      "clima": "Ensolarado",
+      "pessoas": 1,
+      "data": "2026-07-03"
+    }
+  },
+  {
+    "id": "voz-diario-brocas-muro-divisa",
+    "origem": "sintetico",
+    "particao": "teste",
+    "nota": "'8 brocas de 3 metros' não é pessoas; brocas = Fundação; 3 serventes + o pedreiro = 4.",
+    "entrada": {
+      "transcricao": "fizemos 8 brocas de 3 metros pro muro de divisa 3 serventes e o pedreiro"
+    },
+    "esperado": {
+      "clima": null,
+      "pessoas": 4,
+      "fase": "Fundação"
+    }
+  },
+  {
+    "id": "voz-diario-bancada-granito",
+    "origem": "sintetico",
+    "particao": "teste",
+    "nota": "Bancada de granito e soleiras = Acabamento; marmorista + ajudante = 2.",
+    "entrada": {
+      "transcricao": "o marmorista instalou a bancada de granito da cozinha e as soleiras com o ajudante dele"
+    },
+    "esperado": {
+      "clima": null,
+      "pessoas": 2,
+      "fase": "Acabamento"
+    }
+  },
+  {
+    "id": "voz-diario-uns-5-cara-contrapiso",
+    "origem": "sintetico",
+    "particao": "teste",
+    "nota": "'uns 5 cara' = 5; contrapiso = Reboco e contrapiso.",
+    "entrada": {
+      "transcricao": "uns 5 cara vieram hoje pra fazer o contrapiso da garagem"
+    },
+    "esperado": {
+      "clima": null,
+      "pessoas": 5,
+      "fase": "Reboco e contrapiso",
+      "data": "2026-07-06"
+    }
+  },
+  {
+    "id": "voz-diario-dupla-enfiacao",
+    "origem": "sintetico",
+    "particao": "dev",
+    "nota": "'a dupla de eletricista' = 2; enfiar cabos até as tomadas = Instalações elétricas.",
+    "entrada": {
+      "transcricao": "a dupla de eletricista enfiou os cabos do quadro até as tomadas"
+    },
+    "esperado": {
+      "clima": null,
+      "pessoas": 2,
+      "fase": "Instalações elétricas"
+    }
+  },
+  {
+    "id": "voz-diario-caixa-gordura-inspecao",
+    "origem": "sintetico",
+    "particao": "dev",
+    "nota": "Caixa de gordura e de inspeção = Instalações hidráulicas; 'eu e o servente' = 2.",
+    "entrada": {
+      "transcricao": "fizemos a caixa de gordura e a caixa de inspeção do quintal eu e o servente"
+    },
+    "esperado": {
+      "clima": null,
+      "pessoas": 2,
+      "fase": "Instalações hidráulicas"
+    }
+  },
+  {
+    "id": "voz-diario-nao-deu-tempo",
+    "origem": "sintetico",
+    "particao": "dev",
+    "nota": "'não deu tempo' não é clima; reboco do muro; 2 pedreiros.",
+    "entrada": {
+      "transcricao": "não deu tempo de terminar o reboco do muro faltou areia vieram 2 pedreiros"
+    },
+    "esperado": {
+      "clima": null,
+      "pessoas": 2,
+      "fase": "Reboco e contrapiso"
+    }
+  },
+  {
+    "id": "voz-diario-fechamos-vao-nao-e-tempo-fechado",
+    "origem": "sintetico",
+    "particao": "dev",
+    "nota": "'fechamos o vão' não é 'tempo fechado'; parede = Alvenaria; 'eu e o pedreiro' = 2.",
+    "entrada": {
+      "transcricao": "fechamos o vão da janela com bloco e terminamos a parede da sala eu e o pedreiro"
+    },
+    "esperado": {
+      "clima": null,
+      "pessoas": 2,
+      "fase": "Alvenaria"
+    }
+  },
+  {
+    "id": "voz-diario-por-do-sol-nao-e-clima",
+    "origem": "sintetico",
+    "particao": "dev",
+    "nota": "'até o pôr do sol' não diz o clima; 'eu e mais dois' = 3; fase da fossa não avaliada.",
+    "entrada": {
+      "transcricao": "trabalhamos até o pôr do sol pra terminar a escavação da fossa eu e mais dois"
+    },
+    "esperado": {
+      "clima": null,
+      "pessoas": 3
+    }
+  },
+  {
+    "id": "voz-diario-cinza-grafite-portao",
+    "origem": "sintetico",
+    "particao": "dev",
+    "nota": "'de cinza' é a cor da tinta, não céu nublado; 'ontem' = 2026-07-05; pintar portão = Pintura.",
+    "entrada": {
+      "transcricao": "ontem pintamos o portão e a grade de cinza grafite eu e o ajudante"
+    },
+    "esperado": {
+      "clima": null,
+      "pessoas": 2,
+      "fase": "Pintura",
+      "data": "2026-07-05"
+    }
+  },
+  {
+    "id": "voz-diario-ruido-lage-so-o-dia-todo",
+    "origem": "sintetico",
+    "particao": "teste",
+    "nota": "1ª hipótese trocou 'sol' por 'só'; a alternativa traz 'sol o dia todo'; 'lage' = laje (Estrutura).",
+    "entrada": {
+      "transcricao": "hoje fizemos a lage do quarto só o dia todo 4 pedreiros",
+      "alternativas": [
+        [
+          "hoje fizemos a lage do quarto só o dia todo 4 pedreiros",
+          0.57
+        ],
+        [
+          "hoje fizemos a laje do quarto sol o dia todo 4 pedreiros",
+          0.41
+        ]
+      ]
+    },
+    "esperado": {
+      "clima": "Ensolarado",
+      "pessoas": 4,
+      "fase": "Estrutura",
+      "data": "2026-07-06"
+    }
   }
 ]

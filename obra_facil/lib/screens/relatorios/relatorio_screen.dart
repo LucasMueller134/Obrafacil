@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../design/design.dart';
+import '../../providers/auth_provider.dart';
 import '../../services/firestore_service.dart';
 import '../../services/ia/perguntas_obra_service.dart';
 import '../../services/ia/relatorio_semanal_service.dart';
@@ -188,7 +189,9 @@ class _RelatorioScreenState extends State<_Relatorio> {
                         index: _aba,
                         children: [
                           _analise(r),
-                          ChatObra(dados: dados),
+                          ChatObra(
+                              dados: dados,
+                              perfil: context.read<AuthProvider>().usuario?.perfil.name),
                         ],
                       ),
           ),
