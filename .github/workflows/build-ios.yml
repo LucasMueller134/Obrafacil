@@ -140,7 +140,9 @@ jobs:
           dart run flutter_native_splash:create
 
       - name: Build iOS (release, sem assinatura)
-        run: flutter build ios --release --no-codesign
+        env:
+          IA_URL: ${{ vars.IA_URL }}
+        run: flutter build ios --release --no-codesign --dart-define=IA_URL="$IA_URL"
 
       - name: Empacotar o .ipa
         run: |

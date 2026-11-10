@@ -157,7 +157,10 @@ jobs:
       - name: Build APK (release)
         env:
           ANDROID_KEYSTORE_SENHA: ${{ secrets.ANDROID_KEYSTORE_SENHA }}
-        run: flutter build apk --release
+          # Endereço da IA do assistente (variável do repositório, não é
+          # segredo). Vazia: o "Perguntar" do app fica só com as regras.
+          IA_URL: ${{ vars.IA_URL }}
+        run: flutter build apk --release --dart-define=IA_URL="$IA_URL"
 
       - name: Conferir a assinatura do APK
         env:
